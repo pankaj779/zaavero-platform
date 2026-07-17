@@ -1,9 +1,5 @@
-﻿import { ComingSoonPage } from '../../../components/dashboard/coming-soon-page';
-import { getDashboardPageMeta } from '../../../lib/dashboard';
-import { DASHBOARD_ROUTES } from '../../../lib/constants';
+﻿import { CertificatesView } from '../../../components/dashboard/certificates';
 
-const meta = getDashboardPageMeta(DASHBOARD_ROUTES.certificates);
-
-export default function Page(): React.JSX.Element {
-  return <ComingSoonPage title={meta.title} description={meta.description} />;
+export default function CertificatesPage(): React.JSX.Element {
+  return <CertificatesView />;
 }

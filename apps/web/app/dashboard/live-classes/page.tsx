@@ -1,9 +1,7 @@
-﻿import { ComingSoonPage } from '../../../components/dashboard/coming-soon-page';
-import { getDashboardPageMeta } from '../../../lib/dashboard';
+﻿import { redirect } from 'next/navigation';
 import { DASHBOARD_ROUTES } from '../../../lib/constants';
 
-const meta = getDashboardPageMeta(DASHBOARD_ROUTES.liveClasses);
-
-export default function Page(): React.JSX.Element {
-  return <ComingSoonPage title={meta.title} description={meta.description} />;
+/** Legacy path — Live Classes now lives at /dashboard/live */
+export default function LegacyLiveClassesRedirect(): never {
+  redirect(DASHBOARD_ROUTES.liveClasses);
 }

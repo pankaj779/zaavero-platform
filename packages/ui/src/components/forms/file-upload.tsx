@@ -31,7 +31,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
             id={inputId}
             type="file"
             className="sr-only"
-            aria-invalid={invalid || undefined}
+            aria-invalid={invalid ? true : undefined}
             {...props}
           />
         </label>

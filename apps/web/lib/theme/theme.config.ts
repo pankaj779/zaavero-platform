@@ -41,8 +41,8 @@ export const themeConfig: ThemeTokens = {
     maxWidth: '80rem',
   },
   animation: {
-    durationMs: 250,
-    duration: '250ms',
+    durationMs: 200,
+    duration: '200ms',
   },
   zIndex: {
     header: 50,
@@ -52,8 +52,8 @@ export const themeConfig: ThemeTokens = {
   },
   transitions: {
     colors: 'color 200ms ease, background-color 200ms ease, border-color 200ms ease',
-    transform: 'transform 250ms ease',
-    opacity: 'opacity 250ms ease',
+    transform: 'transform 200ms ease',
+    opacity: 'opacity 200ms ease',
   },
   lightMode: {
     background: '#f8fafc',

@@ -116,7 +116,9 @@ export function Pagination({
         size="icon-sm"
         aria-label="Previous page"
         disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
+        onClick={() => {
+          onPageChange(page - 1);
+        }}
       >
         <ChevronLeft />
       </Button>
@@ -128,7 +130,9 @@ export function Pagination({
         size="icon-sm"
         aria-label="Next page"
         disabled={page >= pageCount}
-        onClick={() => onPageChange(page + 1)}
+        onClick={() => {
+          onPageChange(page + 1);
+        }}
       >
         <ChevronRight />
       </Button>

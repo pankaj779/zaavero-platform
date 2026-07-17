@@ -14,6 +14,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   { id: 'live-classes', label: 'Live Classes', href: DASHBOARD_ROUTES.liveClasses, icon: 'video' },
   { id: 'assignments', label: 'Assignments', href: DASHBOARD_ROUTES.assignments, icon: 'clipboard' },
   { id: 'certificates', label: 'Certificates', href: DASHBOARD_ROUTES.certificates, icon: 'award' },
+  { id: 'notifications', label: 'Notifications', href: DASHBOARD_ROUTES.notifications, icon: 'bell' },
   { id: 'calendar', label: 'Calendar', href: DASHBOARD_ROUTES.calendar, icon: 'calendar' },
   { id: 'messages', label: 'Messages', href: DASHBOARD_ROUTES.messages, icon: 'message' },
   { id: 'payments', label: 'Payments', href: DASHBOARD_ROUTES.payments, icon: 'creditCard' },
@@ -32,23 +33,29 @@ export const dashboardPageMeta: Record<
   },
   [DASHBOARD_ROUTES.learning]: {
     title: 'My Learning',
-    description: 'Your enrolled programs and progress will appear here.',
+    description: 'Programs you are enrolled in — continue where you left off.',
     breadcrumb: 'My Learning',
   },
   [DASHBOARD_ROUTES.liveClasses]: {
     title: 'Live Classes',
-    description: 'Upcoming and past live sessions will be listed here.',
+    description: 'Join upcoming sessions and prepare for live learning with your mentor.',
     breadcrumb: 'Live Classes',
   },
   [DASHBOARD_ROUTES.assignments]: {
     title: 'Assignments',
-    description: 'Assignments, submissions, and mentor feedback will appear here.',
+    description: 'Track deadlines, review instructions, and prepare submissions for your courses.',
     breadcrumb: 'Assignments',
   },
   [DASHBOARD_ROUTES.certificates]: {
     title: 'Certificates',
-    description: 'Completed course certificates will be available here.',
+    description: 'Track issued certificates and prepare for verification once generation is enabled.',
     breadcrumb: 'Certificates',
+  },
+  [DASHBOARD_ROUTES.notifications]: {
+    title: 'Notifications',
+    description:
+      'Review system updates and learning alerts. Actions remain disabled until delivery is connected.',
+    breadcrumb: 'Notifications',
   },
   [DASHBOARD_ROUTES.calendar]: {
     title: 'Calendar',
@@ -67,12 +74,12 @@ export const dashboardPageMeta: Record<
   },
   [DASHBOARD_ROUTES.profile]: {
     title: 'Profile',
-    description: 'Manage your personal information and preferences.',
+    description: 'View your learner profile and organization details.',
     breadcrumb: 'Profile',
   },
   [DASHBOARD_ROUTES.settings]: {
     title: 'Settings',
-    description: 'Theme, notifications, privacy, and security preferences.',
+    description: 'Appearance, notifications, privacy, and account preference placeholders.',
     breadcrumb: 'Settings',
   },
 };

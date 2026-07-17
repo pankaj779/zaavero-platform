@@ -44,7 +44,7 @@ export const recentActivityPlaceholder = [
 
 export const quickActionsPlaceholder = [
   { id: 'continue', label: 'Continue Learning', href: '/dashboard/learning' },
-  { id: 'classes', label: 'View Live Classes', href: '/dashboard/live-classes' },
+  { id: 'classes', label: 'View Live Classes', href: '/dashboard/live' },
   { id: 'assignments', label: 'Open Assignments', href: '/dashboard/assignments' },
   { id: 'certificates', label: 'View Certificates', href: '/dashboard/certificates' },
 ];

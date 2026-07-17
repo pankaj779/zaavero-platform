@@ -28,7 +28,7 @@ export function Hero({
         {eyebrow ? <p className="text-caption font-medium uppercase tracking-[0.16em] text-accent">{eyebrow}</p> : null}
         <h1 className="text-display text-foreground">{title}</h1>
         {description ? <p className="text-body-lg text-muted-foreground">{description}</p> : null}
-        {(primaryAction || secondaryAction) && (
+        {(primaryAction ?? secondaryAction) && (
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             {primaryAction ? (
               <Button

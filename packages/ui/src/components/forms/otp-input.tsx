@@ -23,7 +23,7 @@ export function OtpInput({
   className,
   'aria-label': ariaLabel = 'One-time password',
 }: OtpInputProps): React.JSX.Element {
-  const inputsRef = React.useRef<Array<HTMLInputElement | null>>([]);
+  const inputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
   const chars = Array.from({ length }, (_, i) => value[i] ?? '');
 
   const update = (next: string[]): void => {

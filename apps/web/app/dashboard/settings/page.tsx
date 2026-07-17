@@ -1,9 +1,5 @@
-﻿import { ComingSoonPage } from '../../../components/dashboard/coming-soon-page';
-import { getDashboardPageMeta } from '../../../lib/dashboard';
-import { DASHBOARD_ROUTES } from '../../../lib/constants';
+﻿import { SettingsView } from '../../../components/dashboard/settings';
 
-const meta = getDashboardPageMeta(DASHBOARD_ROUTES.settings);
-
-export default function Page(): React.JSX.Element {
-  return <ComingSoonPage title={meta.title} description={meta.description} />;
+export default function SettingsPage(): React.JSX.Element {
+  return <SettingsView />;
 }
