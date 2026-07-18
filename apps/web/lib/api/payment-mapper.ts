@@ -91,6 +91,9 @@ export interface PaymentHistoryApiRecord {
   currency?: string | null;
   createdAt: string;
   paidAt?: string | null;
+  paymentId?: string | null;
+  receiptPdfUrl?: string | null;
+  payment?: { id?: string | null; receiptPdfUrl?: string | null } | null;
 }
 
 export interface InvoiceApiRecord {
@@ -114,6 +117,9 @@ export interface InvoiceApiRecord {
   customerName?: string | null;
   customerEmail?: string | null;
   pdfUrl?: string | null;
+  paymentId?: string | null;
+  receiptPdfUrl?: string | null;
+  payment?: { id?: string | null; receiptPdfUrl?: string | null } | null;
   issuedAt?: string | null;
   paidAt?: string | null;
   createdAt: string;
@@ -220,6 +226,8 @@ export interface TransactionApiRecord {
   provider?: string | null;
   providerOrderId?: string | null;
   providerPaymentId?: string | null;
+  paymentId?: string | null;
+  receiptPdfUrl?: string | null;
   userId?: string | null;
   userEmail?: string | null;
   userName?: string | null;
@@ -246,6 +254,7 @@ export interface RefundApiRecord {
   amount?: number | null;
   currency?: string | null;
   reason?: string | null;
+  receiptPdfUrl?: string | null;
   createdAt: string;
   processedAt?: string | null;
 }
@@ -496,6 +505,8 @@ export function mapPaymentHistoryItem(record: PaymentHistoryApiRecord): PaymentH
     total: mapMoneyDisplay(resolveMinor(record.totalMinor, record.total), currency),
     createdAt: record.createdAt,
     paidAt: record.paidAt ?? null,
+    paymentId: record.paymentId ?? record.payment?.id ?? null,
+    receiptPdfUrl: record.receiptPdfUrl ?? record.payment?.receiptPdfUrl ?? null,
   };
 }
 
@@ -516,6 +527,8 @@ export function mapInvoice(record: InvoiceApiRecord): InvoiceDto {
     billedToName: record.billedToName ?? record.customerName ?? null,
     billedToEmail: record.billedToEmail ?? record.customerEmail ?? null,
     pdfUrl: record.pdfUrl ?? null,
+    paymentId: record.paymentId ?? record.payment?.id ?? null,
+    paymentReceiptPdfUrl: record.receiptPdfUrl ?? record.payment?.receiptPdfUrl ?? null,
     issuedAt: record.issuedAt ?? null,
     paidAt: record.paidAt ?? null,
     createdAt: record.createdAt,
@@ -640,6 +653,8 @@ export function mapTransaction(record: TransactionApiRecord): TransactionDto {
     provider: record.provider ?? null,
     providerOrderId: record.providerOrderId ?? null,
     providerPaymentId: record.providerPaymentId ?? null,
+    paymentId: record.paymentId ?? null,
+    receiptPdfUrl: record.receiptPdfUrl ?? null,
     userId: record.userId ?? record.user?.id ?? null,
     userEmail: record.userEmail ?? record.user?.email ?? null,
     userName,
@@ -661,6 +676,7 @@ export function mapRefund(record: RefundApiRecord): RefundDto {
     status: mapRefundStatus(record.status),
     amount: mapMoneyDisplay(resolveMinor(record.amountMinor, record.amount), currency),
     reason: record.reason ?? null,
+    receiptPdfUrl: record.receiptPdfUrl ?? null,
     createdAt: record.createdAt,
     processedAt: record.processedAt ?? null,
   };

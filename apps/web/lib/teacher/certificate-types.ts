@@ -50,11 +50,13 @@ export interface StudentCertificateDto {
   status: StudentCertificateStatus;
   issuedAt: string | null;
   certificateNumber: string | null;
+  /** Public, non-sequential code embedded in the certificate QR. */
+  verificationCode?: string | null;
   /** Storage-backed certificate PDF URL when generated. */
   downloadUrl: string | null;
   /** Storage-backed QR image URL when generated. */
   qrImageUrl: string | null;
-  /** Always null until a public verification route is exposed. */
+  /** Absolute public verification URL. */
   verificationUrl: string | null;
   mentor: TeacherCertificateMentorDto;
   futureFeatures: TeacherCertificateFutureFeaturesDto;
@@ -107,14 +109,15 @@ export const teacherCertificatesPageCopy = {
   issueButton: 'Issue Certificate',
   downloadButton: 'Download PDF',
   verifyButton: 'Verify',
-  comingSoonNote: 'Certificate engine coming soon',
+  comingSoonNote: 'PDF not generated yet',
   emptyTitle: 'No certificates yet',
   emptyDescription:
-    'Eligible and issued certificates will appear here. Issuance tools arrive in a later sprint.',
+    'Eligible and issued certificates will appear here. Issue a certificate to generate PDF and QR.',
   noMatchesTitle: 'No matching certificates',
   noMatchesDescription: 'Try a different student, course, batch, or status filter.',
   noSelectionTitle: 'Select a certificate',
-  noSelectionDescription: 'Choose a student certificate to preview placeholder details.',
+  noSelectionDescription:
+    'Choose a student certificate to preview details, download PDF, or verify.',
   errorTitle: 'Unable to load certificates',
   errorDescription: 'Something went wrong while loading Certificates. Please try again.',
   studentLabel: 'Student',
@@ -335,7 +338,7 @@ export function deriveTeacherCertificateTemplates(
         id: 'template_placeholder',
         name: 'Standard Completion',
         courseTitle: null,
-        description: 'Default completion template. PDF rendering is not connected.',
+        description: 'Default completion template used when issuing certificates.',
         status: 'active',
         futureFeatures: teacherCertificateComingSoonFeatures,
       },

@@ -93,7 +93,7 @@ export interface MediaAssetListFilters {
 }
 
 export interface StorageAuditEntry {
-  userId: string;
+  userId: string | null;
   action: string;
   entityId: string;
   metadata: Record<string, unknown> & { organizationId: string };

@@ -333,6 +333,49 @@ export function AdminPaymentsView(): React.JSX.Element {
     }
   }
 
+  async function handleRegenerateInvoice(invoiceId: string): Promise<void> {
+    setSaving(true);
+    setFormError(null);
+    try {
+      const updated = await PaymentApi.regenerateInvoicePdf(invoiceId);
+      setInvoices((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+    } catch {
+      setFormError('Unable to generate the invoice PDF.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRegeneratePaymentReceipt(paymentId: string): Promise<void> {
+    setSaving(true);
+    setFormError(null);
+    try {
+      const result = await PaymentApi.regeneratePaymentReceipt(paymentId);
+      setTransactions((items) =>
+        items.map((item) =>
+          item.paymentId === paymentId ? { ...item, receiptPdfUrl: result.url } : item,
+        ),
+      );
+    } catch {
+      setFormError('Unable to regenerate the payment receipt.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRegenerateRefundReceipt(refundId: string): Promise<void> {
+    setSaving(true);
+    setFormError(null);
+    try {
+      const updated = await PaymentApi.regenerateRefundReceipt(refundId);
+      setRefunds((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+    } catch {
+      setFormError('Unable to regenerate the refund receipt.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading && !overview && plans.length === 0 && transactions.length === 0 && !error) {
     return (
       <div className="space-y-8">
@@ -534,6 +577,7 @@ export function AdminPaymentsView(): React.JSX.Element {
           selected={selectedTx}
           onSelect={setSelectedTx}
           onRetry={handleRetry}
+          onRegenerateReceipt={handleRegeneratePaymentReceipt}
           saving={saving}
         />
       ) : null}
@@ -564,42 +608,50 @@ export function AdminPaymentsView(): React.JSX.Element {
                             Download PDF
                           </a>
                         </Button>
-                      ) : (
-                        <label className="inline-flex cursor-pointer items-center">
-                          <span className="sr-only">Upload invoice PDF</span>
-                          <input
-                            type="file"
-                            accept="application/pdf"
-                            className="text-caption"
-                            disabled={saving}
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (!file || !primaryOrganizationId) {
-                                return;
-                              }
-                              setSaving(true);
-                              setFormError(null);
-                              void StorageApi.upload(file, {
-                                organizationId: primaryOrganizationId,
-                                entityType: 'INVOICE_PDF',
-                                entityId: invoice.id,
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={saving}
+                        onClick={() => void handleRegenerateInvoice(invoice.id)}
+                      >
+                        {invoice.pdfUrl ? 'Regenerate PDF' : 'Generate PDF'}
+                      </Button>
+                      <label className="inline-flex cursor-pointer items-center">
+                        <span className="sr-only">Upload invoice PDF override</span>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className="text-caption"
+                          disabled={saving}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file || !primaryOrganizationId) {
+                              return;
+                            }
+                            setSaving(true);
+                            setFormError(null);
+                            void StorageApi.upload(file, {
+                              organizationId: primaryOrganizationId,
+                              entityType: 'INVOICE_PDF',
+                              entityId: invoice.id,
+                            })
+                              .then((asset) => PaymentApi.attachInvoicePdf(invoice.id, asset.id))
+                              .then((updated) => {
+                                setInvoices((items) =>
+                                  items.map((item) => (item.id === updated.id ? updated : item)),
+                                );
                               })
-                                .then((asset) => PaymentApi.attachInvoicePdf(invoice.id, asset.id))
-                                .then((updated) => {
-                                  setInvoices((items) =>
-                                    items.map((item) => (item.id === updated.id ? updated : item)),
-                                  );
-                                })
-                                .catch(() => {
-                                  setFormError('Unable to attach invoice PDF.');
-                                })
-                                .finally(() => {
-                                  setSaving(false);
-                                });
-                            }}
-                          />
-                        </label>
-                      )}
+                              .catch(() => {
+                                setFormError('Unable to attach invoice PDF override.');
+                              })
+                              .finally(() => {
+                                setSaving(false);
+                              });
+                          }}
+                        />
+                      </label>
                     </div>
                   </CardContent>
                 </Card>
@@ -627,7 +679,25 @@ export function AdminPaymentsView(): React.JSX.Element {
                         {refund.status}
                       </p>
                     </div>
-                    <p className="font-medium">{refund.amount.formatted}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{refund.amount.formatted}</p>
+                      {refund.receiptPdfUrl ? (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={refund.receiptPdfUrl} target="_blank" rel="noopener noreferrer">
+                            Download receipt
+                          </a>
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={saving || refund.status !== 'processed'}
+                        onClick={() => void handleRegenerateRefundReceipt(refund.id)}
+                      >
+                        {refund.receiptPdfUrl ? 'Regenerate receipt' : 'Generate receipt'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </li>
@@ -767,12 +837,14 @@ function TransactionsPanel({
   selected,
   onSelect,
   onRetry,
+  onRegenerateReceipt,
   saving,
 }: {
   items: TransactionDto[];
   selected: TransactionDto | null;
   onSelect: (item: TransactionDto) => void;
   onRetry: (orderId: string) => Promise<void>;
+  onRegenerateReceipt: (paymentId: string) => Promise<void>;
   saving: boolean;
 }): React.JSX.Element {
   if (items.length === 0) {
@@ -849,6 +921,24 @@ function TransactionsPanel({
                 onClick={() => void onRetry(selected.orderId)}
               >
                 Retry failed order
+              </Button>
+            ) : null}
+            {selected.receiptPdfUrl ? (
+              <Button type="button" size="sm" variant="outline" asChild>
+                <a href={selected.receiptPdfUrl} target="_blank" rel="noopener noreferrer">
+                  Download receipt
+                </a>
+              </Button>
+            ) : null}
+            {selected.paymentId ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={saving}
+                onClick={() => void onRegenerateReceipt(selected.paymentId ?? '')}
+              >
+                {selected.receiptPdfUrl ? 'Regenerate receipt' : 'Generate receipt'}
               </Button>
             ) : null}
           </CardContent>

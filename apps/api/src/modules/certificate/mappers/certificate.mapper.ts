@@ -18,6 +18,7 @@ export class CertificateMapper {
       verificationCode: record.verificationCode,
       pdfUrl: record.pdfUrl,
       qrImageUrl: record.qrImageUrl ?? null,
+      completedAt: record.completedAt ? record.completedAt.toISOString() : null,
       issuedAt: record.issuedAt ? record.issuedAt.toISOString() : null,
       revokedAt: record.revokedAt ? record.revokedAt.toISOString() : null,
       createdAt: record.createdAt.toISOString(),

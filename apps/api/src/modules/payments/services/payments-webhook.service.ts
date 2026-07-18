@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { PdfService } from '../../pdf/services/pdf.service';
 import {
   PAYMENT_PROVIDER,
   PAYMENT_REPOSITORY,
@@ -105,7 +106,36 @@ export class PaymentsWebhookService {
     @Inject(PAYMENT_PROVIDER)
     private readonly provider: PaymentProvider,
     private readonly businessEmail?: BusinessEmailService,
+    private readonly pdfService?: PdfService,
   ) {}
+
+  /** Best-effort PDF generation; a failure never fails the webhook. */
+  private async ensureCaptureDocuments(orderId: string, paymentId: string): Promise<void> {
+    if (!this.pdfService) return;
+    try {
+      await this.pdfService.ensureInvoicePdfByOrderId(orderId);
+      await this.pdfService.ensurePaymentReceiptPdf(paymentId);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Post-capture PDF generation failed for order ${orderId}: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+    }
+  }
+
+  private async ensureRefundDocument(refundId: string): Promise<void> {
+    if (!this.pdfService) return;
+    try {
+      await this.pdfService.ensureRefundReceiptPdf(refundId);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Refund receipt PDF generation failed for refund ${refundId}: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+    }
+  }
 
   /**
    * Handles a Razorpay webhook. The signature MUST be verified against the
@@ -257,6 +287,7 @@ export class PaymentsWebhookService {
       paymentEventId,
     });
     if (captured && !result.alreadyProcessed) {
+      await this.ensureCaptureDocuments(result.order.id, result.payment.id);
       await this.businessEmail?.paymentCaptured(result.order.id, result.payment.id);
     }
 
@@ -343,6 +374,7 @@ export class PaymentsWebhookService {
       actorUserId: null,
     });
     if (processed) {
+      await this.ensureRefundDocument(finalized.id);
       await this.businessEmail?.refundProcessed(finalized.id);
     }
 

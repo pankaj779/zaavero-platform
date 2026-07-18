@@ -32,12 +32,14 @@ export function CertificatesView({
   initialTemplates,
   initialBatches,
   initialViewState,
+  portalMode = 'teacher',
 }: {
   /** Optional override for tests — skips network when provided with a view state. */
   initialCertificates?: StudentCertificateDto[];
   initialTemplates?: CertificateTemplateDto[];
   initialBatches?: CertificateBatchDto[];
   initialViewState?: TeacherCertificatesViewState;
+  portalMode?: 'teacher' | 'admin';
 } = {}): React.JSX.Element {
   const { primaryOrganizationId } = useOrganization();
   const [query, setQuery] = useState('');
@@ -198,6 +200,16 @@ export function CertificatesView({
         onStatusChange={setStatus}
         onSortChange={setSort}
         serverFiltered
+        portalMode={portalMode}
+        organizationId={primaryOrganizationId}
+        onCertificateChanged={(updated) => {
+          setCertificates((items) =>
+            items.map((item) => (item.id === updated.id ? updated : item)),
+          );
+          setStatsCertificates((items) =>
+            items.map((item) => (item.id === updated.id ? updated : item)),
+          );
+        }}
       />
     </div>
   );

@@ -137,6 +137,8 @@ export interface PaymentHistoryItemDto {
   total: MoneyDisplayDto;
   createdAt: string;
   paidAt: string | null;
+  paymentId: string | null;
+  receiptPdfUrl: string | null;
 }
 
 export interface InvoiceDto {
@@ -154,6 +156,8 @@ export interface InvoiceDto {
   billedToName: string | null;
   billedToEmail: string | null;
   pdfUrl: string | null;
+  paymentId: string | null;
+  paymentReceiptPdfUrl: string | null;
   issuedAt: string | null;
   paidAt: string | null;
   createdAt: string;
@@ -241,6 +245,8 @@ export interface TransactionDto {
   provider: string | null;
   providerOrderId: string | null;
   providerPaymentId: string | null;
+  paymentId: string | null;
+  receiptPdfUrl: string | null;
   userId: string | null;
   userEmail: string | null;
   userName: string | null;
@@ -259,6 +265,7 @@ export interface RefundDto {
   status: RefundStatus;
   amount: MoneyDisplayDto;
   reason: string | null;
+  receiptPdfUrl: string | null;
   createdAt: string;
   processedAt: string | null;
 }

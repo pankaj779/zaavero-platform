@@ -1,6 +1,10 @@
 'use client';
 
 import { Button } from '@graphology/ui';
+import Link from 'next/link';
+import { useState } from 'react';
+import { CertificateApi } from '../../../lib/api';
+import { ADMIN_ROUTES } from '../../../lib/constants';
 import {
   TEACHER_COMING_SOON,
   formatTeacherCertificateDate,
@@ -17,13 +21,36 @@ import { CertificateStatusBadge } from './certificate-status-badge';
 export function CertificateDetails({
   certificate,
   onClose,
+  portalMode = 'teacher',
+  organizationId,
+  onCertificateChanged,
 }: {
   certificate: StudentCertificateDto;
   onClose: () => void;
+  portalMode?: 'teacher' | 'admin';
+  organizationId?: string | null;
+  onCertificateChanged?: (certificate: StudentCertificateDto) => void;
 }): React.JSX.Element {
   const copy = teacherCertificatesPageCopy;
   const canDownload = isSafeHttpUrl(certificate.downloadUrl);
   const canShowQr = isSafeHttpUrl(certificate.qrImageUrl);
+  const canVerify = isSafeHttpUrl(certificate.verificationUrl);
+  const [working, setWorking] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  async function runAction(action: () => Promise<StudentCertificateDto>, message: string) {
+    setWorking(true);
+    setActionMessage(null);
+    try {
+      const updated = await action();
+      onCertificateChanged?.(updated);
+      setActionMessage(message);
+    } catch {
+      setActionMessage('The certificate action failed. Please try again.');
+    } finally {
+      setWorking(false);
+    }
+  }
 
   return (
     <TeacherDetailsPanel
@@ -90,8 +117,26 @@ export function CertificateDetails({
           type="button"
           variant="outline"
           size="sm"
-          disabled
-          aria-label={`${copy.issueButton} — ${copy.comingSoonNote}`}
+          disabled={
+            working ||
+            certificate.status !== 'eligible' ||
+            !organizationId ||
+            !certificate.student.id ||
+            !certificate.course.id
+          }
+          onClick={() => {
+            if (!organizationId) return;
+            void runAction(
+              () =>
+                CertificateApi.issueCertificate({
+                  organizationId,
+                  studentId: certificate.student.id,
+                  courseId: certificate.course.id,
+                  batchId: certificate.batch.id || undefined,
+                }),
+              'Certificate issued.',
+            );
+          }}
         >
           {copy.issueButton}
         </Button>
@@ -112,17 +157,70 @@ export function CertificateDetails({
             {copy.downloadButton}
           </Button>
         )}
+        <Button type="button" variant="outline" size="sm" disabled={!canVerify} asChild={canVerify}>
+          {canVerify && certificate.verificationUrl ? (
+            <a href={certificate.verificationUrl} target="_blank" rel="noopener noreferrer">
+              {copy.verifyButton}
+            </a>
+          ) : (
+            copy.verifyButton
+          )}
+        </Button>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          disabled
-          aria-label={`${copy.verifyButton} — ${copy.comingSoonNote}`}
+          disabled={
+            working || (certificate.status !== 'issued' && certificate.status !== 'revoked')
+          }
+          onClick={() => {
+            void runAction(
+              () => CertificateApi.regenerateCertificatePdf(certificate.id),
+              'Certificate PDF regenerated.',
+            );
+          }}
         >
-          {copy.verifyButton}
+          Regenerate PDF
         </Button>
-        {!canDownload ? (
-          <p className="text-caption text-muted-foreground">{copy.comingSoonNote}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canVerify}
+          onClick={() => {
+            if (certificate.verificationUrl) {
+              void navigator.clipboard.writeText(certificate.verificationUrl);
+              setActionMessage('Verification link copied.');
+            }
+          }}
+        >
+          Copy verification link
+        </Button>
+        {portalMode === 'admin' && certificate.status === 'issued' ? (
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={working}
+            onClick={() => {
+              void runAction(
+                () => CertificateApi.revokeCertificate(certificate.id),
+                'Certificate revoked.',
+              );
+            }}
+          >
+            Revoke certificate
+          </Button>
+        ) : null}
+        {portalMode === 'admin' ? (
+          <Button type="button" variant="outline" size="sm" asChild>
+            <Link href={ADMIN_ROUTES.auditLogs}>View audit logs</Link>
+          </Button>
+        ) : null}
+        {actionMessage ? (
+          <p className="text-caption text-muted-foreground" role="status">
+            {actionMessage}
+          </p>
         ) : null}
       </div>
 

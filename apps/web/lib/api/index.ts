@@ -132,11 +132,15 @@ export {
   collectCertificateTemplateIds,
   mapCertificateApiList,
   mapCertificateApiToTeacherSummary,
+  mapPublicCertificateVerification,
   type CertificateApiRecord,
   type CertificateBatchLookup,
   type CertificateCourseLookup,
   type CertificateListMeta,
   type CertificateListResult,
+  type PublicCertificateVerificationApiRecord,
+  type PublicCertificateVerificationDto,
+  type PublicCertificateVerificationStatus,
 } from './certificate-mapper';
 export { CalendarApi } from './calendar';
 export type {

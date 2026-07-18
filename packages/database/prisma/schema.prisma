@@ -840,6 +840,7 @@ model Certificate {
   verificationCode  String            @unique @map("verification_code")
   pdfUrl            String?           @map("pdf_url")
   qrImageUrl        String?           @map("qr_image_url")
+  completedAt       DateTime?         @map("completed_at")
   issuedAt          DateTime?         @map("issued_at")
   revokedAt         DateTime?         @map("revoked_at")
   createdAt         DateTime          @default(now()) @map("created_at")
@@ -1228,6 +1229,7 @@ model Payment {
   failureSource      String?         @map("failure_source")
   failureStep        String?         @map("failure_step")
   failureReason      String?         @map("failure_reason")
+  receiptPdfUrl      String?         @map("receipt_pdf_url")
   authorizedAt       DateTime?       @map("authorized_at")
   capturedAt         DateTime?       @map("captured_at")
   refundedMinor      Int             @default(0) @map("refunded_minor")
@@ -1414,6 +1416,7 @@ model Refund {
   reason           String?
   failureCode      String?         @map("failure_code")
   failureReason    String?         @map("failure_reason")
+  receiptPdfUrl    String?         @map("receipt_pdf_url")
   processedAt      DateTime?       @map("processed_at")
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
@@ -1938,6 +1941,8 @@ enum MediaEntityType {
   CERTIFICATE_PDF
   CERTIFICATE_QR
   INVOICE_PDF
+  PAYMENT_RECEIPT_PDF
+  REFUND_RECEIPT_PDF
   MESSAGE_ATTACHMENT
   ANNOUNCEMENT_IMAGE
   CALENDAR_ATTACHMENT

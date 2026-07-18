@@ -131,6 +131,8 @@ export class PaymentsMapper {
       currency: order.currency,
       createdAt: iso(order.createdAt),
       paidAt: isoOrNull(order.paidAt),
+      paymentId: order.paymentId,
+      receiptPdfUrl: order.receiptPdfUrl,
     };
   }
 
@@ -139,6 +141,7 @@ export class PaymentsMapper {
       id: invoice.id,
       organizationId: invoice.organizationId,
       orderId: invoice.orderId,
+      paymentId: invoice.paymentId,
       invoiceNumber: invoice.invoiceNumber,
       status: invoice.status,
       currency: invoice.currency,
@@ -173,6 +176,7 @@ export class PaymentsMapper {
       billedToName: invoice.customerName,
       billedToEmail: invoice.customerEmail,
       pdfUrl: invoice.pdfUrl,
+      receiptPdfUrl: invoice.receiptPdfUrl,
       issuedAt: isoOrNull(invoice.issuedAt),
       paidAt: isoOrNull(invoice.paidAt),
       createdAt: iso(invoice.createdAt),
@@ -311,6 +315,7 @@ export class PaymentsMapper {
       amountMinor: refund.amountMinor,
       currency: refund.currency,
       reason: refund.reason,
+      receiptPdfUrl: refund.receiptPdfUrl,
       createdAt: iso(refund.createdAt),
       processedAt: isoOrNull(refund.processedAt),
     };

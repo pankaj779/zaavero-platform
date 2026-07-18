@@ -20,6 +20,17 @@ export const ROUTES = {
   testimonials: '/#testimonials',
 } as const;
 
+/** Public certificate verification path. */
+export function getCertificateVerificationPath(verificationCode: string): string {
+  return `/verify/${encodeURIComponent(verificationCode)}`;
+}
+
+/** Absolute public verification URL used by QR codes and copy-link actions. */
+export function getCertificateVerificationUrl(verificationCode: string): string {
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+  return `${baseUrl}${getCertificateVerificationPath(verificationCode)}`;
+}
+
 export const DASHBOARD_ROUTES = {
   root: '/dashboard',
   learning: '/dashboard/learning',

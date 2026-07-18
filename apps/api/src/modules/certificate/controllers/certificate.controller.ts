@@ -97,6 +97,22 @@ export class CertificateController {
     return this.certificateService.update(user, id, dto);
   }
 
+  @Post(':id/regenerate-pdf')
+  @HttpCode(HttpStatus.OK)
+  @Roles(AUTH_ROLES.admin, AUTH_ROLES.teacher)
+  @Permissions(AUTH_PERMISSIONS.courseUpdate)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({
+    summary: 'Regenerate the certificate PDF and QR code',
+    description: 'Forces a fresh render and upload; the stored URLs are replaced. Audited.',
+  })
+  regeneratePdf(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ControllerSuccessPayload<CertificateResponseDto>> {
+    return this.certificateService.regeneratePdf(user, id);
+  }
+
   @Post(':id/revoke')
   @Roles(AUTH_ROLES.admin, AUTH_ROLES.teacher)
   @Permissions(AUTH_PERMISSIONS.courseUpdate)

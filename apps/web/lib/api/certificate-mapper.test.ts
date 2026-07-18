@@ -3,6 +3,7 @@ import {
   collectCertificateTemplateIds,
   mapCertificateApiList,
   mapCertificateApiToTeacherSummary,
+  mapPublicCertificateVerification,
   type CertificateApiRecord,
 } from './certificate-mapper';
 import { toCertificateApiStatus, toCertificateListSort } from '../teacher/certificate-types';
@@ -35,7 +36,8 @@ describe('certificate mapper', () => {
     expect(dto.batch.name).toBe('Batch');
     expect(dto.mentor.name).toBe('Teacher');
     expect(dto.downloadUrl).toBe('https://example.com/cert.pdf');
-    expect(dto.verificationUrl).toBeNull();
+    expect(dto.verificationCode).toBe('VERIFY-001');
+    expect(dto.verificationUrl).toBe('http://localhost:3000/verify/VERIFY-001');
     expect(dto.certificateNumber).toBe('CERT-001');
     expect(dto.futureFeatures.pdfGeneration).toBe('available');
     expect(dto.futureFeatures.downloads).toBe('available');
@@ -78,11 +80,32 @@ describe('certificate mapper', () => {
     expect(first).not.toHaveProperty('courseId');
     expect(first).not.toHaveProperty('batchId');
     expect(first).not.toHaveProperty('templateId');
-    expect(first).not.toHaveProperty('verificationCode');
+    expect(first?.verificationCode).toBe('VERIFY-001');
     expect(first).not.toHaveProperty('pdfUrl');
     expect(collectCertificateTemplateIds([sampleRecord]).get(sampleRecord.id)).toBe(
       sampleRecord.templateId,
     );
+  });
+});
+
+describe('public certificate verification mapper', () => {
+  it('maps only the scrubbed public payload', () => {
+    const dto = mapPublicCertificateVerification({
+      status: 'VALID',
+      certificateNumber: 'CERT-001',
+      verificationCode: 'VERIFY-001',
+      studentName: 'Asha Rao',
+      courseName: 'Graphology',
+      organizationName: 'Academy',
+      organizationLogoUrl: null,
+      completedAt: '2026-07-01T00:00:00.000Z',
+      issuedAt: '2026-07-02T00:00:00.000Z',
+      revokedAt: null,
+    });
+    expect(dto.status).toBe('VALID');
+    expect(dto.verificationUrl).toBe('http://localhost:3000/verify/VERIFY-001');
+    expect(dto).not.toHaveProperty('id');
+    expect(dto).not.toHaveProperty('organizationId');
   });
 });
 

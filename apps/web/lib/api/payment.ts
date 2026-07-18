@@ -267,6 +267,21 @@ export const PaymentApi = {
     return mapInvoice(record);
   },
 
+  async regenerateInvoicePdf(invoiceId: string): Promise<InvoiceDto> {
+    const record = await apiFetch<InvoiceApiRecord>(
+      `/payments/admin/invoices/${encodeURIComponent(invoiceId)}/pdf/regenerate`,
+      { method: 'POST' },
+    );
+    return mapInvoice(record);
+  },
+
+  async regeneratePaymentReceipt(paymentId: string): Promise<{ url: string; generated: boolean }> {
+    return apiFetch<{ url: string; generated: boolean }>(
+      `/payments/admin/payments/${encodeURIComponent(paymentId)}/receipt/regenerate`,
+      { method: 'POST' },
+    );
+  },
+
   async getAdminRefunds(params: PaymentListParams): Promise<PaymentListResult<RefundDto>> {
     const payload = await apiFetch<PaginatedPayload<RefundApiRecord>>(
       `/payments/admin/refunds${listQuery(params)}`,
@@ -282,6 +297,14 @@ export const PaymentApi = {
       method: 'POST',
       body: JSON.stringify(input),
     });
+    return mapRefund(record);
+  },
+
+  async regenerateRefundReceipt(refundId: string): Promise<RefundDto> {
+    const record = await apiFetch<RefundApiRecord>(
+      `/payments/admin/refunds/${encodeURIComponent(refundId)}/receipt/regenerate`,
+      { method: 'POST' },
+    );
     return mapRefund(record);
   },
 

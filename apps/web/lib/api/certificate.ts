@@ -5,11 +5,14 @@ import {
   collectCertificateTemplateIds,
   mapCertificateApiList,
   mapCertificateApiToTeacherSummary,
+  mapPublicCertificateVerification,
   type CertificateApiRecord,
   type CertificateBatchLookup,
   type CertificateCourseLookup,
   type CertificateListMeta,
   type CertificateListResult,
+  type PublicCertificateVerificationApiRecord,
+  type PublicCertificateVerificationDto,
 } from './certificate-mapper';
 import { CourseApi } from './course';
 
@@ -153,6 +156,16 @@ export const CertificateApi = {
     return mapCertificateApiToTeacherSummary(record, lookups);
   },
 
+  async verifyPublicCertificate(
+    verificationCode: string,
+  ): Promise<PublicCertificateVerificationDto> {
+    const record = await apiFetch<PublicCertificateVerificationApiRecord>(
+      `/public/certificates/verify/${encodeURIComponent(verificationCode)}`,
+      { skipAuth: true },
+    );
+    return mapPublicCertificateVerification(record);
+  },
+
   async issueCertificate(input: IssueCertificateInput): Promise<StudentCertificateDto> {
     const record = await apiFetch<CertificateApiRecord>('/certificates/issue', {
       method: 'POST',
@@ -165,6 +178,14 @@ export const CertificateApi = {
     const record = await apiFetch<CertificateApiRecord>(`/certificates/${id}/revoke`, {
       method: 'POST',
     });
+    return mapCertificateApiToTeacherSummary(record);
+  },
+
+  async regenerateCertificatePdf(id: string): Promise<StudentCertificateDto> {
+    const record = await apiFetch<CertificateApiRecord>(
+      `/certificates/${encodeURIComponent(id)}/regenerate-pdf`,
+      { method: 'POST' },
+    );
     return mapCertificateApiToTeacherSummary(record);
   },
 };

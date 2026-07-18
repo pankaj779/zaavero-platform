@@ -47,6 +47,9 @@ export interface OrderRecord {
   cancelledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Latest captured payment for this order, when present. */
+  paymentId: string | null;
+  receiptPdfUrl: string | null;
 }
 
 export interface PaymentRecord {
@@ -62,6 +65,7 @@ export interface PaymentRecord {
   status: PaymentStatusValue;
   failureCode: string | null;
   failureReason: string | null;
+  receiptPdfUrl: string | null;
   authorizedAt: Date | null;
   capturedAt: Date | null;
   refundedMinor: number;
@@ -91,6 +95,9 @@ export interface InvoiceRecord {
   courseTitleSnapshot: string | null;
   batchNameSnapshot: string | null;
   planNameSnapshot: string | null;
+  /** Latest captured payment for the invoice order, when present. */
+  paymentId: string | null;
+  receiptPdfUrl: string | null;
 }
 
 export interface PlanRecord {
@@ -162,6 +169,7 @@ export interface RefundRecord {
   reason: string | null;
   failureCode: string | null;
   failureReason: string | null;
+  receiptPdfUrl: string | null;
   processedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -504,6 +512,7 @@ export interface PaymentsRepository {
   listOrders(filters: PaymentListFilters): Promise<ListResult<OrderRecord>>;
 
   // Payments / capture
+  findPaymentById(id: string): Promise<PaymentRecord | null>;
   findPaymentByProviderPaymentId(
     provider: string,
     providerPaymentId: string,

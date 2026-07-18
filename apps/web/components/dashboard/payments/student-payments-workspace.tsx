@@ -423,6 +423,13 @@ function HistoryPanel({
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary">{paymentOrderStatusLabels[item.status]}</Badge>
                   <p className="font-medium">{item.total.formatted}</p>
+                  {item.receiptPdfUrl ? (
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <a href={item.receiptPdfUrl} target="_blank" rel="noopener noreferrer">
+                        Download receipt
+                      </a>
+                    </Button>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
@@ -479,6 +486,13 @@ function InvoicesPanel({
                   <Button type="button" variant="outline" size="sm" asChild>
                     <Link href={getPaymentReceiptPath(invoice.id)}>{copy.viewReceipt}</Link>
                   </Button>
+                  {invoice.pdfUrl ? (
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
+                        Download invoice
+                      </a>
+                    </Button>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>

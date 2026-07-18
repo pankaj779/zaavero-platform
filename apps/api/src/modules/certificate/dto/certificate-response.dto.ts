@@ -39,6 +39,9 @@ export class CertificateResponseDto {
   qrImageUrl!: string | null;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  completedAt!: string | null;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   issuedAt!: string | null;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })

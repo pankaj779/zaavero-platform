@@ -25,6 +25,7 @@ import {
   TeacherDetailsPanel,
   teacherCardSurfaceClass,
 } from '../../teacher/shared';
+import { MediaImage } from '../../shared/media-image';
 import { DashboardSearch, DashboardStatGrid, DashboardStatusSortFilters } from '../shared';
 import { canDownloadCertificatePdf, canShowCertificateQr } from './capabilities';
 import { studentCertificatesPageCopy } from './copy';
@@ -209,16 +210,16 @@ export function StudentCertificateDetails({
   const canShowQr = canShowCertificateQr(certificate);
   const downloadUrl = certificate.downloadUrl;
 
-  const [code, setCode] = useState(certificate.certificateNumber ?? '');
+  const [code, setCode] = useState(certificate.verificationCode ?? '');
   const [verifying, setVerifying] = useState(false);
   const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
   useEffect(() => {
-    setCode(certificate.certificateNumber ?? '');
+    setCode(certificate.verificationCode ?? '');
     setVerifyMessage(null);
     setVerifyError(null);
-  }, [certificate.certificateNumber, certificate.id]);
+  }, [certificate.id, certificate.verificationCode]);
 
   return (
     <TeacherDetailsPanel
@@ -278,12 +279,31 @@ export function StudentCertificateDetails({
             {canShowQr ? null : copy.qrUnavailable}
           </p>
           {canShowQr && certificate.qrImageUrl ? (
-            <img
+            <MediaImage
               src={certificate.qrImageUrl}
               alt="Certificate QR code"
               className="h-28 w-28 rounded-md border border-border object-contain"
-              loading="lazy"
+              sizes="112px"
             />
+          ) : null}
+          {certificate.verificationUrl ? (
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" asChild>
+                <a href={certificate.verificationUrl} target="_blank" rel="noopener noreferrer">
+                  Open verification
+                </a>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void navigator.clipboard.writeText(certificate.verificationUrl ?? '');
+                }}
+              >
+                Copy verification link
+              </Button>
+            </div>
           ) : null}
         </section>
 

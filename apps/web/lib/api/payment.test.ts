@@ -164,6 +164,30 @@ describe('PaymentApi', () => {
       body: JSON.stringify({ isActive: false }),
     });
 
+    apiFetchMock.mockResolvedValueOnce({
+      id: 'inv-1',
+      organizationId: 'org-1',
+      invoiceNumber: 'INV-1',
+      status: 'ISSUED',
+      totalMinor: 1000,
+      currency: 'INR',
+      pdfUrl: 'https://cdn.test/invoice.pdf',
+      createdAt: '2026-07-01T00:00:00.000Z',
+    });
+    await PaymentApi.regenerateInvoicePdf('inv-1');
+    expect(apiFetchMock).toHaveBeenCalledWith('/payments/admin/invoices/inv-1/pdf/regenerate', {
+      method: 'POST',
+    });
+
+    apiFetchMock.mockResolvedValueOnce({
+      url: 'https://cdn.test/payment-receipt.pdf',
+      generated: true,
+    });
+    await PaymentApi.regeneratePaymentReceipt('pay-1');
+    expect(apiFetchMock).toHaveBeenCalledWith('/payments/admin/payments/pay-1/receipt/regenerate', {
+      method: 'POST',
+    });
+
     apiFetchMock.mockResolvedValue({
       id: 'rf-1',
       organizationId: 'org-1',
@@ -188,6 +212,11 @@ describe('PaymentApi', () => {
         amountMinor: 500,
         reason: 'Duplicate',
       }),
+    });
+
+    await PaymentApi.regenerateRefundReceipt('rf-1');
+    expect(apiFetchMock).toHaveBeenCalledWith('/payments/admin/refunds/rf-1/receipt/regenerate', {
+      method: 'POST',
     });
 
     apiFetchMock.mockResolvedValue({

@@ -90,7 +90,7 @@ describe('CertificateApi', () => {
     expect(result.items[0]?.course.title).toBe('Foundations');
     expect(result.items[0]?.batch.name).toBe('Weekend Cohort');
     expect(result.items[0]?.downloadUrl).toBe('https://example.com/cert.pdf');
-    expect(result.items[0]?.verificationUrl).toBeNull();
+    expect(result.items[0]?.verificationUrl).toBe('http://localhost:3000/verify/VERIFY-001');
     expect(result.templateIds.get('11111111-1111-4111-8111-111111111111')).toBe(
       '88888888-8888-4888-8888-888888888888',
     );
@@ -127,6 +127,23 @@ describe('CertificateApi', () => {
     await CertificateApi.verifyCertificate('VERIFY-002');
     expect(apiFetchMock).toHaveBeenCalledWith('/certificates/verify/VERIFY-002');
 
+    apiFetchMock.mockResolvedValueOnce({
+      status: 'VALID',
+      certificateNumber: 'CERT-002',
+      verificationCode: 'VERIFY-002',
+      studentName: 'Student',
+      courseName: 'Course',
+      organizationName: 'Academy',
+      organizationLogoUrl: null,
+      completedAt: null,
+      issuedAt: record.issuedAt,
+      revokedAt: null,
+    });
+    await CertificateApi.verifyPublicCertificate('VERIFY-002');
+    expect(apiFetchMock).toHaveBeenCalledWith('/public/certificates/verify/VERIFY-002', {
+      skipAuth: true,
+    });
+
     await CertificateApi.issueCertificate({
       organizationId: record.organizationId,
       studentId: record.studentId,
@@ -143,6 +160,11 @@ describe('CertificateApi', () => {
 
     await CertificateApi.revokeCertificate(record.id);
     expect(apiFetchMock).toHaveBeenCalledWith(`/certificates/${record.id}/revoke`, {
+      method: 'POST',
+    });
+
+    await CertificateApi.regenerateCertificatePdf(record.id);
+    expect(apiFetchMock).toHaveBeenCalledWith(`/certificates/${record.id}/regenerate-pdf`, {
       method: 'POST',
     });
   });

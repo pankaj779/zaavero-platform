@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { PdfService } from '../../pdf/services/pdf.service';
 import {
   PAYMENT_DEFAULT_CURRENCY,
   PAYMENT_ORDER_TTL_MINUTES,
@@ -94,7 +95,27 @@ export class PaymentsService {
     @Inject(PAYMENT_PROVIDER)
     private readonly provider: PaymentProvider,
     private readonly businessEmail?: BusinessEmailService,
+    private readonly pdfService?: PdfService,
   ) {}
+
+  /**
+   * Generates the invoice and payment-receipt PDFs after a successful
+   * capture so the confirmation emails can attach real documents. Failures
+   * are logged and never block payment fulfillment.
+   */
+  async ensureCaptureDocuments(orderId: string, paymentId: string): Promise<void> {
+    if (!this.pdfService) return;
+    try {
+      await this.pdfService.ensureInvoicePdfByOrderId(orderId);
+      await this.pdfService.ensurePaymentReceiptPdf(paymentId);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Post-capture PDF generation failed for order ${orderId}: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+    }
+  }
 
   // ── Config & catalog ───────────────────────────────────────────────────
 
@@ -371,6 +392,7 @@ export class PaymentsService {
       actorUserId: user.id,
     });
     if (captured && !result.alreadyProcessed) {
+      await this.ensureCaptureDocuments(result.order.id, result.payment.id);
       await this.businessEmail?.paymentCaptured(result.order.id, result.payment.id);
     }
 

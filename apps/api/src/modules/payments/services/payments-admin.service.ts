@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { PdfService } from '../../pdf/services/pdf.service';
 import { StorageService } from '../../storage/services/storage.service';
 import {
   PAYMENT_DEFAULT_CURRENCY,
@@ -24,6 +25,7 @@ import type {
 import type {
   AdminPaymentOverviewResponseDto,
   CouponResponseDto,
+  GeneratedPdfResponseDto,
   InvoiceResponseDto,
   OrderResponseDto,
   PaginatedCouponsResponseDto,
@@ -83,6 +85,7 @@ export class PaymentsAdminService {
     private readonly paymentsService: PaymentsService,
     private readonly businessEmail?: BusinessEmailService,
     private readonly storageService?: StorageService,
+    private readonly pdfService?: PdfService,
   ) {}
 
   // ── Overview ───────────────────────────────────────────────────────────
@@ -285,6 +288,66 @@ export class PaymentsAdminService {
     };
   }
 
+  async regenerateInvoicePdf(
+    user: AuthenticatedUser,
+    invoiceId: string,
+  ): Promise<ControllerSuccessPayload<InvoiceResponseDto>> {
+    const invoice = await this.repository.findInvoiceById(invoiceId);
+    if (!invoice) throw new InvoiceNotFoundException();
+    assertOrganizationAccess(user, invoice.organizationId);
+    const pdf = this.requirePdfService();
+
+    await pdf.ensureInvoicePdf(invoice.id, { force: true, actorUserId: user.id });
+    const refreshed = (await this.repository.findInvoiceById(invoice.id)) ?? invoice;
+    return {
+      message: 'Invoice PDF regenerated successfully.',
+      data: PaymentsMapper.toInvoiceResponse(refreshed),
+    };
+  }
+
+  async regeneratePaymentReceiptPdf(
+    user: AuthenticatedUser,
+    paymentId: string,
+  ): Promise<ControllerSuccessPayload<GeneratedPdfResponseDto>> {
+    const payment = await this.repository.findPaymentById(paymentId);
+    if (!payment) throw new PaymentNotFoundException();
+    assertOrganizationAccess(user, payment.organizationId);
+    const pdf = this.requirePdfService();
+
+    const result = await pdf.ensurePaymentReceiptPdf(payment.id, {
+      force: true,
+      actorUserId: user.id,
+    });
+    return {
+      message: 'Payment receipt PDF regenerated successfully.',
+      data: { url: result.url, generated: result.generated },
+    };
+  }
+
+  async regenerateRefundReceiptPdf(
+    user: AuthenticatedUser,
+    refundId: string,
+  ): Promise<ControllerSuccessPayload<RefundResponseDto>> {
+    const refund = await this.repository.findRefundById(refundId);
+    if (!refund) throw new PaymentNotFoundException('Refund not found.');
+    assertOrganizationAccess(user, refund.organizationId);
+    const pdf = this.requirePdfService();
+
+    await pdf.ensureRefundReceiptPdf(refund.id, { force: true, actorUserId: user.id });
+    const refreshed = (await this.repository.findRefundById(refund.id)) ?? refund;
+    return {
+      message: 'Refund receipt PDF regenerated successfully.',
+      data: PaymentsMapper.toRefundResponse(refreshed),
+    };
+  }
+
+  private requirePdfService(): PdfService {
+    if (!this.pdfService) {
+      throw new PaymentProviderUnavailableException('PDF service is unavailable.');
+    }
+    return this.pdfService;
+  }
+
   // ── Refunds ────────────────────────────────────────────────────────────
 
   async listRefunds(
@@ -396,6 +459,13 @@ export class PaymentsAdminService {
       throw error;
     }
     if (finalized.status === 'PROCESSED') {
+      if (this.pdfService) {
+        try {
+          await this.pdfService.ensureRefundReceiptPdf(finalized.id, { actorUserId: user.id });
+        } catch {
+          // Receipt generation must never fail the refund itself.
+        }
+      }
       await this.businessEmail?.refundProcessed(finalized.id);
     }
 

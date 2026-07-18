@@ -3,6 +3,27 @@ import {
   type StudentCertificateDto,
   type StudentCertificateStatus,
 } from '../teacher/certificate-types';
+import { getCertificateVerificationUrl } from '../constants/routes';
+
+export type PublicCertificateVerificationStatus = 'VALID' | 'REVOKED' | 'NOT_FOUND';
+
+/** Scrubbed payload returned by the unauthenticated verification endpoint. */
+export interface PublicCertificateVerificationApiRecord {
+  status: PublicCertificateVerificationStatus;
+  certificateNumber: string | null;
+  verificationCode: string | null;
+  studentName: string | null;
+  courseName: string | null;
+  organizationName: string | null;
+  organizationLogoUrl: string | null;
+  completedAt: string | null;
+  issuedAt: string | null;
+  revokedAt: string | null;
+}
+
+export interface PublicCertificateVerificationDto extends PublicCertificateVerificationApiRecord {
+  verificationUrl: string | null;
+}
 
 /** Raw certificate payload from NestJS Certificate API (frontend-owned mirror). */
 export interface CertificateApiRecord {
@@ -104,9 +125,10 @@ export function mapCertificateApiToTeacherSummary(
     status,
     issuedAt: record.issuedAt,
     certificateNumber: record.certificateNumber.trim().length > 0 ? record.certificateNumber : null,
+    verificationCode: record.verificationCode,
     downloadUrl: record.pdfUrl,
     qrImageUrl: record.qrImageUrl ?? null,
-    verificationUrl: null,
+    verificationUrl: getCertificateVerificationUrl(record.verificationCode),
     mentor: {
       id: '',
       // TEMPORARY: mentor identity is not on CertificateResponseDto.
@@ -114,6 +136,26 @@ export function mapCertificateApiToTeacherSummary(
     },
     futureFeatures: teacherCertificateComingSoonFeatures,
     updatedAt: record.updatedAt,
+  };
+}
+
+export function mapPublicCertificateVerification(
+  record: PublicCertificateVerificationApiRecord,
+): PublicCertificateVerificationDto {
+  return {
+    status: record.status,
+    certificateNumber: record.certificateNumber,
+    verificationCode: record.verificationCode,
+    studentName: record.studentName,
+    courseName: record.courseName,
+    organizationName: record.organizationName,
+    organizationLogoUrl: record.organizationLogoUrl,
+    completedAt: record.completedAt,
+    issuedAt: record.issuedAt,
+    revokedAt: record.revokedAt,
+    verificationUrl: record.verificationCode
+      ? getCertificateVerificationUrl(record.verificationCode)
+      : null,
   };
 }
 

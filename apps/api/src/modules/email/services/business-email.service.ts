@@ -141,12 +141,16 @@ export class BusinessEmailService {
         organizationId: true,
         customerId: true,
         purpose: true,
-        invoice: { select: { id: true } },
+        invoice: { select: { id: true, invoiceNumber: true, pdfUrl: true } },
         subscription: { select: { id: true, planId: true } },
       },
     });
     if (!order) return;
 
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+      select: { receiptPdfUrl: true },
+    });
     await this.enqueueForUser({
       organizationId: order.organizationId,
       userId: order.customerId,
@@ -154,6 +158,9 @@ export class BusinessEmailService {
       actionPath: `/payments/orders/${order.id}`,
       entityType: 'payment',
       entityId: paymentId,
+      attachments: await this.pdfAttachments(order.organizationId, [
+        { url: payment?.receiptPdfUrl ?? null, filename: `payment-receipt-${paymentId}.pdf` },
+      ]),
     });
     if (order.invoice) {
       await this.enqueueForUser({
@@ -163,6 +170,12 @@ export class BusinessEmailService {
         actionPath: `/payments/invoices/${order.invoice.id}`,
         entityType: 'invoice',
         entityId: order.invoice.id,
+        attachments: await this.pdfAttachments(order.organizationId, [
+          {
+            url: order.invoice.pdfUrl,
+            filename: `invoice-${order.invoice.invoiceNumber}.pdf`,
+          },
+        ]),
       });
     }
     if (order.purpose === 'ORGANIZATION_SUBSCRIPTION' && order.subscription) {
@@ -204,6 +217,7 @@ export class BusinessEmailService {
       select: {
         id: true,
         organizationId: true,
+        receiptPdfUrl: true,
         order: { select: { customerId: true } },
       },
     });
@@ -215,6 +229,9 @@ export class BusinessEmailService {
       actionPath: '/payments/history',
       entityType: 'refund',
       entityId: refund.id,
+      attachments: await this.pdfAttachments(refund.organizationId, [
+        { url: refund.receiptPdfUrl, filename: `refund-receipt-${refund.id}.pdf` },
+      ]),
     });
   }
 
@@ -225,27 +242,24 @@ export class BusinessEmailService {
         id: true,
         organizationId: true,
         studentId: true,
+        certificateNumber: true,
         verificationCode: true,
         pdfUrl: true,
       },
     });
     if (!certificate) return;
-    const safePdfUrl = this.httpsUrlOrNull(certificate.pdfUrl);
     await this.enqueueForStudent(certificate.organizationId, certificate.studentId, {
       templateKey: 'certificate_issued',
-      actionPath: `/certificates/verify/${encodeURIComponent(certificate.verificationCode)}`,
+      // Matches the public QR verification page: /verify/{code}.
+      actionPath: `/verify/${encodeURIComponent(certificate.verificationCode)}`,
       entityType: 'certificate',
       entityId: certificate.id,
-      attachments: safePdfUrl
-        ? [
-            {
-              filename: `certificate-${certificate.id}.pdf`,
-              url: safePdfUrl,
-              contentType: 'application/pdf',
-              sizeBytes: 0,
-            },
-          ]
-        : undefined,
+      attachments: await this.pdfAttachments(certificate.organizationId, [
+        {
+          url: certificate.pdfUrl,
+          filename: `certificate-${certificate.certificateNumber}.pdf`,
+        },
+      ]),
     });
   }
 
@@ -412,5 +426,31 @@ export class BusinessEmailService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Builds PDF attachment metadata with the real stored size from the
+   * MediaAsset ledger. Non-https or unknown URLs are silently skipped.
+   */
+  private async pdfAttachments(
+    organizationId: string,
+    candidates: { url: string | null; filename: string }[],
+  ): Promise<EnqueueForUserInput['attachments']> {
+    const attachments: NonNullable<EnqueueForUserInput['attachments']> = [];
+    for (const candidate of candidates) {
+      const safeUrl = this.httpsUrlOrNull(candidate.url);
+      if (!safeUrl) continue;
+      const asset = await this.prisma.mediaAsset.findFirst({
+        where: { organizationId, secureUrl: safeUrl, deletedAt: null },
+        select: { bytes: true },
+      });
+      attachments.push({
+        filename: candidate.filename,
+        url: safeUrl,
+        contentType: 'application/pdf',
+        sizeBytes: asset ? Number(asset.bytes) : 0,
+      });
+    }
+    return attachments.length > 0 ? attachments : undefined;
   }
 }

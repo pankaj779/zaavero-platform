@@ -15,6 +15,7 @@ export interface CertificateRecord {
   verificationCode: string;
   pdfUrl: string | null;
   qrImageUrl?: string | null;
+  completedAt?: Date | null;
   issuedAt: Date | null;
   revokedAt: Date | null;
   createdAt: Date;
@@ -49,6 +50,7 @@ export interface IssueCertificateData {
   qrImageUrl?: string | null;
   certificateNumber: string;
   verificationCode: string;
+  completedAt?: Date | null;
   issuedAt: Date;
 }
 

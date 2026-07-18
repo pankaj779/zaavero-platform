@@ -32,6 +32,9 @@ export function CertificatesWorkspace({
   onStatusChange,
   onSortChange,
   serverFiltered = false,
+  portalMode = 'teacher',
+  organizationId,
+  onCertificateChanged,
 }: {
   certificates: StudentCertificateDto[];
   templates: CertificateTemplateDto[];
@@ -44,6 +47,9 @@ export function CertificatesWorkspace({
   onSortChange?: (value: TeacherCertificateSortOption) => void;
   /** When true, parent already applied server/client list filters — skip local filter/sort. */
   serverFiltered?: boolean;
+  portalMode?: 'teacher' | 'admin';
+  organizationId?: string | null;
+  onCertificateChanged?: (certificate: StudentCertificateDto) => void;
 }): React.JSX.Element {
   const copy = teacherCertificatesPageCopy;
   const [localQuery, setLocalQuery] = useState('');
@@ -115,6 +121,9 @@ export function CertificatesWorkspace({
           {selectedCertificate ? (
             <CertificateDetails
               certificate={selectedCertificate}
+              portalMode={portalMode}
+              organizationId={organizationId}
+              onCertificateChanged={onCertificateChanged}
               onClose={() => {
                 setSelectedCertificateId(null);
               }}

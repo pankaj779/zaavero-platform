@@ -84,13 +84,25 @@ export function ReceiptView({ invoiceId }: { invoiceId: string }): React.JSX.Ele
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <StudentModuleHeader
           title={`Receipt ${invoice.invoiceNumber}`}
-          description="Printable HTML receipt — no PDF download required."
+          description="Invoice and payment receipt details."
         />
         <div className="flex flex-wrap gap-2">
           {invoice.pdfUrl ? (
             <Button asChild>
               <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer" download>
                 Download PDF
+              </a>
+            </Button>
+          ) : null}
+          {invoice.paymentReceiptPdfUrl ? (
+            <Button asChild variant="outline">
+              <a
+                href={invoice.paymentReceiptPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                Download payment receipt
               </a>
             </Button>
           ) : null}

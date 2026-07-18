@@ -64,6 +64,18 @@ export interface ResolveMediaAssetOptions {
   ownerUserId?: string;
 }
 
+export interface GeneratedAssetInput {
+  organizationId: string;
+  ownerUserId: string;
+  entityType: MediaEntityTypeValue;
+  entityId: string;
+  filename: string;
+  mimeType: string;
+  buffer: Buffer;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+}
+
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
@@ -202,6 +214,82 @@ export class StorageService {
       uploaded,
       checksum,
     );
+    return StorageMapper.asset(record);
+  }
+
+  /**
+   * Trusted server-side upload path for generated artifacts. Callers must
+   * provide the owning user explicitly; no request-scoped user is fabricated.
+   */
+  async uploadGeneratedAsset(input: GeneratedAssetInput): Promise<MediaAssetResponseDto> {
+    const sizeBytes = input.buffer.byteLength;
+    validateStorageFile(
+      { filename: input.filename, mimeType: input.mimeType, sizeBytes },
+      this.configService,
+      { serverUpload: true },
+    );
+
+    const checksumSha256 = createHash('sha256').update(input.buffer).digest('hex');
+    const duplicate = await this.repository.findByChecksum({
+      organizationId: input.organizationId,
+      ownerUserId: input.ownerUserId,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      checksumSha256,
+    });
+    if (duplicate) return StorageMapper.asset(duplicate);
+
+    const folder = this.buildFolder(input.organizationId, input.entityType);
+    const uploaded = await this.provider.uploadBuffer({
+      buffer: input.buffer,
+      folder,
+      publicId: randomUUID(),
+      filename: input.filename,
+      mimeType: input.mimeType,
+      resourceType: providerResourceType(input.mimeType),
+      tags: input.tags,
+    });
+    const record = await this.repository.create({
+      organizationId: input.organizationId,
+      ownerUserId: input.ownerUserId,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      provider: uploaded.provider,
+      resourceType: persistedResourceType(uploaded.resourceType),
+      deliveryType: 'UPLOAD',
+      providerPublicId: uploaded.publicId,
+      providerAssetId: uploaded.providerAssetId ?? undefined,
+      folder,
+      originalFilename: input.filename,
+      mimeType: input.mimeType,
+      extension: fileExtension(input.filename),
+      bytes: sizeBytes,
+      checksumSha256,
+      providerEtag: uploaded.etag,
+      secureUrl: uploaded.secureUrl,
+      width: uploaded.width,
+      height: uploaded.height,
+      durationSeconds: uploaded.durationSeconds,
+      format: uploaded.format,
+      version: uploaded.version,
+      tags: input.tags,
+      metadata: input.metadata,
+    });
+    await this.repository.audit({
+      userId: null,
+      action: STORAGE_AUDIT_ACTIONS.upload,
+      entityId: record.id,
+      metadata: {
+        organizationId: input.organizationId,
+        entityType: input.entityType,
+        entityId: input.entityId,
+        publicId: uploaded.publicId,
+        mimeType: input.mimeType,
+        sizeBytes,
+        provider: uploaded.provider,
+        generated: true,
+      },
+    });
     return StorageMapper.asset(record);
   }
 

@@ -158,6 +158,12 @@ export class PaymentHistoryItemResponseDto {
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   paidAt!: string | null;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  paymentId!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  receiptPdfUrl!: string | null;
 }
 
 export class PaginatedHistoryResponseDto {
@@ -177,6 +183,9 @@ export class InvoiceResponseDto {
 
   @ApiProperty({ format: 'uuid' })
   orderId!: string;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  paymentId!: string | null;
 
   @ApiProperty()
   invoiceNumber!: string;
@@ -210,6 +219,9 @@ export class InvoiceResponseDto {
 
   @ApiPropertyOptional({ nullable: true })
   pdfUrl!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  receiptPdfUrl!: string | null;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   issuedAt!: string | null;
@@ -505,11 +517,22 @@ export class RefundResponseDto {
   @ApiPropertyOptional({ nullable: true })
   reason!: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  receiptPdfUrl!: string | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   processedAt!: string | null;
+}
+
+export class GeneratedPdfResponseDto {
+  @ApiProperty({ description: 'Secure URL of the stored PDF' })
+  url!: string;
+
+  @ApiProperty({ description: 'True when a new document was rendered and stored' })
+  generated!: boolean;
 }
 
 export class PaginatedRefundsResponseDto {

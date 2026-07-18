@@ -70,15 +70,28 @@ const orderSelect = {
   cancelledAt: true,
   createdAt: true,
   updatedAt: true,
+  payments: {
+    select: { id: true, receiptPdfUrl: true },
+    where: { status: 'CAPTURED' },
+    orderBy: { capturedAt: 'desc' },
+    take: 1,
+  },
 } as const;
 
 type OrderRow = {
   coupon: { code: string } | null;
-} & Omit<OrderRecord, 'couponCode'>;
+  payments: { id: string; receiptPdfUrl: string | null }[];
+} & Omit<OrderRecord, 'couponCode' | 'paymentId' | 'receiptPdfUrl'>;
 
 function toOrderRecord(row: OrderRow): OrderRecord {
-  const { coupon, ...rest } = row;
-  return { ...rest, couponCode: coupon?.code ?? null };
+  const { coupon, payments, ...rest } = row;
+  const payment = payments[0] ?? null;
+  return {
+    ...rest,
+    couponCode: coupon?.code ?? null,
+    paymentId: payment?.id ?? null,
+    receiptPdfUrl: payment?.receiptPdfUrl ?? null,
+  };
 }
 
 const paymentSelect = {
@@ -94,6 +107,7 @@ const paymentSelect = {
   status: true,
   failureCode: true,
   failureReason: true,
+  receiptPdfUrl: true,
   authorizedAt: true,
   capturedAt: true,
   refundedMinor: true,
@@ -124,6 +138,12 @@ const invoiceSelect = {
       courseTitleSnapshot: true,
       batchNameSnapshot: true,
       planNameSnapshot: true,
+      payments: {
+        select: { id: true, receiptPdfUrl: true },
+        where: { status: 'CAPTURED' },
+        orderBy: { capturedAt: 'desc' },
+        take: 1,
+      },
     },
   },
 } as const;
@@ -150,11 +170,13 @@ interface InvoiceRow {
     courseTitleSnapshot: string | null;
     batchNameSnapshot: string | null;
     planNameSnapshot: string | null;
+    payments: { id: string; receiptPdfUrl: string | null }[];
   } | null;
 }
 
 function toInvoiceRecord(row: InvoiceRow): InvoiceRecord {
   const { customer, order, ...rest } = row;
+  const payment = order?.payments[0] ?? null;
   return {
     ...rest,
     customerName: customer ? `${customer.firstName} ${customer.lastName}`.trim() : null,
@@ -163,6 +185,8 @@ function toInvoiceRecord(row: InvoiceRow): InvoiceRecord {
     courseTitleSnapshot: order?.courseTitleSnapshot ?? null,
     batchNameSnapshot: order?.batchNameSnapshot ?? null,
     planNameSnapshot: order?.planNameSnapshot ?? null,
+    paymentId: payment?.id ?? null,
+    receiptPdfUrl: payment?.receiptPdfUrl ?? null,
   };
 }
 
@@ -235,6 +259,7 @@ const refundSelect = {
   reason: true,
   failureCode: true,
   failureReason: true,
+  receiptPdfUrl: true,
   processedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -571,6 +596,13 @@ export class PrismaPaymentsRepository implements PaymentsRepository {
   }
 
   // ── Payments / capture ─────────────────────────────────────────────────
+
+  async findPaymentById(id: string): Promise<PaymentRecord | null> {
+    return this.prisma.payment.findUnique({
+      where: { id },
+      select: paymentSelect,
+    });
+  }
 
   async findPaymentByProviderPaymentId(
     provider: string,
@@ -1568,7 +1600,13 @@ export class PrismaPaymentsRepository implements PaymentsRepository {
     const items: TransactionRecord[] = rows.map((row) => {
       const { customer, payments, ...orderRow } = row;
       return {
-        order: toOrderRecord(orderRow),
+        order: toOrderRecord({
+          ...orderRow,
+          payments: payments.map((payment) => ({
+            id: payment.id,
+            receiptPdfUrl: payment.receiptPdfUrl,
+          })),
+        }),
         latestPayment: payments[0] ?? null,
         customer,
       };

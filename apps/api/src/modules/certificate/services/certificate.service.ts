@@ -1,10 +1,11 @@
-import { randomUUID } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { PdfService } from '../../pdf/services/pdf.service';
 import { StorageService } from '../../storage/services/storage.service';
 import { CERTIFICATE_CODE_MAX_RETRIES } from '../constants/certificate.constants';
 import { CERTIFICATE_REPOSITORY } from '../constants/injection-tokens';
@@ -43,11 +44,14 @@ function isPrismaUniqueConflict(error: unknown): boolean {
 
 @Injectable()
 export class CertificateService {
+  private readonly logger = new Logger(CertificateService.name);
+
   constructor(
     @Inject(CERTIFICATE_REPOSITORY)
     private readonly certificateRepository: CertificateRepository,
     private readonly businessEmail?: BusinessEmailService,
     private readonly storageService?: StorageService,
+    private readonly pdfService?: PdfService,
   ) {}
 
   async list(
@@ -144,14 +148,69 @@ export class CertificateService {
       templateId: dto.templateId ?? null,
       pdfUrl: pdfUrl ?? null,
       qrImageUrl: qrImageUrl ?? null,
+      completedAt: dto.completedAt ? new Date(dto.completedAt) : null,
       issuedAt: new Date(),
     });
+
+    // The PDF + QR are generated before the issue email so the email can
+    // attach the real document. A generation failure never blocks issuance.
+    const finalized = await this.generatePdfSafely(certificate, user.id, false);
     await this.businessEmail?.certificateIssued(certificate.id);
 
     return {
       message: 'Certificate issued successfully.',
-      data: CertificateMapper.toResponse(certificate),
+      data: CertificateMapper.toResponse(finalized),
     };
+  }
+
+  async regeneratePdf(
+    user: AuthenticatedUser,
+    id: string,
+  ): Promise<ControllerSuccessPayload<CertificateResponseDto>> {
+    const certificate = await this.requireAccessibleCertificate(user, id);
+    const course = await this.requireCourseInOrganization(
+      certificate.organizationId,
+      certificate.courseId,
+    );
+    await this.assertCanMutateCourseCertificates(user, course);
+
+    if (certificate.status !== 'ISSUED') {
+      throw new InvalidCertificateException('Only issued certificates can be regenerated.');
+    }
+    if (!this.pdfService) {
+      throw new InvalidCertificateException('PDF service is unavailable.');
+    }
+
+    await this.pdfService.ensureCertificatePdf(certificate.id, {
+      force: true,
+      actorUserId: user.id,
+    });
+    const refreshed = (await this.certificateRepository.findById(certificate.id)) ?? certificate;
+
+    return {
+      message: 'Certificate PDF regenerated successfully.',
+      data: CertificateMapper.toResponse(refreshed),
+    };
+  }
+
+  /** Generates the PDF and returns the refreshed record; failures are logged only. */
+  private async generatePdfSafely(
+    certificate: CertificateRecord,
+    actorUserId: string,
+    force: boolean,
+  ): Promise<CertificateRecord> {
+    if (!this.pdfService || certificate.pdfUrl) return certificate;
+    try {
+      await this.pdfService.ensureCertificatePdf(certificate.id, { force, actorUserId });
+      return (await this.certificateRepository.findById(certificate.id)) ?? certificate;
+    } catch (error: unknown) {
+      this.logger.error(
+        `Certificate PDF generation failed for ${certificate.id}: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+      return certificate;
+    }
   }
 
   async update(
@@ -241,12 +300,12 @@ export class CertificateService {
   }
 
   private generateCertificateNumber(): string {
-    const random = Math.random().toString(36).slice(2, 8).toUpperCase();
-    return `CERT-${String(Date.now())}-${random}`;
+    return `CERT-${String(Date.now())}-${randomBytes(4).toString('hex').toUpperCase()}`;
   }
 
+  /** Cryptographically random, URL-safe, non-sequential verification code. */
   private generateVerificationCode(): string {
-    return `VER-${randomUUID()}`;
+    return `VER-${randomBytes(18).toString('base64url')}`;
   }
 
   private resolveOrganizationId(user: AuthenticatedUser, organizationId?: string): string {

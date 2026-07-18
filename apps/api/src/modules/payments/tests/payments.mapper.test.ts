@@ -58,6 +58,49 @@ describe('PaymentsMapper', () => {
     expect(dto.features).toEqual(['Feature one']);
   });
 
+  it('exposes payment receipt URLs on history items', () => {
+    const dto = PaymentsMapper.toHistoryItem(
+      createOrderRecord({
+        paymentId: 'payment-1',
+        receiptPdfUrl: 'https://cdn.example.com/receipt.pdf',
+        paidAt: new Date('2026-07-01T01:00:00.000Z'),
+      }),
+    );
+    expect(dto.paymentId).toBe('payment-1');
+    expect(dto.receiptPdfUrl).toBe('https://cdn.example.com/receipt.pdf');
+  });
+
+  it('exposes invoice and payment receipt URLs on invoices', () => {
+    const dto = PaymentsMapper.toInvoiceResponse({
+      id: 'invoice-1',
+      organizationId: 'org-1',
+      orderId: 'order-1',
+      customerId: 'user-1',
+      invoiceNumber: 'INV-1',
+      status: 'PAID',
+      subtotalMinor: 50_000,
+      discountMinor: 0,
+      taxMinor: 0,
+      totalMinor: 50_000,
+      currency: 'INR',
+      pdfUrl: 'https://cdn.example.com/invoice.pdf',
+      issuedAt: new Date('2026-07-01T00:00:00.000Z'),
+      paidAt: new Date('2026-07-01T01:00:00.000Z'),
+      createdAt: new Date('2026-07-01T00:00:00.000Z'),
+      customerName: 'Ada Student',
+      customerEmail: 'student@example.com',
+      orderPurpose: 'COURSE_PURCHASE',
+      courseTitleSnapshot: 'Graphology Basics',
+      batchNameSnapshot: 'Batch A',
+      planNameSnapshot: null,
+      paymentId: 'payment-1',
+      receiptPdfUrl: 'https://cdn.example.com/receipt.pdf',
+    });
+    expect(dto.paymentId).toBe('payment-1');
+    expect(dto.pdfUrl).toBe('https://cdn.example.com/invoice.pdf');
+    expect(dto.receiptPdfUrl).toBe('https://cdn.example.com/receipt.pdf');
+  });
+
   it('computes renewal/upgrade hints for subscriptions', () => {
     const active = PaymentsMapper.toSubscriptionResponse(createSubscriptionRecord());
     expect(active.canRenew).toBe(true);

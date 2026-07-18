@@ -37,6 +37,7 @@ import {
 import type {
   AdminPaymentOverviewResponseDto,
   CouponResponseDto,
+  GeneratedPdfResponseDto,
   InvoiceResponseDto,
   OrderResponseDto,
   PaginatedCouponsResponseDto,
@@ -128,6 +129,39 @@ export class PaymentsAdminController {
     @Body() dto: AttachInvoicePdfDto,
   ): Promise<ControllerSuccessPayload<InvoiceResponseDto>> {
     return this.adminService.attachInvoicePdf(user, id, dto);
+  }
+
+  @Post('invoices/:id/pdf/regenerate')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'Regenerate the invoice PDF (forces a fresh render; audited)' })
+  regenerateInvoicePdf(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ControllerSuccessPayload<InvoiceResponseDto>> {
+    return this.adminService.regenerateInvoicePdf(user, id);
+  }
+
+  @Post('payments/:id/receipt/regenerate')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'Regenerate a payment receipt PDF (audited)' })
+  regeneratePaymentReceiptPdf(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ControllerSuccessPayload<GeneratedPdfResponseDto>> {
+    return this.adminService.regeneratePaymentReceiptPdf(user, id);
+  }
+
+  @Post('refunds/:id/receipt/regenerate')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'Regenerate a refund receipt PDF (audited)' })
+  regenerateRefundReceiptPdf(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ControllerSuccessPayload<RefundResponseDto>> {
+    return this.adminService.regenerateRefundReceiptPdf(user, id);
   }
 
   @Get('refunds')

@@ -37,6 +37,7 @@ export function createRepositoryMock(): MockedRepository {
     attachProviderOrder: vi.fn(),
     markOrderFailed: vi.fn(),
     listOrders: vi.fn(),
+    findPaymentById: vi.fn(),
     findPaymentByProviderPaymentId: vi.fn(),
     findCapturedPaymentForOrder: vi.fn(),
     capturePayment: vi.fn(),
@@ -145,6 +146,8 @@ export function createOrderRecord(overrides: Partial<OrderRecord> = {}): OrderRe
     cancelledAt: null,
     createdAt: new Date('2026-07-01T00:00:00.000Z'),
     updatedAt: new Date('2026-07-01T00:00:00.000Z'),
+    paymentId: null,
+    receiptPdfUrl: null,
     ...overrides,
   };
 }
@@ -163,6 +166,7 @@ export function createPaymentRecord(overrides: Partial<PaymentRecord> = {}): Pay
     status: 'CAPTURED',
     failureCode: null,
     failureReason: null,
+    receiptPdfUrl: null,
     authorizedAt: null,
     capturedAt: new Date('2026-07-01T00:05:00.000Z'),
     refundedMinor: 0,
@@ -230,6 +234,7 @@ export function createRefundRecord(overrides: Partial<RefundRecord> = {}): Refun
     reason: 'Requested by student',
     failureCode: null,
     failureReason: null,
+    receiptPdfUrl: null,
     processedAt: null,
     createdAt: new Date('2026-07-02T00:00:00.000Z'),
     updatedAt: new Date('2026-07-02T00:00:00.000Z'),

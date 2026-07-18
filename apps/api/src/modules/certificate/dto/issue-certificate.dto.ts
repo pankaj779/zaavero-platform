@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsDateString, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class IssueCertificateDto {
   @ApiProperty({ format: 'uuid' })
@@ -38,4 +38,14 @@ export class IssueCertificateDto {
   @IsString()
   @MaxLength(2000)
   qrImageUrl?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'Course completion date shown on the certificate.',
+  })
+  @IsOptional()
+  @IsDateString()
+  completedAt?: string | null;
 }
