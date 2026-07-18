@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  FileUpload,
   Input,
   Label,
   Switch,
@@ -14,7 +15,7 @@ import {
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { AdminOrganizationDto } from '../../../lib/admin';
-import { AdminApi } from '../../../lib/api';
+import { AdminApi, StorageApi } from '../../../lib/api';
 import { useOrganization } from '../../../lib/auth';
 import { ADMIN_ROUTES } from '../../../lib/constants';
 import { TeacherModuleErrorState } from '../../teacher/shared';
@@ -39,6 +40,7 @@ export function AdminSettingsView(): React.JSX.Element {
   const [organization, setOrganization] = useState<AdminOrganizationDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [error, setError] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
@@ -113,6 +115,28 @@ export function AdminSettingsView(): React.JSX.Element {
       setFormError('Unable to save settings.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadLogo(file: File): Promise<void> {
+    if (!organization) {
+      return;
+    }
+    setLogoUploading(true);
+    setFormError(null);
+    try {
+      const asset = await StorageApi.upload(file, {
+        organizationId: organization.id,
+        entityType: 'ORG_LOGO',
+        entityId: organization.id,
+      });
+      const updated = await AdminApi.updateOrganization(organization.id, { logo: asset.id });
+      setOrganization(updated);
+      setLogo(updated.logo ?? asset.url);
+    } catch {
+      setFormError('Unable to upload the organization logo.');
+    } finally {
+      setLogoUploading(false);
     }
   }
 
@@ -194,7 +218,11 @@ export function AdminSettingsView(): React.JSX.Element {
             <Field label="Language" value={language} onChange={setLanguage} />
             <Field label="Currency" value={currency} onChange={setCurrency} />
             <Field label="Contact email" value={email} onChange={setEmail} type="email" />
-            <Field label="Logo URL" value={logo} onChange={setLogo} />
+            <LogoUpload
+              logo={logo}
+              uploading={logoUploading}
+              onUpload={(file) => void uploadLogo(file)}
+            />
             <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 tablet:col-span-2">
               <div>
                 <p className="text-sm font-medium">Organization active</p>
@@ -220,7 +248,11 @@ export function AdminSettingsView(): React.JSX.Element {
             <CardTitle className="text-base">Appearance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Field label="Logo URL" value={logo} onChange={setLogo} />
+            <LogoUpload
+              logo={logo}
+              uploading={logoUploading}
+              onUpload={(file) => void uploadLogo(file)}
+            />
             <Button size="sm" disabled={saving} onClick={() => void saveOrganization()}>
               Save branding
             </Button>
@@ -310,6 +342,36 @@ export function AdminSettingsView(): React.JSX.Element {
           </CardContent>
         </Card>
       ) : null}
+    </div>
+  );
+}
+
+function LogoUpload({
+  logo,
+  uploading,
+  onUpload,
+}: {
+  logo: string;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+}): React.JSX.Element {
+  return (
+    <div className="space-y-2">
+      {logo ? (
+        <img src={logo} alt="Organization logo" className="h-12 max-w-48 object-contain" />
+      ) : null}
+      <FileUpload
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        disabled={uploading}
+        label={uploading ? 'Uploading logo…' : 'Upload organization logo'}
+        helperText="PNG, JPG, WebP or GIF"
+        onFilesChange={(files) => {
+          const file = files?.[0];
+          if (file) {
+            onUpload(file);
+          }
+        }}
+      />
     </div>
   );
 }

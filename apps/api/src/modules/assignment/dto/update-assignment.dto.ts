@@ -1,5 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDateString,
   IsIn,
   IsInt,
@@ -26,6 +28,16 @@ export class UpdateAssignmentDto {
   @IsString()
   @MaxLength(10000)
   instructions?: string | null;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'ASSIGNMENT_ATTACHMENT MediaAsset ids or secure URLs',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  attachmentUrls?: string[];
 
   @ApiPropertyOptional({ enum: ASSIGNMENT_STATUSES })
   @IsOptional()

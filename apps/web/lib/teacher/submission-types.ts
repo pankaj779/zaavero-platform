@@ -107,7 +107,7 @@ export const teacherSubmissionsPageCopy = {
   submissionInfoLabel: 'Submission information',
   contentLabel: 'Content',
   attachmentsLabel: 'Attachments',
-  attachmentsPlaceholder: 'Attachment previews arrive when storage metadata is available.',
+  attachmentsPlaceholder: 'No files are attached to this submission.',
   gradingLabel: 'Grading',
   emptyContentLabel: 'No written content submitted.',
 } as const;

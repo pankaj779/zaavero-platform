@@ -16,6 +16,7 @@ export interface AuthSessionUser extends AuthUserSummary {
   permissions: string[];
   organizationIds: string[];
   phone?: string | null;
+  profileImage?: string | null;
   emailVerified?: boolean;
   isActive?: boolean;
 }
@@ -44,6 +45,7 @@ export interface AuthMeResponseData {
   firstName?: string;
   lastName?: string;
   phone?: string | null;
+  profileImage: string | null;
   emailVerified?: boolean;
   isActive?: boolean;
   roles: AuthRole[];

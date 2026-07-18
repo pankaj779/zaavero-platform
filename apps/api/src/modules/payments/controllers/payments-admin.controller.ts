@@ -23,6 +23,7 @@ import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { AssignSubscriptionDto, RetryOrderDto } from '../dto/assign-subscription.dto';
+import { AttachInvoicePdfDto } from '../dto/attach-invoice-pdf.dto';
 import { CreateCouponDto, UpdateCouponDto } from '../dto/coupon.dto';
 import {
   ListCouponsQueryDto,
@@ -36,6 +37,7 @@ import {
 import type {
   AdminPaymentOverviewResponseDto,
   CouponResponseDto,
+  InvoiceResponseDto,
   OrderResponseDto,
   PaginatedCouponsResponseDto,
   PaginatedInvoicesResponseDto,
@@ -115,6 +117,17 @@ export class PaymentsAdminController {
     @Query() query: ListInvoicesQueryDto,
   ): Promise<ControllerSuccessPayload<PaginatedInvoicesResponseDto>> {
     return this.adminService.listInvoices(user, query);
+  }
+
+  @Patch('invoices/:id/pdf')
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'Attach a stored PDF to an invoice' })
+  attachInvoicePdf(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AttachInvoicePdfDto,
+  ): Promise<ControllerSuccessPayload<InvoiceResponseDto>> {
+    return this.adminService.attachInvoicePdf(user, id, dto);
   }
 
   @Get('refunds')

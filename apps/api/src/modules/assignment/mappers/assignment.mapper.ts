@@ -13,6 +13,7 @@ export class AssignmentMapper {
       batchId: record.batchId,
       title: record.title,
       instructions: record.instructions,
+      attachmentUrls: record.attachmentUrls ?? [],
       status: record.status,
       maxScore: record.maxScore,
       dueAt: record.dueAt ? record.dueAt.toISOString() : null,

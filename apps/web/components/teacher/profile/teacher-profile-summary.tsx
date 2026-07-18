@@ -5,13 +5,16 @@ import {
   teacherProfilePageCopy,
   type TeacherProfileDto,
 } from '../../../lib/teacher';
+import { AvatarUpload } from '../../shared/avatar-upload';
 
 const UserIcon = icons.user;
 
 export function TeacherProfileSummary({
   profile,
+  organizationId,
 }: {
   profile: TeacherProfileDto;
+  organizationId: string;
 }): React.JSX.Element {
   const copy = teacherProfilePageCopy;
 
@@ -43,17 +46,12 @@ export function TeacherProfileSummary({
           >
             {copy.editProfile}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            className="w-full"
-            disabled
-            aria-label={`${copy.uploadAvatar} — ${copy.comingSoonNote}`}
-          >
-            {copy.uploadAvatar}
-          </Button>
-          <p className="text-center text-caption text-muted-foreground">{copy.comingSoonNote}</p>
+          <AvatarUpload
+            organizationId={organizationId}
+            userId={profile.id}
+            initialUrl={profile.avatarUrl}
+            alt={copy.avatarAlt}
+          />
         </CardContent>
       </Card>
     </aside>

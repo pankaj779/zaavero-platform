@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -18,6 +19,7 @@ import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { ResendVerificationDto } from '../dto/resend-verification.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { UpdateAvatarDto } from '../dto/update-avatar.dto';
 import { VerifyEmailDto } from '../dto/verify-email.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AuthService } from '../services/auth.service';
@@ -87,6 +89,17 @@ export class AuthController {
     >
   > {
     return this.authService.getCurrentUser(user);
+  }
+
+  @Patch('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Set current user avatar from a USER_AVATAR MediaAsset' })
+  updateAvatar(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateAvatarDto,
+  ): Promise<ControllerSuccessPayload<{ profileImage: string | null }>> {
+    return this.authService.updateAvatar(user, dto);
   }
 
   @Get('verify-email')

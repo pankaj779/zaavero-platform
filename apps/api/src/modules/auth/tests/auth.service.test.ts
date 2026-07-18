@@ -318,6 +318,25 @@ describe('AuthService.login', () => {
     expect(refreshInput?.expiresAt).toBeInstanceOf(Date);
   });
 
+  it('includes the persisted profile image in the current user response', async () => {
+    findById.mockResolvedValue({
+      ...activeUser,
+      profileImage: 'https://res.cloudinary.com/demo/image/upload/avatar.webp',
+    });
+
+    const result = await service.getCurrentUser({
+      id: activeUser.id,
+      email: activeUser.email,
+      roles: ['Teacher'],
+      permissions: [],
+      organizationIds: ['org-1'],
+    });
+
+    expect(result.data.profileImage).toBe(
+      'https://res.cloudinary.com/demo/image/upload/avatar.webp',
+    );
+  });
+
   it('rejects wrong password with InvalidCredentialsException', async () => {
     findByEmail.mockResolvedValue(activeUser);
 

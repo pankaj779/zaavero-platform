@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { StorageService } from '../../storage/services/storage.service';
 import { COURSE_REPOSITORY } from '../constants/injection-tokens';
 import type { CourseResponseDto, PaginatedCoursesResponseDto } from '../dto/course-response.dto';
 import type { CreateCourseDto } from '../dto/create-course.dto';
@@ -33,6 +34,7 @@ export class CourseService {
   constructor(
     @Inject(COURSE_REPOSITORY)
     private readonly courseRepository: CourseRepository,
+    private readonly storageService?: StorageService,
   ) {}
 
   async list(
@@ -96,6 +98,10 @@ export class CourseService {
     const teacherId = await this.resolveTeacherIdForCreate(user, dto);
 
     await this.assertSlugAvailable(dto.organizationId, dto.slug);
+    const [thumbnailUrl, bannerUrl] = await Promise.all([
+      this.resolveMedia(dto.thumbnailUrl, dto.organizationId, 'COURSE_THUMBNAIL'),
+      this.resolveMedia(dto.bannerUrl, dto.organizationId, 'COURSE_BANNER'),
+    ]);
 
     try {
       const course = await this.courseRepository.create({
@@ -104,6 +110,8 @@ export class CourseService {
         title: dto.title,
         slug: dto.slug,
         description: dto.description,
+        thumbnailUrl: thumbnailUrl ?? undefined,
+        bannerUrl: bannerUrl ?? undefined,
         difficulty: dto.difficulty,
         status: dto.status,
         language: dto.language,
@@ -142,12 +150,18 @@ export class CourseService {
     if (dto.slug !== undefined && dto.slug !== course.slug) {
       await this.assertSlugAvailable(course.organizationId, dto.slug);
     }
+    const [thumbnailUrl, bannerUrl] = await Promise.all([
+      this.resolveMedia(dto.thumbnailUrl, course.organizationId, 'COURSE_THUMBNAIL'),
+      this.resolveMedia(dto.bannerUrl, course.organizationId, 'COURSE_BANNER'),
+    ]);
 
     try {
       const updated = await this.courseRepository.update(id, {
         title: dto.title,
         slug: dto.slug,
         description: dto.description,
+        thumbnailUrl,
+        bannerUrl,
         difficulty: dto.difficulty,
         status: dto.status,
         language: dto.language,
@@ -327,5 +341,17 @@ export class CourseService {
     if (isPrismaUniqueConflict(error)) {
       throw new CourseSlugConflictException();
     }
+  }
+
+  private async resolveMedia(
+    reference: string | null | undefined,
+    organizationId: string,
+    entityType: 'COURSE_THUMBNAIL' | 'COURSE_BANNER',
+  ): Promise<string | null | undefined> {
+    if (reference === undefined || reference === null) return reference;
+    if (!this.storageService) {
+      throw new CourseMutationForbiddenException('Storage service is unavailable.');
+    }
+    return this.storageService.resolveAssetUrl(reference, { organizationId, entityType });
   }
 }

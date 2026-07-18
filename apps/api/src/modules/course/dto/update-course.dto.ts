@@ -47,6 +47,21 @@ export class UpdateCourseDto {
   })
   description?: string | null;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'COURSE_THUMBNAIL MediaAsset id or secure URL',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  thumbnailUrl?: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'COURSE_BANNER MediaAsset id or secure URL' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  bannerUrl?: string | null;
+
   @ApiPropertyOptional({ enum: COURSE_DIFFICULTIES })
   @IsOptional()
   @IsIn([...COURSE_DIFFICULTIES])

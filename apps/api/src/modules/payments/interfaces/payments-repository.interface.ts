@@ -81,6 +81,7 @@ export interface InvoiceRecord {
   taxMinor: number;
   totalMinor: number;
   currency: string;
+  pdfUrl: string | null;
   issuedAt: Date | null;
   paidAt: Date | null;
   createdAt: Date;
@@ -514,6 +515,7 @@ export interface PaymentsRepository {
   // Invoices
   listInvoices(filters: PaymentListFilters): Promise<ListResult<InvoiceRecord>>;
   findInvoiceById(id: string): Promise<InvoiceRecord | null>;
+  updateInvoicePdf(id: string, pdfUrl: string): Promise<InvoiceRecord>;
 
   // Subscriptions
   findCurrentSubscription(organizationId: string): Promise<SubscriptionRecord | null>;

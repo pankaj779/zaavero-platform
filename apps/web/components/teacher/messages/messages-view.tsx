@@ -50,7 +50,7 @@ export function MessagesView({
   const hasLoadedRef = useRef(initialViewState !== undefined);
 
   const sendMessage = useCallback(
-    async (conversationId: string, body: string) => {
+    async (conversationId: string, body: string, attachments: string[]) => {
       if (user === null) {
         throw new Error('Authentication is required.');
       }
@@ -58,7 +58,11 @@ export function MessagesView({
         id: user.id,
         name: `${user.firstName} ${user.lastName}`.trim(),
       };
-      const message = await MessagingApi.sendMessage(conversationId, { body }, currentUser);
+      const message = await MessagingApi.sendMessage(
+        conversationId,
+        { body, attachments },
+        currentUser,
+      );
       setConversations((current) =>
         current.map((conversation) =>
           conversation.id === conversationId
@@ -170,6 +174,7 @@ export function MessagesView({
       {header}
       <MessagesWorkspace
         conversations={conversations}
+        organizationId={primaryOrganizationId ?? ''}
         query={query}
         filter={filter}
         portalMode={portalMode}

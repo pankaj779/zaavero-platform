@@ -89,7 +89,7 @@ describe('CertificateApi', () => {
     expect(result.items[0]?.status).toBe('issued');
     expect(result.items[0]?.course.title).toBe('Foundations');
     expect(result.items[0]?.batch.name).toBe('Weekend Cohort');
-    expect(result.items[0]?.downloadUrl).toBeNull();
+    expect(result.items[0]?.downloadUrl).toBe('https://example.com/cert.pdf');
     expect(result.items[0]?.verificationUrl).toBeNull();
     expect(result.templateIds.get('11111111-1111-4111-8111-111111111111')).toBe(
       '88888888-8888-4888-8888-888888888888',

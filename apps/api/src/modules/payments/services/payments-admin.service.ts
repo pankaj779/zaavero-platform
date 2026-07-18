@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { StorageService } from '../../storage/services/storage.service';
 import {
   PAYMENT_DEFAULT_CURRENCY,
   PAYMENT_PROVIDER,
@@ -9,6 +10,7 @@ import {
   RETRYABLE_ORDER_STATUSES,
 } from '../constants/payment.constants';
 import type { AssignSubscriptionDto, RetryOrderDto } from '../dto/assign-subscription.dto';
+import type { AttachInvoicePdfDto } from '../dto/attach-invoice-pdf.dto';
 import type { CreateCouponDto, UpdateCouponDto } from '../dto/coupon.dto';
 import type {
   ListCouponsQueryDto,
@@ -22,6 +24,7 @@ import type {
 import type {
   AdminPaymentOverviewResponseDto,
   CouponResponseDto,
+  InvoiceResponseDto,
   OrderResponseDto,
   PaginatedCouponsResponseDto,
   PaginatedInvoicesResponseDto,
@@ -42,6 +45,7 @@ import {
   IdempotencyKeyConflictException,
   InvalidOrderStateException,
   InvalidRefundAmountException,
+  InvoiceNotFoundException,
   PaymentNotFoundException,
   PaymentOrderNotFoundException,
   PaymentProviderUnavailableException,
@@ -78,6 +82,7 @@ export class PaymentsAdminService {
     private readonly provider: PaymentProvider,
     private readonly paymentsService: PaymentsService,
     private readonly businessEmail?: BusinessEmailService,
+    private readonly storageService?: StorageService,
   ) {}
 
   // ── Overview ───────────────────────────────────────────────────────────
@@ -255,6 +260,28 @@ export class PaymentsAdminService {
         items: PaymentsMapper.toInvoiceResponseList(result.items),
         meta: pageMeta(result.total, query.page, query.limit),
       },
+    };
+  }
+
+  async attachInvoicePdf(
+    user: AuthenticatedUser,
+    invoiceId: string,
+    dto: AttachInvoicePdfDto,
+  ): Promise<ControllerSuccessPayload<InvoiceResponseDto>> {
+    const invoice = await this.repository.findInvoiceById(invoiceId);
+    if (!invoice) throw new InvoiceNotFoundException();
+    assertOrganizationAccess(user, invoice.organizationId);
+    if (!this.storageService) {
+      throw new PaymentProviderUnavailableException('Storage service is unavailable.');
+    }
+    const pdfUrl = await this.storageService.resolveAssetUrl(dto.pdfUrl, {
+      organizationId: invoice.organizationId,
+      entityType: 'INVOICE_PDF',
+    });
+    const updated = await this.repository.updateInvoicePdf(invoice.id, pdfUrl);
+    return {
+      message: 'Invoice PDF attached successfully.',
+      data: PaymentsMapper.toInvoiceResponse(updated),
     };
   }
 

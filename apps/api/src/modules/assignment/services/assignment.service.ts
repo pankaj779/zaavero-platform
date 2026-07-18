@@ -4,6 +4,7 @@ import type { ControllerSuccessPayload } from '../../../common/interfaces/api-re
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { StorageService } from '../../storage/services/storage.service';
 import { ASSIGNMENT_REPOSITORY } from '../constants/injection-tokens';
 import type {
   AssignmentResponseDto,
@@ -36,6 +37,7 @@ export class AssignmentService {
     @Inject(ASSIGNMENT_REPOSITORY)
     private readonly assignmentRepository: AssignmentRepository,
     private readonly businessEmail?: BusinessEmailService,
+    private readonly storageService?: StorageService,
   ) {}
 
   async list(
@@ -103,6 +105,7 @@ export class AssignmentService {
 
     const dueAt =
       dto.dueAt === undefined ? undefined : dto.dueAt === null ? null : new Date(dto.dueAt);
+    const attachmentUrls = await this.resolveAttachments(dto.attachmentUrls, dto.organizationId);
 
     const assignment = await this.assignmentRepository.create({
       organizationId: dto.organizationId,
@@ -110,6 +113,7 @@ export class AssignmentService {
       batchId: dto.batchId ?? null,
       title: dto.title,
       instructions: dto.instructions,
+      attachmentUrls,
       status: dto.status,
       maxScore: dto.maxScore,
       dueAt,
@@ -149,10 +153,15 @@ export class AssignmentService {
 
     const dueAt =
       dto.dueAt === undefined ? undefined : dto.dueAt === null ? null : new Date(dto.dueAt);
+    const attachmentUrls = await this.resolveAttachments(
+      dto.attachmentUrls,
+      assignment.organizationId,
+    );
 
     const updated = await this.assignmentRepository.update(id, {
       title: dto.title,
       instructions: dto.instructions,
+      attachmentUrls,
       status: dto.status,
       maxScore: dto.maxScore,
       dueAt,
@@ -325,5 +334,19 @@ export class AssignmentService {
     }
 
     throw new TeacherAssignmentMutationForbiddenException();
+  }
+
+  private async resolveAttachments(
+    references: string[] | undefined,
+    organizationId: string,
+  ): Promise<string[] | undefined> {
+    if (references === undefined) return undefined;
+    if (!this.storageService) {
+      throw new InvalidAssignmentException('Storage service is unavailable.');
+    }
+    return this.storageService.resolveAssetUrls(references, {
+      organizationId,
+      entityType: 'ASSIGNMENT_ATTACHMENT',
+    });
   }
 }

@@ -113,6 +113,7 @@ const invoiceSelect = {
   taxMinor: true,
   totalMinor: true,
   currency: true,
+  pdfUrl: true,
   issuedAt: true,
   paidAt: true,
   createdAt: true,
@@ -139,6 +140,7 @@ interface InvoiceRow {
   taxMinor: number;
   totalMinor: number;
   currency: string;
+  pdfUrl: string | null;
   issuedAt: Date | null;
   paidAt: Date | null;
   createdAt: Date;
@@ -977,6 +979,15 @@ export class PrismaPaymentsRepository implements PaymentsRepository {
       select: invoiceSelect,
     });
     return row ? toInvoiceRecord(row) : null;
+  }
+
+  async updateInvoicePdf(id: string, pdfUrl: string): Promise<InvoiceRecord> {
+    const row = await this.prisma.invoice.update({
+      where: { id },
+      data: { pdfUrl },
+      select: invoiceSelect,
+    });
+    return toInvoiceRecord(row);
   }
 
   // ── Subscriptions ──────────────────────────────────────────────────────

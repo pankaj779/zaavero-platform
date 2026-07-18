@@ -24,6 +24,7 @@ function mergeSessionUser(
     permissions: me.permissions,
     organizationIds: me.organizationIds,
     phone: me.phone ?? null,
+    profileImage: me.profileImage,
     emailVerified: me.emailVerified ?? false,
     isActive: me.isActive ?? true,
   };

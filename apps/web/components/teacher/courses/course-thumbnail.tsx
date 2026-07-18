@@ -1,15 +1,29 @@
 import { cn } from '@graphology/utils';
 import { icons } from '../../../lib/constants';
+import { MediaImage } from '../../shared/media-image';
 
 const BookIcon = icons.book;
 
 export function CourseThumbnail({
   label,
+  src,
   className,
 }: {
   label: string;
+  src?: string | null;
   className?: string;
 }): React.JSX.Element {
+  if (src) {
+    return (
+      <MediaImage
+        src={src}
+        alt={label}
+        sizes="(min-width: 1024px) 224px, 100vw"
+        className={cn('aspect-[16/10] w-full rounded-lg', className)}
+      />
+    );
+  }
+
   return (
     <div
       className={cn(

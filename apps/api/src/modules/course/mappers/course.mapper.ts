@@ -13,6 +13,8 @@ export class CourseMapper {
       title: record.title,
       slug: record.slug,
       description: record.description,
+      thumbnailUrl: record.thumbnailUrl ?? null,
+      bannerUrl: record.bannerUrl ?? null,
       difficulty: record.difficulty,
       status: record.status,
       language: record.language,

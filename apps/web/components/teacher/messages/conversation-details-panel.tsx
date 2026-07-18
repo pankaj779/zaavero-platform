@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  TEACHER_COMING_SOON,
   formatTeacherMessageDateTime,
   teacherConversationTypeLabel,
   teacherMessagesPageCopy,
@@ -35,10 +34,10 @@ export function ConversationDetailsPanel({
       : teacherConversationTypeLabel[conversation.type];
 
   const integrationRows = [
-    { id: 'realtime', label: 'Realtime / websocket', value: TEACHER_COMING_SOON.integrationLabel },
-    { id: 'uploads', label: 'File uploads', value: TEACHER_COMING_SOON.integrationLabel },
-    { id: 'notifications', label: 'Notifications', value: TEACHER_COMING_SOON.integrationLabel },
-    { id: 'reactions', label: 'Reactions', value: TEACHER_COMING_SOON.integrationLabel },
+    { id: 'realtime', label: 'Realtime / websocket', value: 'Coming Soon' },
+    { id: 'uploads', label: 'File uploads', value: 'Available' },
+    { id: 'notifications', label: 'Notifications', value: 'Coming Soon' },
+    { id: 'reactions', label: 'Reactions', value: 'Coming Soon' },
   ];
 
   return (

@@ -87,6 +87,7 @@ export function parseCachedUser(json: string | null): AuthSessionUser | null {
       organizationIds: Array.isArray(parsed.organizationIds)
         ? parsed.organizationIds.filter((value): value is string => typeof value === 'string')
         : [],
+      profileImage: typeof parsed.profileImage === 'string' ? parsed.profileImage : null,
     };
   } catch {
     return null;

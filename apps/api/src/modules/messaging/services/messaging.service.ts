@@ -3,6 +3,7 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { StorageService } from '../../storage/services/storage.service';
 import { MESSAGING_REPOSITORY } from '../constants/injection-tokens';
 import type { AddParticipantDto } from '../dto/add-participant.dto';
 import type { CreateConversationDto } from '../dto/create-conversation.dto';
@@ -45,6 +46,7 @@ export class MessagingService {
   constructor(
     @Inject(MESSAGING_REPOSITORY)
     private readonly messagingRepository: MessagingRepository,
+    private readonly storageService?: StorageService,
   ) {}
 
   async listConversations(
@@ -212,13 +214,17 @@ export class MessagingService {
     dto: CreateMessageDto,
   ): Promise<ControllerSuccessPayload<MessageResponseDto>> {
     const conversation = await this.requireAccessibleConversation(user, conversationId);
+    const attachments =
+      dto.attachments === undefined || dto.attachments.length === 0
+        ? dto.attachments
+        : await this.resolveAttachments(dto.attachments, conversation.organizationId, user.id);
 
     const message = await this.messagingRepository.createMessage({
       organizationId: conversation.organizationId,
       conversationId,
       senderId: user.id,
       body: dto.body,
-      attachments: dto.attachments,
+      attachments,
     });
 
     return {
@@ -366,5 +372,22 @@ export class MessagingService {
     if (isPrismaUniqueConflict(error)) {
       throw new ConversationConflictException();
     }
+  }
+
+  private async resolveAttachments(
+    references: string[],
+    organizationId: string,
+    ownerUserId: string,
+  ): Promise<string[]> {
+    if (!this.storageService) {
+      throw new InvalidConversationException('Storage service is unavailable.');
+    }
+    return (
+      (await this.storageService.resolveAssetUrls(references, {
+        organizationId,
+        entityType: 'MESSAGE_ATTACHMENT',
+        ownerUserId,
+      })) ?? []
+    );
   }
 }

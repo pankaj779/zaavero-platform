@@ -256,6 +256,17 @@ export const PaymentApi = {
     };
   },
 
+  async attachInvoicePdf(invoiceId: string, pdfUrl: string): Promise<InvoiceDto> {
+    const record = await apiFetch<InvoiceApiRecord>(
+      `/payments/admin/invoices/${encodeURIComponent(invoiceId)}/pdf`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ pdfUrl }),
+      },
+    );
+    return mapInvoice(record);
+  },
+
   async getAdminRefunds(params: PaymentListParams): Promise<PaymentListResult<RefundDto>> {
     const payload = await apiFetch<PaginatedPayload<RefundApiRecord>>(
       `/payments/admin/refunds${listQuery(params)}`,

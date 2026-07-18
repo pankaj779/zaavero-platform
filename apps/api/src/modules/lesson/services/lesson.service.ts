@@ -3,6 +3,8 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { StorageService } from '../../storage/services/storage.service';
+import type { LessonContentTypeValue } from '../constants/lesson.constants';
 import { LESSON_REPOSITORY } from '../constants/injection-tokens';
 import type { LessonResponseDto, PaginatedLessonsResponseDto } from '../dto/lesson-response.dto';
 import type { CreateLessonDto } from '../dto/create-lesson.dto';
@@ -29,6 +31,7 @@ export class LessonService {
   constructor(
     @Inject(LESSON_REPOSITORY)
     private readonly lessonRepository: LessonRepository,
+    private readonly storageService?: StorageService,
   ) {}
 
   async list(
@@ -90,6 +93,11 @@ export class LessonService {
     if (dto.durationSeconds !== undefined && dto.durationSeconds < 0) {
       throw new InvalidLessonException('durationSeconds must be >= 0.');
     }
+    const contentUrl = await this.resolveContentUrl(
+      dto.contentUrl,
+      dto.contentType ?? 'VIDEO',
+      dto.organizationId,
+    );
 
     const lesson = await this.lessonRepository.create({
       organizationId: dto.organizationId,
@@ -97,7 +105,7 @@ export class LessonService {
       title: dto.title,
       description: dto.description,
       contentType: dto.contentType,
-      contentUrl: dto.contentUrl,
+      contentUrl: contentUrl ?? undefined,
       durationSeconds: dto.durationSeconds,
       displayOrder: dto.displayOrder,
     });
@@ -116,12 +124,17 @@ export class LessonService {
     const lesson = await this.requireAccessibleLesson(user, id);
     const module = await this.requireModuleInOrganization(lesson.organizationId, lesson.moduleId);
     await this.assertCanMutateCourseLessons(user, lesson.organizationId, module.courseId);
+    const contentUrl = await this.resolveContentUrl(
+      dto.contentUrl,
+      dto.contentType ?? lesson.contentType,
+      lesson.organizationId,
+    );
 
     const updated = await this.lessonRepository.update(id, {
       title: dto.title,
       description: dto.description,
       contentType: dto.contentType,
-      contentUrl: dto.contentUrl,
+      contentUrl,
       durationSeconds: dto.durationSeconds,
       displayOrder: dto.displayOrder,
     });
@@ -228,5 +241,20 @@ export class LessonService {
     if (!ownProfileId || !teacherId || ownProfileId !== teacherId) {
       throw new TeacherLessonMutationForbiddenException();
     }
+  }
+
+  private async resolveContentUrl(
+    reference: string | null | undefined,
+    contentType: LessonContentTypeValue,
+    organizationId: string,
+  ): Promise<string | null | undefined> {
+    if (reference === undefined || reference === null) return reference;
+    const entityType =
+      contentType === 'VIDEO' ? 'LESSON_VIDEO' : contentType === 'PDF' ? 'LESSON_PDF' : undefined;
+    if (!entityType) return reference;
+    if (!this.storageService) {
+      throw new InvalidLessonException('Storage service is unavailable.');
+    }
+    return this.storageService.resolveAssetUrl(reference, { organizationId, entityType });
   }
 }

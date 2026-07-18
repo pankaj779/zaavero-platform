@@ -75,16 +75,14 @@ export function canEditOwnSubmission(assignment: StudentAssignmentDto): boolean 
 export function canDownloadCertificatePdf(
   certificate: Pick<StudentCertificateDto, 'downloadUrl'>,
 ): boolean {
-  const url = certificate.downloadUrl as string | null;
-  return isSafeHttpUrl(url);
+  return isSafeHttpUrl(certificate.downloadUrl);
 }
 
-/** QR / public verify URL only when a real safe verification URL exists. */
+/** QR image when a storage-backed QR URL exists. */
 export function canShowCertificateQr(
-  certificate: Pick<StudentCertificateDto, 'verificationUrl'>,
+  certificate: Pick<StudentCertificateDto, 'verificationUrl' | 'qrImageUrl'>,
 ): boolean {
-  const url = certificate.verificationUrl as string | null;
-  return isSafeHttpUrl(url);
+  return isSafeHttpUrl(certificate.qrImageUrl) || isSafeHttpUrl(certificate.verificationUrl);
 }
 
 /** Student assignment list must never surface draft/archived items. */

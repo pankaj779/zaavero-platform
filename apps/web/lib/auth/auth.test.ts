@@ -173,6 +173,7 @@ describe('authService login', () => {
       roles: [AUTH_ROLES.teacher],
       permissions: ['course.create'],
       organizationIds: ['org-1'],
+      profileImage: 'https://res.cloudinary.com/demo/image/upload/avatar.webp',
     });
 
     const user = await authService.login({
@@ -181,6 +182,7 @@ describe('authService login', () => {
     });
 
     expect(user.roles).toContain(AUTH_ROLES.teacher);
+    expect(user.profileImage).toBe('https://res.cloudinary.com/demo/image/upload/avatar.webp');
     expect(authStorage.getAccessToken()).toBe('access');
     expect(authStorage.getRefreshToken()).toBe('refresh');
   });

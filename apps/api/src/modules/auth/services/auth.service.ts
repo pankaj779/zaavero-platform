@@ -1,9 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { hash, verify } from 'argon2';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { EnvConfig } from '../../../config/env.schema';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { StorageService } from '../../storage/services/storage.service';
 import {
   DEFAULT_ORGANIZATION,
   DEFAULT_REGISTRATION_ROLE,
@@ -18,6 +24,7 @@ import type { RefreshTokenDto } from '../dto/refresh-token.dto';
 import type { RegisterDto } from '../dto/register.dto';
 import type { ResendVerificationDto } from '../dto/resend-verification.dto';
 import type { ResetPasswordDto } from '../dto/reset-password.dto';
+import type { UpdateAvatarDto } from '../dto/update-avatar.dto';
 import type { VerifyEmailDto } from '../dto/verify-email.dto';
 import {
   AccountDisabledException,
@@ -54,6 +61,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly emailService: BusinessEmailService,
     private readonly configService: ConfigService<EnvConfig, true>,
+    private readonly storageService?: StorageService,
   ) {}
 
   getRepositoryMarkers(): { auth: AuthRepository['marker']; user: UserRepository['marker'] } {
@@ -69,6 +77,7 @@ export class AuthService {
         firstName: string;
         lastName: string;
         phone: string | null;
+        profileImage: string | null;
         emailVerified: boolean;
         isActive: boolean;
       }
@@ -86,10 +95,33 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        profileImage: user.profileImage ?? null,
         emailVerified: user.emailVerified,
         isActive: user.isActive,
       },
     };
+  }
+
+  async updateAvatar(
+    user: AuthenticatedUser,
+    dto: UpdateAvatarDto,
+  ): Promise<ControllerSuccessPayload<{ profileImage: string | null }>> {
+    if (!user.organizationIds.includes(dto.organizationId)) {
+      throw new ForbiddenException('Organization access denied.');
+    }
+    if (!this.storageService || !this.userRepository.updateProfileImage) {
+      throw new ServiceUnavailableException('Avatar storage is unavailable.');
+    }
+    const profileImage =
+      dto.profileImage === null
+        ? null
+        : await this.storageService.resolveAssetUrl(dto.profileImage, {
+            organizationId: dto.organizationId,
+            entityType: 'USER_AVATAR',
+            ownerUserId: user.id,
+          });
+    await this.userRepository.updateProfileImage(user.id, profileImage);
+    return { message: 'Avatar updated successfully.', data: { profileImage } };
   }
 
   async register(dto: RegisterDto): Promise<ControllerSuccessPayload<RegisterResponseData>> {

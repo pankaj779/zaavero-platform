@@ -172,6 +172,7 @@ export class PaymentsMapper {
       ],
       billedToName: invoice.customerName,
       billedToEmail: invoice.customerEmail,
+      pdfUrl: invoice.pdfUrl,
       issuedAt: isoOrNull(invoice.issuedAt),
       paidAt: isoOrNull(invoice.paidAt),
       createdAt: iso(invoice.createdAt),

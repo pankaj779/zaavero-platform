@@ -113,6 +113,7 @@ export interface InvoiceApiRecord {
   billedToEmail?: string | null;
   customerName?: string | null;
   customerEmail?: string | null;
+  pdfUrl?: string | null;
   issuedAt?: string | null;
   paidAt?: string | null;
   createdAt: string;
@@ -514,6 +515,7 @@ export function mapInvoice(record: InvoiceApiRecord): InvoiceDto {
     lines: mapOrderLines(record.lines, currency),
     billedToName: record.billedToName ?? record.customerName ?? null,
     billedToEmail: record.billedToEmail ?? record.customerEmail ?? null,
+    pdfUrl: record.pdfUrl ?? null,
     issuedAt: record.issuedAt ?? null,
     paidAt: record.paidAt ?? null,
     createdAt: record.createdAt,

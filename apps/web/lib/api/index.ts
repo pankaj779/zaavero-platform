@@ -290,3 +290,21 @@ export type {
   InvitationStatus,
   InvitationType,
 } from './email-mapper';
+export { StorageApi } from './storage';
+export type {
+  ListStorageAssetsParams,
+  SignedStorageUpload,
+  SignStorageUploadInput,
+  StorageAssetContext,
+  StorageAssetList,
+  StorageProviderStatus,
+} from './storage';
+export {
+  mapStorageAsset,
+  STORAGE_ENTITY_TYPES,
+  type StorageAsset,
+  type StorageAssetApiRecord,
+  type StorageEntityType,
+  type StorageProviderName,
+  type StorageResourceType,
+} from './storage-mapper';

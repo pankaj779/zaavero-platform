@@ -22,6 +22,7 @@ export function MessagesWorkspace({
   onQueryChange,
   onFilterChange,
   onSendMessage,
+  organizationId,
   serverFiltered = false,
   portalMode = 'teacher',
 }: {
@@ -30,7 +31,8 @@ export function MessagesWorkspace({
   filter?: TeacherMessageFilter;
   onQueryChange?: (value: string) => void;
   onFilterChange?: (value: TeacherMessageFilter) => void;
-  onSendMessage?: (conversationId: string, body: string) => Promise<void>;
+  onSendMessage?: (conversationId: string, body: string, attachments: string[]) => Promise<void>;
+  organizationId: string;
   /** Parent already applied backend and client completion filters. */
   serverFiltered?: boolean;
   portalMode?: MessagesPortalMode;
@@ -101,11 +103,13 @@ export function MessagesWorkspace({
             />
             <MessageThread conversation={selectedConversation} />
             <ComposePanel
-              onSend={(body) => {
+              organizationId={organizationId}
+              conversationId={selectedConversation.id}
+              onSend={(body, attachments) => {
                 if (!onSendMessage) {
                   return Promise.reject(new Error('Messaging is unavailable.'));
                 }
-                return onSendMessage(selectedConversation.id, body);
+                return onSendMessage(selectedConversation.id, body, attachments);
               }}
             />
           </>

@@ -35,6 +35,9 @@ export class CertificateResponseDto {
   @ApiPropertyOptional({ nullable: true })
   pdfUrl!: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  qrImageUrl!: string | null;
+
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   issuedAt!: string | null;
 

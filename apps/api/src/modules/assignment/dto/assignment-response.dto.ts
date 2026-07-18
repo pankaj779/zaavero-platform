@@ -20,6 +20,9 @@ export class AssignmentResponseDto {
   @ApiPropertyOptional({ nullable: true })
   instructions!: string | null;
 
+  @ApiProperty({ type: [String] })
+  attachmentUrls!: string[];
+
   @ApiProperty({ enum: ASSIGNMENT_STATUSES })
   status!: AssignmentStatusValue;
 

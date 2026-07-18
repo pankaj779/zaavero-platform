@@ -14,6 +14,7 @@ export interface CertificateRecord {
   certificateNumber: string;
   verificationCode: string;
   pdfUrl: string | null;
+  qrImageUrl?: string | null;
   issuedAt: Date | null;
   revokedAt: Date | null;
   createdAt: Date;
@@ -45,6 +46,7 @@ export interface IssueCertificateData {
   batchId?: string | null;
   templateId?: string | null;
   pdfUrl?: string | null;
+  qrImageUrl?: string | null;
   certificateNumber: string;
   verificationCode: string;
   issuedAt: Date;
@@ -53,6 +55,7 @@ export interface IssueCertificateData {
 export interface UpdateCertificateData {
   templateId?: string | null;
   pdfUrl?: string | null;
+  qrImageUrl?: string | null;
   status?: CertificateStatusValue;
 }
 

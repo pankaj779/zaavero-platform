@@ -47,6 +47,22 @@ const baseEnvSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_FOLDER_ROOT: z.string().trim().min(1).default('graphology'),
+  STORAGE_PROVIDER: z.enum(['CLOUDINARY', 'SANDBOX']).default('CLOUDINARY'),
+  STORAGE_SANDBOX_MODE: booleanFromEnv.optional(),
+  STORAGE_SIGNED_UPLOAD_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(600),
+  STORAGE_MAX_FILE_SIZE_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(100 * 1024 * 1024),
+  STORAGE_SERVER_UPLOAD_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10 * 1024 * 1024),
+  /** Comma-separated MIME allow list; falls back to the built-in defaults. */
+  STORAGE_ALLOWED_MIME_TYPES: z.string().trim().min(1).optional(),
 });
 
 export const envSchema = baseEnvSchema
@@ -90,12 +106,43 @@ export const envSchema = baseEnvSchema
         message: 'EMAIL_FROM (or RESEND_FROM_EMAIL) is required in production.',
       });
     }
+
+    if (config.STORAGE_SANDBOX_MODE === true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['STORAGE_SANDBOX_MODE'],
+        message: 'STORAGE_SANDBOX_MODE must not be enabled in production.',
+      });
+    }
+    if (config.STORAGE_PROVIDER === 'SANDBOX') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['STORAGE_PROVIDER'],
+        message: 'STORAGE_PROVIDER must not be SANDBOX in production.',
+      });
+    }
+    if (config.STORAGE_PROVIDER === 'CLOUDINARY') {
+      for (const key of [
+        'CLOUDINARY_CLOUD_NAME',
+        'CLOUDINARY_API_KEY',
+        'CLOUDINARY_API_SECRET',
+      ] as const) {
+        if (!config[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required in production when STORAGE_PROVIDER is CLOUDINARY.`,
+          });
+        }
+      }
+    }
   })
   .transform((config) => ({
     ...config,
     EMAIL_FROM: config.EMAIL_FROM ?? DEFAULT_LOCAL_EMAIL_FROM,
     // Sandbox is the safe default everywhere except production.
     EMAIL_SANDBOX_MODE: config.EMAIL_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
+    STORAGE_SANDBOX_MODE: config.STORAGE_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
   }));
 
 export type EnvConfig = z.infer<typeof envSchema>;

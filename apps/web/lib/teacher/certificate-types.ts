@@ -9,7 +9,7 @@ export type StudentCertificateStatus = 'eligible' | 'pending' | 'issued' | 'revo
 export type TeacherCertificatesViewState = 'loading' | 'empty' | 'error' | 'populated';
 export type TeacherCertificateStatusFilter = 'all' | StudentCertificateStatus;
 export type TeacherCertificateSortOption = 'newest' | 'student_name' | 'course' | 'batch';
-export type TeacherIntegrationAvailability = 'coming_soon';
+export type TeacherIntegrationAvailability = 'available' | 'coming_soon';
 
 export interface TeacherCertificateStudentRefDto {
   id: string;
@@ -50,10 +50,12 @@ export interface StudentCertificateDto {
   status: StudentCertificateStatus;
   issuedAt: string | null;
   certificateNumber: string | null;
-  /** Always null until download storage is integrated into the UI contract. */
-  downloadUrl: null;
-  /** Always null until verification URLs are wired into the UI contract. */
-  verificationUrl: null;
+  /** Storage-backed certificate PDF URL when generated. */
+  downloadUrl: string | null;
+  /** Storage-backed QR image URL when generated. */
+  qrImageUrl: string | null;
+  /** Always null until a public verification route is exposed. */
+  verificationUrl: string | null;
   mentor: TeacherCertificateMentorDto;
   futureFeatures: TeacherCertificateFutureFeaturesDto;
   updatedAt: string;
@@ -164,11 +166,11 @@ export const teacherCertificateSortOptions: {
 ];
 
 export const teacherCertificateComingSoonFeatures: TeacherCertificateFutureFeaturesDto = {
-  pdfGeneration: 'coming_soon',
-  qrGeneration: 'coming_soon',
+  pdfGeneration: 'available',
+  qrGeneration: 'available',
   blockchainVerification: 'coming_soon',
   emailDelivery: 'coming_soon',
-  downloads: 'coming_soon',
+  downloads: 'available',
 };
 
 export function getTeacherCertificateStats(

@@ -29,6 +29,8 @@ export interface CreateCourseInput {
   status?: string;
   language?: string;
   teacherId?: string;
+  thumbnailUrl?: string;
+  bannerUrl?: string;
 }
 
 export interface UpdateCourseInput {
@@ -39,6 +41,8 @@ export interface UpdateCourseInput {
   status?: string;
   language?: string;
   teacherId?: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
 }
 
 interface PaginatedCoursesApiPayload {

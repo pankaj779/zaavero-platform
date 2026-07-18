@@ -207,7 +207,7 @@ export function StudentCertificateDetails({
   const codeId = useId();
   const canDownload = canDownloadCertificatePdf(certificate);
   const canShowQr = canShowCertificateQr(certificate);
-  const downloadUrl = certificate.downloadUrl as string | null;
+  const downloadUrl = certificate.downloadUrl;
 
   const [code, setCode] = useState(certificate.certificateNumber ?? '');
   const [verifying, setVerifying] = useState(false);
@@ -277,6 +277,14 @@ export function StudentCertificateDetails({
           <p className="text-caption text-muted-foreground">
             {canShowQr ? null : copy.qrUnavailable}
           </p>
+          {canShowQr && certificate.qrImageUrl ? (
+            <img
+              src={certificate.qrImageUrl}
+              alt="Certificate QR code"
+              className="h-28 w-28 rounded-md border border-border object-contain"
+              loading="lazy"
+            />
+          ) : null}
         </section>
 
         <section className="space-y-3" aria-label="Certificate verification">

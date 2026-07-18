@@ -9,7 +9,7 @@ import { formatDashboardDate } from '../dashboard/format-date';
 export type TeacherProfileViewState = 'loading' | 'empty' | 'error' | 'populated';
 export type TeacherSettingsViewState = 'loading' | 'empty' | 'error' | 'populated';
 export type TeacherThemePreference = 'system' | 'light' | 'dark';
-export type TeacherIntegrationAvailability = 'coming_soon';
+export type TeacherIntegrationAvailability = 'available' | 'coming_soon';
 
 export interface TeacherNotificationPreferencesDto {
   emailNotifications: boolean;
@@ -50,8 +50,7 @@ export interface TeacherProfileDto {
   lastName: string;
   email: string;
   phone: string | null;
-  /** Always null until avatar upload is integrated. */
-  avatarUrl: null;
+  avatarUrl: string | null;
   bio: string;
   qualifications: string[];
   experienceYears: number;
@@ -149,7 +148,7 @@ export const teacherThemePreferenceLabel: Record<TeacherThemePreference, string>
 };
 
 const comingSoonFeatures: TeacherProfileFutureFeaturesDto = {
-  avatarUpload: 'coming_soon',
+  avatarUpload: 'available',
   profileEditing: 'coming_soon',
   passwordChange: 'coming_soon',
   twoFactor: 'coming_soon',
@@ -214,6 +213,7 @@ export function buildTeacherProfileFromAuth(user: {
   email: string;
   firstName: string;
   lastName: string;
+  profileImage?: string | null;
 }): TeacherProfileDto {
   return {
     ...teacherProfileDefaults,
@@ -221,6 +221,7 @@ export function buildTeacherProfileFromAuth(user: {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    avatarUrl: user.profileImage ?? null,
   };
 }
 

@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@graphology/ui';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { PaymentApi } from '../../../lib/api';
+import { PaymentApi, StorageApi } from '../../../lib/api';
 import { useOrganization } from '../../../lib/auth';
 import type {
   AdminPaymentOverviewDto,
@@ -549,14 +549,58 @@ export function AdminPaymentsView(): React.JSX.Element {
             {invoices.map((invoice) => (
               <li key={invoice.id}>
                 <Card className="rounded-xl">
-                  <CardContent className="flex flex-col gap-2 p-4 tablet:flex-row tablet:items-center tablet:justify-between">
+                  <CardContent className="flex flex-col gap-3 p-4 tablet:flex-row tablet:items-center tablet:justify-between">
                     <div>
                       <p className="font-medium">{invoice.invoiceNumber}</p>
                       <p className="text-caption capitalize text-muted-foreground">
                         {invoice.status}
                       </p>
                     </div>
-                    <p className="font-medium">{invoice.total.formatted}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{invoice.total.formatted}</p>
+                      {invoice.pdfUrl ? (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={invoice.pdfUrl} target="_blank" rel="noopener noreferrer">
+                            Download PDF
+                          </a>
+                        </Button>
+                      ) : (
+                        <label className="inline-flex cursor-pointer items-center">
+                          <span className="sr-only">Upload invoice PDF</span>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="text-caption"
+                            disabled={saving}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (!file || !primaryOrganizationId) {
+                                return;
+                              }
+                              setSaving(true);
+                              setFormError(null);
+                              void StorageApi.upload(file, {
+                                organizationId: primaryOrganizationId,
+                                entityType: 'INVOICE_PDF',
+                                entityId: invoice.id,
+                              })
+                                .then((asset) => PaymentApi.attachInvoicePdf(invoice.id, asset.id))
+                                .then((updated) => {
+                                  setInvoices((items) =>
+                                    items.map((item) => (item.id === updated.id ? updated : item)),
+                                  );
+                                })
+                                .catch(() => {
+                                  setFormError('Unable to attach invoice PDF.');
+                                })
+                                .finally(() => {
+                                  setSaving(false);
+                                });
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </li>

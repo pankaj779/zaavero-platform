@@ -3,13 +3,16 @@ import { icons } from '../../../lib/constants';
 import type { StudentProfileDto } from '../../../lib/student';
 import { studentProfileCopy } from './copy';
 import { getStudentDisplayName } from './profile-display';
+import { AvatarUpload } from '../../shared/avatar-upload';
 
 const UserIcon = icons.user;
 
 export function StudentProfileSummary({
   profile,
+  organizationId,
 }: {
   profile: StudentProfileDto;
+  organizationId: string;
 }): React.JSX.Element {
   const primaryRole = profile.roles[0] ?? 'Student';
 
@@ -43,19 +46,12 @@ export function StudentProfileSummary({
           >
             {studentProfileCopy.editProfile}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            className="w-full"
-            disabled
-            aria-label={`${studentProfileCopy.uploadAvatar} — ${studentProfileCopy.unavailableNote}`}
-          >
-            {studentProfileCopy.uploadAvatar}
-          </Button>
-          <p className="text-center text-caption text-muted-foreground">
-            {studentProfileCopy.unavailableNote}
-          </p>
+          <AvatarUpload
+            organizationId={organizationId}
+            userId={profile.id}
+            initialUrl={profile.avatarUrl}
+            alt={studentProfileCopy.avatarAlt}
+          />
         </CardContent>
       </Card>
     </aside>

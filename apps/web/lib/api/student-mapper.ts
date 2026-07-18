@@ -390,7 +390,7 @@ export function mapEnrollmentToStudentCourseDetail(
     ...card,
     modules: buildStudentCourseModules(lessons, progressItems),
     capabilities: {
-      mediaThumbnails: 'coming_soon',
+      mediaThumbnails: 'available',
       moduleTitles: 'coming_soon',
       teacherProfile: 'coming_soon',
     },
@@ -503,7 +503,7 @@ export function mapStudentAssignment(
       : null,
     submission: submission ? mapStudentOwnSubmission(submission) : null,
     capabilities: {
-      fileUploads: 'coming_soon',
+      fileUploads: 'available',
       plagiarismDetection: 'coming_soon',
       aiEvaluation: 'coming_soon',
     },
@@ -775,11 +775,11 @@ export function mapStudentDashboard(input: {
       analyticsApi: 'disabled',
       payments: 'available',
       emailDelivery: 'coming_soon',
-      cloudinaryMedia: 'coming_soon',
+      cloudinaryMedia: 'available',
       zoomOAuth: 'coming_soon',
       googleCalendarSync: 'coming_soon',
-      pdfGeneration: 'coming_soon',
-      qrGeneration: 'coming_soon',
+      pdfGeneration: 'available',
+      qrGeneration: 'available',
     },
   };
 }
@@ -798,7 +798,7 @@ export function mapStudentProfile(
     email: user.email,
     roles: user.roles,
     organizationIds: user.organizationIds,
-    avatarUrl: null,
+    avatarUrl: user.profileImage ?? null,
     learning: options?.learning ?? null,
     certificates: options?.certificates ?? [],
     preferences: {
@@ -807,7 +807,7 @@ export function mapStudentProfile(
       timezone: null,
     },
     capabilities: {
-      avatarUpload: 'coming_soon',
+      avatarUpload: 'available',
       profileEditing: 'coming_soon',
       preferenceSync: 'coming_soon',
       passwordChange: 'coming_soon',

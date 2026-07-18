@@ -6,22 +6,24 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  FileUpload,
   Input,
   Label,
   Switch,
 } from '@graphology/ui';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { AdminOrganizationDto } from '../../../lib/admin';
-import { AdminApi } from '../../../lib/api';
+import { AdminApi, StorageApi } from '../../../lib/api';
 import { useOrganization } from '../../../lib/auth';
 import { TeacherModuleErrorState } from '../../teacher/shared';
-import { AdminCapabilityNotice, AdminPageHeader } from '../shared';
+import { AdminPageHeader } from '../shared';
 
 export function AdminOrganizationView(): React.JSX.Element {
   const { primaryOrganizationId } = useOrganization();
   const [organization, setOrganization] = useState<AdminOrganizationDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [error, setError] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
@@ -111,6 +113,28 @@ export function AdminOrganizationView(): React.JSX.Element {
     }
   }
 
+  async function uploadLogo(file: File): Promise<void> {
+    if (!organization) {
+      return;
+    }
+    setLogoUploading(true);
+    setFormError(null);
+    try {
+      const asset = await StorageApi.upload(file, {
+        organizationId: organization.id,
+        entityType: 'ORG_LOGO',
+        entityId: organization.id,
+      });
+      const updated = await AdminApi.updateOrganization(organization.id, { logo: asset.id });
+      setOrganization(updated);
+      setLogo(updated.logo ?? asset.url);
+    } catch {
+      setFormError('Unable to upload the organization logo.');
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
   if (loading && organization === null && !error) {
     return (
       <div className="space-y-8">
@@ -173,7 +197,23 @@ export function AdminOrganizationView(): React.JSX.Element {
           ) : null}
           <Field label="Name" value={name} onChange={setName} />
           <Field label="Slug" value={slug} onChange={setSlug} />
-          <Field label="Logo URL" value={logo} onChange={setLogo} />
+          <div className="space-y-2">
+            {logo ? (
+              <img src={logo} alt="Organization logo" className="h-12 max-w-48 object-contain" />
+            ) : null}
+            <FileUpload
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              disabled={logoUploading}
+              label={logoUploading ? 'Uploading logo…' : 'Upload organization logo'}
+              helperText="PNG, JPG, WebP or GIF"
+              onFilesChange={(files) => {
+                const file = files?.[0];
+                if (file) {
+                  void uploadLogo(file);
+                }
+              }}
+            />
+          </div>
           <Field label="Website" value={website} onChange={setWebsite} />
           <Field label="Email" value={email} onChange={setEmail} type="email" />
           <Field label="Phone" value={phone} onChange={setPhone} />
@@ -203,11 +243,6 @@ export function AdminOrganizationView(): React.JSX.Element {
           </div>
         </CardContent>
       </Card>
-
-      <AdminCapabilityNotice
-        title="Branding asset upload"
-        description="Logo currently accepts a URL because the platform does not yet expose organization media upload endpoints."
-      />
     </div>
   );
 }

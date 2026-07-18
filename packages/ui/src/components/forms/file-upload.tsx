@@ -8,11 +8,27 @@ export interface FileUploadProps extends Omit<React.InputHTMLAttributes<HTMLInpu
   label?: string;
   helperText?: string;
   invalid?: boolean;
+  selectedFileName?: string | null;
+  onFilesChange?: (files: FileList | null) => void;
 }
 
 export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
-  ({ className, label = 'Upload file', helperText, invalid, id, ...props }, ref) => {
-    const inputId = id ?? 'file-upload';
+  (
+    {
+      className,
+      label = 'Upload file',
+      helperText,
+      invalid,
+      selectedFileName,
+      onFilesChange,
+      id,
+      onChange,
+      ...props
+    },
+    ref,
+  ) => {
+    const generatedId = React.useId();
+    const inputId = id ?? generatedId;
     return (
       <div className={cn('space-y-2', className)}>
         <label
@@ -25,6 +41,9 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
         >
           <Upload className="h-5 w-5 text-muted-foreground" aria-hidden />
           <span className="text-sm font-medium">{label}</span>
+          {selectedFileName ? (
+            <span className="max-w-full truncate text-sm text-foreground">{selectedFileName}</span>
+          ) : null}
           {helperText ? <span className="text-caption">{helperText}</span> : null}
           <input
             ref={ref}
@@ -32,6 +51,10 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
             type="file"
             className="sr-only"
             aria-invalid={invalid ? true : undefined}
+            onChange={(event) => {
+              onFilesChange?.(event.currentTarget.files);
+              onChange?.(event);
+            }}
             {...props}
           />
         </label>

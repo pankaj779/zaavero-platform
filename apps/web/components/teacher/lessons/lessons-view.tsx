@@ -230,8 +230,17 @@ export function LessonsView({
       {selectedLesson ? (
         <LessonDetailsPanel
           lesson={selectedLesson}
+          organizationId={primaryOrganizationId ?? ''}
           onClose={() => {
             setSelectedLessonId(null);
+          }}
+          onLessonUpdated={(updated) => {
+            setLessons((items) =>
+              items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
+            );
+            setStatsLessons((items) =>
+              items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
+            );
           }}
         />
       ) : null}

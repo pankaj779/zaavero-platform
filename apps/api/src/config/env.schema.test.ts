@@ -109,6 +109,9 @@ describe('validateEnv', () => {
       RESEND_API_KEY: 're_live_key',
       RESEND_WEBHOOK_SECRET: 'whsec_live',
       EMAIL_FROM: 'no-reply@graphology.app',
+      CLOUDINARY_CLOUD_NAME: 'demo-cloud',
+      CLOUDINARY_API_KEY: 'key_123',
+      CLOUDINARY_API_SECRET: 'secret_456',
     };
 
     it('allows Resend credentials to remain unset outside production', () => {
@@ -182,6 +185,65 @@ describe('validateEnv', () => {
       );
       expect(() => validateEnv({ ...validEnv, EMAIL_REPLY_TO: 'not-an-email' })).toThrow(
         /EMAIL_REPLY_TO/,
+      );
+    });
+  });
+
+  describe('storage configuration', () => {
+    const productionEnv = {
+      ...validEnv,
+      NODE_ENV: 'production',
+      RESEND_API_KEY: 're_live_key',
+      RESEND_WEBHOOK_SECRET: 'whsec_live',
+      EMAIL_FROM: 'no-reply@graphology.app',
+      CLOUDINARY_CLOUD_NAME: 'demo-cloud',
+      CLOUDINARY_API_KEY: 'key_123',
+      CLOUDINARY_API_SECRET: 'secret_456',
+      STORAGE_SANDBOX_MODE: 'false',
+    };
+
+    it('applies storage defaults outside production', () => {
+      const config = validateEnv(validEnv);
+
+      expect(config.STORAGE_PROVIDER).toBe('CLOUDINARY');
+      expect(config.STORAGE_SANDBOX_MODE).toBe(true);
+      expect(config.CLOUDINARY_FOLDER_ROOT).toBe('graphology');
+      expect(config.STORAGE_SIGNED_UPLOAD_TTL_SECONDS).toBe(600);
+      expect(config.STORAGE_MAX_FILE_SIZE_BYTES).toBe(100 * 1024 * 1024);
+      expect(config.STORAGE_SERVER_UPLOAD_MAX_BYTES).toBe(10 * 1024 * 1024);
+      expect(config.STORAGE_ALLOWED_MIME_TYPES).toBeUndefined();
+    });
+
+    it('accepts a fully configured production storage environment', () => {
+      const config = validateEnv(productionEnv);
+      expect(config.STORAGE_PROVIDER).toBe('CLOUDINARY');
+      expect(config.STORAGE_SANDBOX_MODE).toBe(false);
+    });
+
+    it('requires Cloudinary credentials in production', () => {
+      expect(() => validateEnv({ ...productionEnv, CLOUDINARY_API_SECRET: undefined })).toThrow(
+        /CLOUDINARY_API_SECRET is required in production/,
+      );
+      expect(() => validateEnv({ ...productionEnv, CLOUDINARY_CLOUD_NAME: undefined })).toThrow(
+        /CLOUDINARY_CLOUD_NAME is required in production/,
+      );
+    });
+
+    it('forbids sandbox storage settings in production', () => {
+      expect(() => validateEnv({ ...productionEnv, STORAGE_SANDBOX_MODE: 'true' })).toThrow(
+        /STORAGE_SANDBOX_MODE must not be enabled in production/,
+      );
+      expect(() => validateEnv({ ...productionEnv, STORAGE_PROVIDER: 'SANDBOX' })).toThrow(
+        /STORAGE_PROVIDER must not be SANDBOX in production/,
+      );
+    });
+
+    it('rejects invalid storage tuning values', () => {
+      expect(() => validateEnv({ ...validEnv, STORAGE_SIGNED_UPLOAD_TTL_SECONDS: '10' })).toThrow(
+        /STORAGE_SIGNED_UPLOAD_TTL_SECONDS/,
+      );
+      expect(() => validateEnv({ ...validEnv, STORAGE_MAX_FILE_SIZE_BYTES: '0' })).toThrow(
+        /STORAGE_MAX_FILE_SIZE_BYTES/,
       );
     });
   });

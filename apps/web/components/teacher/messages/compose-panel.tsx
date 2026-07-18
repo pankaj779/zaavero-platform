@@ -1,20 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@graphology/ui';
+import { Button, FileUpload } from '@graphology/ui';
+import { StorageApi } from '../../../lib/api';
 import { teacherMessagesPageCopy } from '../../../lib/teacher';
 
 export function ComposePanel({
   onSend,
+  organizationId,
+  conversationId,
   pageCopy,
 }: {
-  onSend: (body: string) => Promise<void>;
+  onSend: (body: string, attachments: string[]) => Promise<void>;
+  organizationId: string;
+  conversationId: string;
   pageCopy?: Partial<typeof teacherMessagesPageCopy>;
 }): React.JSX.Element {
   const copy = { ...teacherMessagesPageCopy, ...pageCopy };
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
 
   return (
     <form
@@ -28,9 +34,24 @@ export function ComposePanel({
         }
         setSending(true);
         setError('');
-        void onSend(body)
+        void Promise.all(
+          files.map((file) =>
+            StorageApi.upload(file, {
+              organizationId,
+              entityType: 'MESSAGE_ATTACHMENT',
+              entityId: conversationId,
+            }),
+          ),
+        )
+          .then((assets) =>
+            onSend(
+              body,
+              assets.map((asset) => asset.id),
+            ),
+          )
           .then(() => {
             setDraft('');
+            setFiles([]);
           })
           .catch(() => {
             setError('Unable to send this message. Please try again.');
@@ -58,15 +79,16 @@ export function ComposePanel({
         <Button type="submit" size="sm" disabled={sending || draft.trim().length === 0}>
           {sending ? 'Sending…' : copy.sendButton}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled
-          aria-label={`${copy.attachButton} — coming soon`}
-        >
-          {copy.attachButton}
-        </Button>
+        <FileUpload
+          className="w-full"
+          multiple
+          disabled={sending}
+          label={copy.attachButton}
+          helperText={files.length > 0 ? `${String(files.length)} file(s) selected` : undefined}
+          onFilesChange={(selected) => {
+            setFiles(Array.from(selected ?? []));
+          }}
+        />
         <Button
           type="button"
           variant="outline"
@@ -82,9 +104,7 @@ export function ComposePanel({
           {error}
         </p>
       ) : null}
-      <p className="text-caption text-muted-foreground">
-        Attachments and emoji require storage and rich-message backend support.
-      </p>
+      <p className="text-caption text-muted-foreground">Emoji support is coming soon.</p>
     </form>
   );
 }

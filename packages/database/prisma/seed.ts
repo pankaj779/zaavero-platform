@@ -44,6 +44,8 @@ const PERMISSIONS = [
   { name: 'email.manage', module: 'email', description: 'Manage queued email' },
   { name: 'email.template.manage', module: 'email', description: 'Manage email templates' },
   { name: 'email.retry', module: 'email', description: 'Retry failed email deliveries' },
+  { name: 'storage.upload', module: 'storage', description: 'Upload and attach media assets' },
+  { name: 'storage.manage', module: 'storage', description: 'Manage organization media assets' },
 ] as const;
 
 const SYSTEM_SETTINGS = [
@@ -384,7 +386,7 @@ async function seedRolePermissions(
     });
   }
 
-  const teacherPermissionNames = ['course.create', 'course.update'] as const;
+  const teacherPermissionNames = ['course.create', 'course.update', 'storage.upload'] as const;
 
   for (const permissionName of teacherPermissionNames) {
     const permissionId = permissionIds.get(permissionName);

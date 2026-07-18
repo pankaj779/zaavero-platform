@@ -27,11 +27,13 @@ export function AssignmentsWorkspace({
   batchId: controlledBatchId,
   courseOptions = [{ value: 'all', label: 'All Courses' }],
   batchOptions = [{ value: 'all', label: 'All Batches' }],
+  organizationId = '',
   onQueryChange,
   onStatusChange,
   onSortChange,
   onCourseChange,
   onBatchChange,
+  onAssignmentUpdated,
   serverFiltered = false,
 }: {
   assignments: TeacherAssignmentDto[];
@@ -42,11 +44,13 @@ export function AssignmentsWorkspace({
   batchId?: string;
   courseOptions?: readonly { value: string; label: string }[];
   batchOptions?: readonly { value: string; label: string }[];
+  organizationId?: string;
   onQueryChange?: (value: string) => void;
   onStatusChange?: (value: TeacherAssignmentStatusFilter) => void;
   onSortChange?: (value: TeacherAssignmentSortOption) => void;
   onCourseChange?: (value: string) => void;
   onBatchChange?: (value: string) => void;
+  onAssignmentUpdated?: (assignment: TeacherAssignmentDto) => void;
   /** When true, parent already applied server-side filters — skip local filter/sort. */
   serverFiltered?: boolean;
 }): React.JSX.Element {
@@ -111,9 +115,11 @@ export function AssignmentsWorkspace({
       {selectedAssignment ? (
         <AssignmentDetailsPanel
           assignment={selectedAssignment}
+          organizationId={organizationId}
           onClose={() => {
             setSelectedAssignmentId(null);
           }}
+          onAssignmentUpdated={onAssignmentUpdated}
         />
       ) : null}
 

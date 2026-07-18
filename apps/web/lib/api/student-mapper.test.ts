@@ -164,7 +164,7 @@ describe('student mapper', () => {
     expect(dto.instructions).toBe('Complete the worksheet');
     expect(dto.submission?.score).toBe(88);
     expect(dto.submission?.feedback).toBe('Well done');
-    expect(dto.capabilities.fileUploads).toBe('coming_soon');
+    expect(dto.capabilities.fileUploads).toBe('available');
   });
 
   it('preserves late/excused attendance statuses', () => {
@@ -272,7 +272,9 @@ describe('student mapper', () => {
     expect(dashboard.welcomeName).toBe('Ada');
     expect(dashboard.attendancePercent).toBeNull();
     expect(dashboard.stats.find((stat) => stat.id === 'attendance')?.value).toBeNull();
-    expect(dashboard.capabilities.pdfGeneration).toBe('coming_soon');
+    expect(dashboard.capabilities.pdfGeneration).toBe('available');
+    expect(dashboard.capabilities.qrGeneration).toBe('available');
+    expect(dashboard.capabilities.cloudinaryMedia).toBe('available');
   });
 
   it('builds progress overview and profile from auth only', () => {
@@ -289,11 +291,12 @@ describe('student mapper', () => {
       roles: ['Student'],
       permissions: [],
       organizationIds: ['org-1'],
+      profileImage: 'https://res.cloudinary.com/demo/image/upload/avatar.webp',
     };
 
     const profile = mapStudentProfile(user);
     expect(profile.firstName).toBe('Ada');
-    expect(profile.avatarUrl).toBeNull();
+    expect(profile.avatarUrl).toBe('https://res.cloudinary.com/demo/image/upload/avatar.webp');
     expect(profile.learning).toBeNull();
     expect(profile.preferences.language).toBeNull();
   });

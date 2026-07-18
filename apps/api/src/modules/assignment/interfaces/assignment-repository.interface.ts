@@ -7,6 +7,7 @@ export interface AssignmentRecord {
   batchId: string | null;
   title: string;
   instructions: string | null;
+  attachmentUrls?: string[];
   status: AssignmentStatusValue;
   maxScore: number | null;
   dueAt: Date | null;
@@ -44,6 +45,7 @@ export interface CreateAssignmentData {
   batchId?: string | null;
   title: string;
   instructions?: string | null;
+  attachmentUrls?: string[];
   status?: AssignmentStatusValue;
   maxScore?: number | null;
   dueAt?: Date | null;
@@ -52,6 +54,7 @@ export interface CreateAssignmentData {
 export interface UpdateAssignmentData {
   title?: string;
   instructions?: string | null;
+  attachmentUrls?: string[];
   status?: AssignmentStatusValue;
   maxScore?: number | null;
   dueAt?: Date | null;

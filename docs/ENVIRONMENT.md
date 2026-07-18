@@ -55,12 +55,26 @@ Never commit real secrets.
 | `RAZORPAY_KEY_ID` | Yes      | —                     | Razorpay key id |
 | `RAZORPAY_SECRET` | Yes      | `RAZORPAY_KEY_SECRET` | Razorpay secret |
 
+## Storage (Cloudinary)
+
+| Variable                            | Required   | Default      | Description                                                                            |
+| ----------------------------------- | ---------- | ------------ | -------------------------------------------------------------------------------------- |
+| `STORAGE_PROVIDER`                  | No         | `CLOUDINARY` | `CLOUDINARY` or `SANDBOX`; sandbox is forbidden in production                          |
+| `STORAGE_SANDBOX_MODE`              | No         | —            | Captures assets locally; defaults on outside production and is forbidden in production |
+| `CLOUDINARY_CLOUD_NAME`             | Production | —            | Cloudinary cloud name; required in production when the provider is `CLOUDINARY`        |
+| `CLOUDINARY_API_KEY`                | Production | —            | Cloudinary API key; required in production when the provider is `CLOUDINARY`           |
+| `CLOUDINARY_API_SECRET`             | Production | —            | Cloudinary API secret; server-only, never exposed to clients                           |
+| `CLOUDINARY_FOLDER_ROOT`            | No         | `graphology` | Root folder for all uploaded assets                                                    |
+| `STORAGE_SIGNED_UPLOAD_TTL_SECONDS` | No         | `600`        | Validity window (60–3600s) for signed direct-upload parameters                         |
+| `STORAGE_MAX_FILE_SIZE_BYTES`       | No         | `104857600`  | Maximum size for direct (signed) uploads                                               |
+| `STORAGE_SERVER_UPLOAD_MAX_BYTES`   | No         | `10485760`   | Maximum size for multipart server uploads                                              |
+| `STORAGE_ALLOWED_MIME_TYPES`        | No         | built-ins    | Comma-separated MIME allow list; defaults to common image/video/PDF/zip/text types     |
+
 ## Optional
 
 | Variable                                    | Description                     |
 | ------------------------------------------- | ------------------------------- |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Future Google OAuth             |
-| `CLOUDINARY_*`                              | Future media uploads            |
 | `SEED_ADMIN_*`                              | Database seed admin credentials |
 
 ## App-specific examples

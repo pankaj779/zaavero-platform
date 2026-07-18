@@ -10,6 +10,7 @@ import { hash } from 'argon2';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { PRISMA_CLIENT } from '../../../database/database.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { StorageService } from '../../storage/services/storage.service';
 import type {
   AdminAuditQueryDto,
   AdminListQueryDto,
@@ -25,7 +26,10 @@ type AuditMetadata = Record<string, string | number | boolean | null | string[]>
 
 @Injectable()
 export class AdminService {
-  constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
+    private readonly storageService: StorageService,
+  ) {}
 
   async overview(user: AuthenticatedUser, organizationId?: string): Promise<AdminPayload> {
     const orgId = this.resolveOrganizationId(user, organizationId);
@@ -391,9 +395,28 @@ export class AdminService {
     dto: UpdateOrganizationDto,
   ): Promise<AdminPayload> {
     const organizationId = this.resolveOrganizationId(user, id);
+    const logo =
+      dto.logo === undefined || dto.logo === null
+        ? dto.logo
+        : await this.storageService.resolveAssetUrl(dto.logo, {
+            organizationId,
+            entityType: 'ORG_LOGO',
+          });
     const organization = await this.prisma.organization.update({
       where: { id: organizationId },
-      data: dto,
+      data: {
+        name: dto.name,
+        slug: dto.slug,
+        logo,
+        website: dto.website,
+        email: dto.email,
+        phone: dto.phone,
+        address: dto.address,
+        timezone: dto.timezone,
+        currency: dto.currency,
+        language: dto.language,
+        isActive: dto.isActive,
+      },
       include: { _count: { select: { members: true, courses: true, batches: true } } },
     });
     await this.writeAudit(user.id, 'admin.organization.update', 'Organization', id, {});

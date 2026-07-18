@@ -35,6 +35,7 @@ export interface CreateAssignmentInput {
   status?: string;
   maxScore?: number | null;
   dueAt?: string | null;
+  attachmentUrls?: string[];
 }
 
 export interface UpdateAssignmentInput {
@@ -44,6 +45,7 @@ export interface UpdateAssignmentInput {
   maxScore?: number | null;
   dueAt?: string | null;
   batchId?: string | null;
+  attachmentUrls?: string[];
 }
 
 interface PaginatedAssignmentsApiPayload {

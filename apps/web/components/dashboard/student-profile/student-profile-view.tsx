@@ -105,7 +105,7 @@ export function StudentProfileView(): React.JSX.Element {
     <div className="space-y-8">
       <StudentProfileHeader />
       <div className="grid gap-6 laptop:grid-cols-[18rem_minmax(0,1fr)] laptop:items-start">
-        <StudentProfileSummary profile={profile} />
+        <StudentProfileSummary profile={profile} organizationId={primaryOrganizationId ?? ''} />
         <div className="min-w-0 space-y-4">
           <PersonalIdentityCard profile={profile} authUser={user} />
           <OrganizationMembershipCard organizationIds={profile.organizationIds} />

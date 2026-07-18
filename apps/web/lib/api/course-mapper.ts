@@ -11,6 +11,8 @@ export interface CourseApiRecord {
   difficulty: string;
   status: string;
   language: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,8 +56,8 @@ export function mapCourseApiToTeacherSummary(record: CourseApiRecord): TeacherCo
     status,
     isPublished: status === 'published',
     media: {
-      thumbnailUrl: null,
-      thumbnailAlt: 'Course thumbnail placeholder',
+      thumbnailUrl: record.thumbnailUrl ?? null,
+      thumbnailAlt: `${record.title} thumbnail`,
     },
     counts: {
       batches: 0,

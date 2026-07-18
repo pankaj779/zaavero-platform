@@ -24,7 +24,7 @@ export interface TeacherAssignmentBatchRefDto {
   studentsEnrolled: number;
 }
 
-/** Placeholder submission attachment metadata — never a real file/URL. */
+/** Submission attachment metadata returned by the API. */
 export interface TeacherAssignmentAttachmentDto {
   id: string;
   label: string;
@@ -138,7 +138,7 @@ export const teacherAssignmentsPageCopy = {
   gradingSummaryLabel: 'Grading summary',
   timelineLabel: 'Timeline',
   attachmentsLabel: 'Submission files',
-  attachmentsPlaceholder: 'Submission files are placeholders until storage is integrated.',
+  attachmentsPlaceholder: 'No submission files are attached.',
   futureIntegrationsLabel: 'Future integrations',
   awaitingReviewLabel: 'Awaiting Review',
   averageScoreLabel: 'Average Score',

@@ -11,6 +11,8 @@ export interface CourseRecord {
   title: string;
   slug: string;
   description: string | null;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
   difficulty: CourseDifficultyValue;
   status: CourseStatusValue;
   language: string;
@@ -44,6 +46,8 @@ export interface CreateCourseData {
   title: string;
   slug: string;
   description?: string;
+  thumbnailUrl?: string;
+  bannerUrl?: string;
   difficulty?: CourseDifficultyValue;
   status?: CourseStatusValue;
   language?: string;
@@ -53,6 +57,8 @@ export interface UpdateCourseData {
   title?: string;
   slug?: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
   difficulty?: CourseDifficultyValue;
   status?: CourseStatusValue;
   language?: string;

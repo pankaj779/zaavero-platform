@@ -52,6 +52,18 @@ export class CreateCourseDto {
   })
   description?: string;
 
+  @ApiPropertyOptional({ description: 'COURSE_THUMBNAIL MediaAsset id or secure URL' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  thumbnailUrl?: string;
+
+  @ApiPropertyOptional({ description: 'COURSE_BANNER MediaAsset id or secure URL' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  bannerUrl?: string;
+
   @ApiPropertyOptional({ enum: COURSE_DIFFICULTIES, default: 'BEGINNER' })
   @IsOptional()
   @IsIn([...COURSE_DIFFICULTIES])

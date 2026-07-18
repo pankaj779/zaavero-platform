@@ -13,6 +13,8 @@ export interface UserRepository {
 
   findById(id: string): Promise<AuthUserRecord | null>;
 
+  updateProfileImage?(userId: string, profileImage: string | null): Promise<void>;
+
   markEmailVerified(userId: string): Promise<void>;
 }
 

@@ -34,10 +34,12 @@ describe('certificate mapper', () => {
     expect(dto.course.title).toBe('Course');
     expect(dto.batch.name).toBe('Batch');
     expect(dto.mentor.name).toBe('Teacher');
-    expect(dto.downloadUrl).toBeNull();
+    expect(dto.downloadUrl).toBe('https://example.com/cert.pdf');
     expect(dto.verificationUrl).toBeNull();
     expect(dto.certificateNumber).toBe('CERT-001');
-    expect(dto.futureFeatures.pdfGeneration).toBe('coming_soon');
+    expect(dto.futureFeatures.pdfGeneration).toBe('available');
+    expect(dto.futureFeatures.downloads).toBe('available');
+    expect(dto.qrImageUrl).toBeNull();
   });
 
   it('enriches course and batch when lookups are provided', () => {

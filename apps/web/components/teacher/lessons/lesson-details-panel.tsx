@@ -1,5 +1,8 @@
 'use client';
 
+import { FileUpload } from '@graphology/ui';
+import { useState } from 'react';
+import { LessonApi, StorageApi } from '../../../lib/api';
 import {
   formatTeacherLessonDate,
   formatTeacherLessonDuration,
@@ -10,14 +13,46 @@ import {
 import { TeacherDetailList, TeacherDetailsPanel } from '../shared';
 import { LessonContentTypeBadge } from './lesson-content-type-badge';
 
+function lessonEntityType(
+  contentType: TeacherLessonSummaryDto['contentType'],
+): 'LESSON_VIDEO' | 'LESSON_PDF' | null {
+  switch (contentType) {
+    case 'video':
+      return 'LESSON_VIDEO';
+    case 'pdf':
+      return 'LESSON_PDF';
+    default:
+      return null;
+  }
+}
+
+function lessonAccept(contentType: TeacherLessonSummaryDto['contentType']): string | undefined {
+  switch (contentType) {
+    case 'video':
+      return 'video/mp4,video/webm';
+    case 'pdf':
+      return 'application/pdf';
+    default:
+      return undefined;
+  }
+}
+
 export function LessonDetailsPanel({
   lesson,
+  organizationId,
   onClose,
+  onLessonUpdated,
 }: {
   lesson: TeacherLessonSummaryDto;
+  organizationId: string;
   onClose: () => void;
+  onLessonUpdated?: (lesson: TeacherLessonSummaryDto) => void;
 }): React.JSX.Element {
   const copy = teacherLessonsPageCopy;
+  const entityType = lessonEntityType(lesson.contentType);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [contentUrl, setContentUrl] = useState(lesson.contentUrl);
 
   return (
     <TeacherDetailsPanel
@@ -53,8 +88,55 @@ export function LessonDetailsPanel({
               label: copy.lastUpdatedLabel,
               value: formatTeacherLessonDate(lesson.updatedAt),
             },
+            {
+              id: 'content',
+              label: 'Content URL',
+              value: contentUrl ?? '—',
+            },
           ]}
         />
+        {entityType ? (
+          <FileUpload
+            accept={lessonAccept(lesson.contentType)}
+            disabled={uploading || !organizationId}
+            label={uploading ? 'Uploading content…' : 'Upload lesson content'}
+            helperText={lesson.contentType === 'video' ? 'MP4 or WebM' : 'PDF document'}
+            onFilesChange={(files) => {
+              const file = files?.[0];
+              if (!file) {
+                return;
+              }
+              setUploading(true);
+              setError(null);
+              void StorageApi.upload(file, {
+                organizationId,
+                entityType,
+                entityId: lesson.id,
+              })
+                .then((asset) =>
+                  LessonApi.updateLesson(lesson.id, {
+                    contentUrl: asset.id,
+                    contentType: lesson.contentType.toUpperCase(),
+                  }),
+                )
+                .then((updated) => {
+                  setContentUrl(updated.contentUrl);
+                  onLessonUpdated?.(updated);
+                })
+                .catch(() => {
+                  setError('Unable to upload lesson content.');
+                })
+                .finally(() => {
+                  setUploading(false);
+                });
+            }}
+          />
+        ) : null}
+        {error ? (
+          <p className="text-caption text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
       </section>
 
       <section className="space-y-3" aria-label="Lesson rollups">

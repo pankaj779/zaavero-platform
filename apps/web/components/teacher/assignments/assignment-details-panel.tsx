@@ -1,5 +1,8 @@
 'use client';
 
+import { FileUpload } from '@graphology/ui';
+import { useState } from 'react';
+import { AssignmentApi, StorageApi } from '../../../lib/api';
 import {
   TEACHER_COMING_SOON,
   formatTeacherAssignmentDate,
@@ -13,12 +16,19 @@ import { AssignmentStatusBadge } from './assignment-status-badge';
 /** Keyboard-accessible details panel for a selected assignment DTO. */
 export function AssignmentDetailsPanel({
   assignment,
+  organizationId,
   onClose,
+  onAssignmentUpdated,
 }: {
   assignment: TeacherAssignmentDto;
+  organizationId: string;
   onClose: () => void;
+  onAssignmentUpdated?: (assignment: TeacherAssignmentDto) => void;
 }): React.JSX.Element {
   const copy = teacherAssignmentsPageCopy;
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState(assignment.attachments);
 
   const rate = assignment.submissions.submissionRate;
   const average = assignment.grading.averageScore;
@@ -165,7 +175,62 @@ export function AssignmentDetailsPanel({
             </li>
           ))}
         </ol>
-        <p className="text-caption text-muted-foreground">{copy.attachmentsPlaceholder}</p>
+        {attachments.length > 0 ? (
+          <ul className="space-y-1 text-small text-muted-foreground">
+            {attachments.map((attachment) => (
+              <li key={attachment.id}>{attachment.label}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-caption text-muted-foreground">{copy.attachmentsPlaceholder}</p>
+        )}
+        <FileUpload
+          multiple
+          disabled={uploading || !organizationId}
+          label={uploading ? 'Uploading attachments…' : 'Attach files'}
+          helperText="Stored as assignment attachments"
+          onFilesChange={(files) => {
+            const selected = Array.from(files ?? []);
+            if (selected.length === 0) {
+              return;
+            }
+            setUploading(true);
+            setError(null);
+            void Promise.all(
+              selected.map((file) =>
+                StorageApi.upload(file, {
+                  organizationId,
+                  entityType: 'ASSIGNMENT_ATTACHMENT',
+                  entityId: assignment.id,
+                }),
+              ),
+            )
+              .then((assets) => {
+                const nextUrls = [
+                  ...attachments.map((item) => item.label),
+                  ...assets.map((asset) => asset.id),
+                ];
+                return AssignmentApi.updateAssignment(assignment.id, {
+                  attachmentUrls: nextUrls,
+                });
+              })
+              .then((updated) => {
+                setAttachments(updated.attachments);
+                onAssignmentUpdated?.(updated);
+              })
+              .catch(() => {
+                setError('Unable to upload assignment attachments.');
+              })
+              .finally(() => {
+                setUploading(false);
+              });
+          }}
+        />
+        {error ? (
+          <p className="text-caption text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
       </section>
 
       <section className="space-y-3" aria-label={copy.futureIntegrationsLabel}>

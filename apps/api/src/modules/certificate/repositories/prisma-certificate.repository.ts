@@ -23,6 +23,7 @@ const certificateSelect = {
   certificateNumber: true,
   verificationCode: true,
   pdfUrl: true,
+  qrImageUrl: true,
   issuedAt: true,
   revokedAt: true,
   createdAt: true,
@@ -167,6 +168,7 @@ export class PrismaCertificateRepository implements CertificateRepository {
         certificateNumber: data.certificateNumber,
         verificationCode: data.verificationCode,
         pdfUrl: data.pdfUrl ?? null,
+        qrImageUrl: data.qrImageUrl ?? null,
         issuedAt: data.issuedAt,
       },
       select: certificateSelect,
@@ -179,6 +181,7 @@ export class PrismaCertificateRepository implements CertificateRepository {
       data: {
         ...(data.templateId !== undefined ? { templateId: data.templateId } : {}),
         ...(data.pdfUrl !== undefined ? { pdfUrl: data.pdfUrl } : {}),
+        ...(data.qrImageUrl !== undefined ? { qrImageUrl: data.qrImageUrl } : {}),
         ...(data.status !== undefined ? { status: data.status } : {}),
       },
       select: certificateSelect,

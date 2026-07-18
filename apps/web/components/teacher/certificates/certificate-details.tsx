@@ -8,6 +8,8 @@ import {
   teacherCertificatesPageCopy,
   type StudentCertificateDto,
 } from '../../../lib/teacher';
+import { isSafeHttpUrl } from '../../dashboard/student-academic/capabilities';
+import { MediaImage } from '../../shared/media-image';
 import { TeacherDetailList, TeacherDetailsPanel } from '../shared';
 import { CertificateStatusBadge } from './certificate-status-badge';
 
@@ -20,6 +22,8 @@ export function CertificateDetails({
   onClose: () => void;
 }): React.JSX.Element {
   const copy = teacherCertificatesPageCopy;
+  const canDownload = isSafeHttpUrl(certificate.downloadUrl);
+  const canShowQr = isSafeHttpUrl(certificate.qrImageUrl);
 
   return (
     <TeacherDetailsPanel
@@ -58,10 +62,28 @@ export function CertificateDetails({
             value: certificate.certificateNumber ?? copy.noNumberLabel,
           },
           { id: 'mentor', label: copy.mentorLabel, value: certificate.mentor.name },
-          { id: 'download', label: copy.downloadUrlLabel, value: copy.urlPending },
-          { id: 'verify', label: copy.verificationUrlLabel, value: copy.urlPending },
+          {
+            id: 'download',
+            label: copy.downloadUrlLabel,
+            value:
+              canDownload && certificate.downloadUrl ? certificate.downloadUrl : copy.urlPending,
+          },
+          {
+            id: 'verify',
+            label: copy.verificationUrlLabel,
+            value: certificate.verificationUrl ?? copy.urlPending,
+          },
         ]}
       />
+
+      {canShowQr && certificate.qrImageUrl ? (
+        <MediaImage
+          src={certificate.qrImageUrl}
+          alt="Certificate QR code"
+          className="h-28 w-28 rounded-md border border-border"
+          sizes="112px"
+        />
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Button
@@ -73,15 +95,23 @@ export function CertificateDetails({
         >
           {copy.issueButton}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled
-          aria-label={`${copy.downloadButton} — ${copy.comingSoonNote}`}
-        >
-          {copy.downloadButton}
-        </Button>
+        {canDownload && certificate.downloadUrl ? (
+          <Button type="button" variant="outline" size="sm" asChild>
+            <a href={certificate.downloadUrl} target="_blank" rel="noopener noreferrer">
+              {copy.downloadButton}
+            </a>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled
+            aria-label={`${copy.downloadButton} — ${copy.comingSoonNote}`}
+          >
+            {copy.downloadButton}
+          </Button>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -91,7 +121,9 @@ export function CertificateDetails({
         >
           {copy.verifyButton}
         </Button>
-        <p className="text-caption text-muted-foreground">{copy.comingSoonNote}</p>
+        {!canDownload ? (
+          <p className="text-caption text-muted-foreground">{copy.comingSoonNote}</p>
+        ) : null}
       </div>
 
       <section className="space-y-2" aria-label={copy.futureFeaturesLabel}>
@@ -99,15 +131,27 @@ export function CertificateDetails({
         <TeacherDetailList
           layout="stack"
           rows={[
-            { id: 'pdf', label: 'PDF generation', value: TEACHER_COMING_SOON.integrationLabel },
-            { id: 'qr', label: 'QR generation', value: TEACHER_COMING_SOON.integrationLabel },
+            {
+              id: 'pdf',
+              label: 'PDF generation',
+              value: canDownload ? 'Available' : TEACHER_COMING_SOON.integrationLabel,
+            },
+            {
+              id: 'qr',
+              label: 'QR generation',
+              value: canShowQr ? 'Available' : TEACHER_COMING_SOON.integrationLabel,
+            },
             {
               id: 'blockchain',
               label: 'Blockchain verification',
               value: TEACHER_COMING_SOON.integrationLabel,
             },
             { id: 'email', label: 'Email delivery', value: TEACHER_COMING_SOON.integrationLabel },
-            { id: 'downloads', label: 'Downloads', value: TEACHER_COMING_SOON.integrationLabel },
+            {
+              id: 'downloads',
+              label: 'Downloads',
+              value: canDownload ? 'Available' : TEACHER_COMING_SOON.integrationLabel,
+            },
           ]}
         />
       </section>

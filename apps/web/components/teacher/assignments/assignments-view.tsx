@@ -272,11 +272,18 @@ export function AssignmentsView({
         batchId={batchId}
         courseOptions={courseOptions}
         batchOptions={batchOptions}
+        organizationId={primaryOrganizationId ?? ''}
         onQueryChange={setQuery}
         onStatusChange={setStatus}
         onSortChange={setSort}
         onCourseChange={setCourseId}
         onBatchChange={setBatchId}
+        onAssignmentUpdated={(updated) => {
+          setAssignments((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+          setStatsAssignments((items) =>
+            items.map((item) => (item.id === updated.id ? updated : item)),
+          );
+        }}
         serverFiltered
       />
     </div>

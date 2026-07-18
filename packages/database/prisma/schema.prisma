@@ -64,6 +64,7 @@ model User {
   emailEvents              EmailEvent[]
   emailInvitationsSent     EmailInvitation[]         @relation("EmailInvitationInvitedBy")
   emailInvitationsAccepted EmailInvitation[]         @relation("EmailInvitationAcceptedBy")
+  ownedMediaAssets         MediaAsset[]              @relation("MediaAssetOwner")
 
   @@index([email])
   @@index([deletedAt])
@@ -135,6 +136,7 @@ model Organization {
   emailAttachments         EmailAttachment[]
   emailEvents              EmailEvent[]
   emailInvitations         EmailInvitation[]
+  mediaAssets              MediaAsset[]
 
   @@index([slug])
   @@index([isActive])
@@ -396,6 +398,8 @@ model Course {
   title          String
   slug           String
   description    String?
+  thumbnailUrl   String?          @map("thumbnail_url")
+  bannerUrl      String?          @map("banner_url")
   difficulty     CourseDifficulty @default(BEGINNER)
   status         CourseStatus     @default(DRAFT)
   language       String           @default("en")
@@ -746,6 +750,7 @@ model Assignment {
   batchId        String?          @map("batch_id") @db.Uuid
   title          String
   instructions   String?
+  attachmentUrls String[]         @default([]) @map("attachment_urls")
   status         AssignmentStatus @default(DRAFT)
   maxScore       Int?             @map("max_score")
   dueAt          DateTime?        @map("due_at")
@@ -834,6 +839,7 @@ model Certificate {
   certificateNumber String            @unique @map("certificate_number")
   verificationCode  String            @unique @map("verification_code")
   pdfUrl            String?           @map("pdf_url")
+  qrImageUrl        String?           @map("qr_image_url")
   issuedAt          DateTime?         @map("issued_at")
   revokedAt         DateTime?         @map("revoked_at")
   createdAt         DateTime          @default(now()) @map("created_at")
@@ -1264,6 +1270,7 @@ model Invoice {
   totalMinor             Int           @map("total_minor")
   currency               String        @db.Char(3)
   billingAddressSnapshot Json          @map("billing_address_snapshot")
+  pdfUrl                 String?       @map("pdf_url")
   issuedAt               DateTime?     @map("issued_at")
   dueAt                  DateTime?     @map("due_at")
   paidAt                 DateTime?     @map("paid_at")
@@ -1909,4 +1916,98 @@ model EmailInvitation {
   @@index([invitedById])
   @@index([acceptedById])
   @@map("email_invitations")
+}
+
+// ---------------------------------------------------------------------------
+// Storage — provider-neutral metadata for tenant-scoped media. Provider
+// identities remain unique even after soft deletion to prevent accidental reuse.
+// ---------------------------------------------------------------------------
+
+enum MediaEntityType {
+  USER_AVATAR
+  ORG_LOGO
+  ORG_BRANDING
+  COURSE_THUMBNAIL
+  COURSE_BANNER
+  LESSON_VIDEO
+  LESSON_PDF
+  LESSON_ZIP
+  LESSON_ATTACHMENT
+  ASSIGNMENT_ATTACHMENT
+  SUBMISSION_ATTACHMENT
+  CERTIFICATE_PDF
+  CERTIFICATE_QR
+  INVOICE_PDF
+  MESSAGE_ATTACHMENT
+  ANNOUNCEMENT_IMAGE
+  CALENDAR_ATTACHMENT
+  OTHER
+
+  @@map("media_entity_type")
+}
+
+enum StorageProvider {
+  CLOUDINARY
+  SANDBOX
+
+  @@map("storage_provider")
+}
+
+enum MediaResourceType {
+  IMAGE
+  VIDEO
+  RAW
+
+  @@map("media_resource_type")
+}
+
+enum MediaDeliveryType {
+  UPLOAD
+  PRIVATE
+  AUTHENTICATED
+
+  @@map("media_delivery_type")
+}
+
+/// Safe provider metadata only. Binary data and provider credentials are never
+/// persisted in this table.
+model MediaAsset {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  organizationId   String            @map("organization_id") @db.Uuid
+  ownerUserId      String            @map("owner_user_id") @db.Uuid
+  entityType       MediaEntityType   @map("entity_type")
+  entityId         String?           @map("entity_id")
+  provider         StorageProvider
+  resourceType     MediaResourceType @map("resource_type")
+  deliveryType     MediaDeliveryType @map("delivery_type")
+  providerPublicId String            @map("provider_public_id")
+  providerAssetId  String?           @map("provider_asset_id")
+  folder           String
+  originalFilename String            @map("original_filename")
+  mimeType         String            @map("mime_type")
+  extension        String
+  bytes            BigInt
+  checksumSha256   String            @map("checksum_sha256")
+  providerEtag     String?           @map("provider_etag")
+  secureUrl        String            @map("secure_url")
+  width            Int?
+  height           Int?
+  durationSeconds  Int?              @map("duration_seconds")
+  format           String?
+  version          Int
+  tags             String[]          @default([])
+  metadata         Json?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deletedAt        DateTime?         @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  owner        User         @relation("MediaAssetOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, provider, providerPublicId])
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, checksumSha256])
+  @@index([ownerUserId])
+  @@index([deletedAt])
+  @@map("media_assets")
 }

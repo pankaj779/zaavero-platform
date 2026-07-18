@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, IsUrl, IsUUID, MaxLength, ValidateIf } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
 import {
   CERTIFICATE_STATUSES,
   type CertificateStatusValue,
@@ -16,9 +16,18 @@ export class UpdateCertificateDto {
   @IsOptional()
   @ValidateIf((_, value: unknown) => value !== null)
   @IsString()
-  @IsUrl()
   @MaxLength(2000)
   pdfUrl?: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'CERTIFICATE_QR MediaAsset id or secure URL',
+  })
+  @IsOptional()
+  @ValidateIf((_, value: unknown) => value !== null)
+  @IsString()
+  @MaxLength(2000)
+  qrImageUrl?: string | null;
 
   @ApiPropertyOptional({ enum: CERTIFICATE_STATUSES })
   @IsOptional()

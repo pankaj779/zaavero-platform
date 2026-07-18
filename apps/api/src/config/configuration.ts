@@ -18,6 +18,9 @@ export default (): EnvConfig => {
   const emailProvider: EnvConfig['EMAIL_PROVIDER'] =
     process.env.EMAIL_PROVIDER === 'SANDBOX' ? 'SANDBOX' : 'RESEND';
 
+  const storageProvider: EnvConfig['STORAGE_PROVIDER'] =
+    process.env.STORAGE_PROVIDER === 'SANDBOX' ? 'SANDBOX' : 'CLOUDINARY';
+
   return {
     NODE_ENV: resolvedNodeEnv,
     PORT: Number(process.env.PORT ?? 3001),
@@ -58,5 +61,17 @@ export default (): EnvConfig => {
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    CLOUDINARY_FOLDER_ROOT: process.env.CLOUDINARY_FOLDER_ROOT ?? 'graphology',
+    STORAGE_PROVIDER: storageProvider,
+    STORAGE_SANDBOX_MODE:
+      booleanFromEnv(process.env.STORAGE_SANDBOX_MODE) ?? resolvedNodeEnv !== 'production',
+    STORAGE_SIGNED_UPLOAD_TTL_SECONDS: Number(process.env.STORAGE_SIGNED_UPLOAD_TTL_SECONDS ?? 600),
+    STORAGE_MAX_FILE_SIZE_BYTES: Number(
+      process.env.STORAGE_MAX_FILE_SIZE_BYTES ?? 100 * 1024 * 1024,
+    ),
+    STORAGE_SERVER_UPLOAD_MAX_BYTES: Number(
+      process.env.STORAGE_SERVER_UPLOAD_MAX_BYTES ?? 10 * 1024 * 1024,
+    ),
+    STORAGE_ALLOWED_MIME_TYPES: process.env.STORAGE_ALLOWED_MIME_TYPES,
   };
 };

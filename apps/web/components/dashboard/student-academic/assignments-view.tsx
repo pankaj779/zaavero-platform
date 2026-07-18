@@ -204,7 +204,11 @@ export function StudentAssignmentsView({
 
   const stats = useMemo(() => deriveStudentAssignmentStats(statsAssignments), [statsAssignments]);
 
-  async function handleSubmit(assignment: StudentAssignmentDto, content: string): Promise<void> {
+  async function handleSubmit(
+    assignment: StudentAssignmentDto,
+    content: string,
+    attachments: string[],
+  ): Promise<void> {
     if (!canEditOwnSubmission(assignment)) {
       throw new Error('Submission cannot be edited.');
     }
@@ -238,7 +242,7 @@ export function StudentAssignmentsView({
     try {
       let updated: StudentAssignmentDto | null;
       if (assignment.submission) {
-        const payload = buildUpdateOwnSubmissionPayload(content);
+        const payload = buildUpdateOwnSubmissionPayload(content, attachments);
         assertNoGradingFields(payload);
         updated = await StudentApi.updateOwnSubmission(
           organizationId,
@@ -247,7 +251,7 @@ export function StudentAssignmentsView({
           payload,
         );
       } else {
-        const createPayload = buildCreateSubmissionPayload(content);
+        const createPayload = buildCreateSubmissionPayload(content, attachments);
         updated = await StudentApi.submitAssignment({
           organizationId,
           assignmentId: assignment.id,
@@ -336,6 +340,7 @@ export function StudentAssignmentsView({
       {selectedAssignment ? (
         <StudentAssignmentDetails
           assignment={selectedAssignment}
+          organizationId={requireOrganizationId(primaryOrganizationId)}
           onClose={() => {
             setSelectedId(null);
           }}

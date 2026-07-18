@@ -25,6 +25,12 @@ export class CourseResponseDto {
   @ApiPropertyOptional({ nullable: true })
   description!: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  thumbnailUrl!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  bannerUrl!: string | null;
+
   @ApiProperty({ enum: COURSE_DIFFICULTIES })
   difficulty!: CourseDifficultyValue;
 

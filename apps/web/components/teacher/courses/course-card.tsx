@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Badge,
   Button,
@@ -6,8 +8,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  FileUpload,
 } from '@graphology/ui';
 import { cn } from '@graphology/utils';
+import { useState } from 'react';
+import { CourseApi, StorageApi } from '../../../lib/api';
 import {
   formatTeacherCourseDate,
   teacherCoursesPageCopy,
@@ -48,11 +53,20 @@ function CourseCounts({
   );
 }
 
-function CourseActions({ courseTitle }: { courseTitle: string }): React.JSX.Element {
+function CourseActions({
+  course,
+  organizationId,
+  onCourseUpdated,
+}: {
+  course: TeacherCourseSummaryDto;
+  organizationId: string;
+  onCourseUpdated?: (course: TeacherCourseSummaryDto) => void;
+}): React.JSX.Element {
   const copy = teacherCoursesPageCopy;
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const actions = [
     { id: 'view', label: copy.viewButton },
-    { id: 'manage', label: copy.manageButton },
     { id: 'analytics', label: copy.analyticsButton },
   ];
 
@@ -67,13 +81,46 @@ function CourseActions({ courseTitle }: { courseTitle: string }): React.JSX.Elem
             size="sm"
             className="w-full tablet:flex-1"
             disabled
-            aria-label={`${action.label} ${courseTitle} — coming soon`}
+            aria-label={`${action.label} ${course.title} — coming soon`}
           >
             {action.label}
           </Button>
         ))}
       </div>
-      <p className="text-caption text-muted-foreground">{copy.comingSoonNote}</p>
+      <FileUpload
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        disabled={uploading || !organizationId}
+        label={uploading ? 'Uploading thumbnail…' : 'Upload thumbnail'}
+        helperText="PNG, JPG, WebP or GIF"
+        onFilesChange={(files) => {
+          const file = files?.[0];
+          if (!file) {
+            return;
+          }
+          setUploading(true);
+          setError(null);
+          void StorageApi.upload(file, {
+            organizationId,
+            entityType: 'COURSE_THUMBNAIL',
+            entityId: course.id,
+          })
+            .then((asset) => CourseApi.updateCourse(course.id, { thumbnailUrl: asset.id }))
+            .then((updated) => {
+              onCourseUpdated?.(updated);
+            })
+            .catch(() => {
+              setError('Unable to upload course thumbnail.');
+            })
+            .finally(() => {
+              setUploading(false);
+            });
+        }}
+      />
+      {error ? (
+        <p className="text-caption text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -84,9 +131,13 @@ function CourseActions({ courseTitle }: { courseTitle: string }): React.JSX.Elem
 export function CourseCard({
   course,
   layout = 'grid',
+  organizationId = '',
+  onCourseUpdated,
 }: {
   course: TeacherCourseSummaryDto;
   layout?: TeacherCoursesViewMode;
+  organizationId?: string;
+  onCourseUpdated?: (course: TeacherCourseSummaryDto) => void;
 }): React.JSX.Element {
   const copy = teacherCoursesPageCopy;
   const updatedLabel = `${copy.lastUpdatedLabel}: ${formatTeacherCourseDate(course.updatedAt)}`;
@@ -102,6 +153,7 @@ export function CourseCard({
         <CardContent className="flex flex-col gap-4 p-5 laptop:flex-row">
           <CourseThumbnail
             label={course.media.thumbnailAlt}
+            src={course.media.thumbnailUrl}
             className="laptop:w-56 laptop:shrink-0 laptop:self-start"
           />
           <div className="flex min-w-0 flex-1 flex-col gap-4">
@@ -115,7 +167,11 @@ export function CourseCard({
               <p className="text-caption text-muted-foreground">{updatedLabel}</p>
             </div>
             <CourseCounts course={course} className="tablet:grid-cols-4" />
-            <CourseActions courseTitle={course.title} />
+            <CourseActions
+              course={course}
+              organizationId={organizationId}
+              onCourseUpdated={onCourseUpdated}
+            />
           </div>
         </CardContent>
       </Card>
@@ -125,7 +181,7 @@ export function CourseCard({
   return (
     <Card className={cn('flex h-full flex-col', teacherCardSurfaceClass)}>
       <CardHeader className="space-y-4 p-5 pb-0">
-        <CourseThumbnail label={course.media.thumbnailAlt} />
+        <CourseThumbnail label={course.media.thumbnailAlt} src={course.media.thumbnailUrl} />
         <div className="flex flex-wrap items-center gap-2">
           <CourseStatusBadge status={course.status} />
           {publishBadge}
@@ -142,7 +198,11 @@ export function CourseCard({
       </CardContent>
 
       <CardFooter className="p-5 pt-0">
-        <CourseActions courseTitle={course.title} />
+        <CourseActions
+          course={course}
+          organizationId={organizationId}
+          onCourseUpdated={onCourseUpdated}
+        />
       </CardFooter>
     </Card>
   );

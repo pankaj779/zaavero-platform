@@ -185,7 +185,17 @@ export function CoursesView({
       {courses.length === 0 ? (
         <CoursesEmptyState variant="no-matches" />
       ) : (
-        <CourseCollection courses={courses} mode={mode} />
+        <CourseCollection
+          courses={courses}
+          mode={mode}
+          organizationId={primaryOrganizationId ?? ''}
+          onCourseUpdated={(updated) => {
+            setCourses((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+            setStatsCourses((items) =>
+              items.map((item) => (item.id === updated.id ? updated : item)),
+            );
+          }}
+        />
       )}
     </div>
   );

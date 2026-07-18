@@ -33,7 +33,7 @@ describe('assignment mapper', () => {
     expect(dto.grading.awaitingReview).toBe(0);
     expect(dto.submissions.submitted).toBe(0);
     expect(dto.submissions.submissionRate).toBeNull();
-    expect(dto.attachments).toHaveLength(1);
+    expect(dto.attachments).toHaveLength(0);
     expect(dto.integrations.plagiarismDetection).toBe('coming_soon');
     expect(dto.timeline[0]?.id).toBe('created');
   });

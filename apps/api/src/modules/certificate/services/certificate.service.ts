@@ -5,6 +5,7 @@ import type { ControllerSuccessPayload } from '../../../common/interfaces/api-re
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { StorageService } from '../../storage/services/storage.service';
 import { CERTIFICATE_CODE_MAX_RETRIES } from '../constants/certificate.constants';
 import { CERTIFICATE_REPOSITORY } from '../constants/injection-tokens';
 import type {
@@ -46,6 +47,7 @@ export class CertificateService {
     @Inject(CERTIFICATE_REPOSITORY)
     private readonly certificateRepository: CertificateRepository,
     private readonly businessEmail?: BusinessEmailService,
+    private readonly storageService?: StorageService,
   ) {}
 
   async list(
@@ -129,6 +131,10 @@ export class CertificateService {
     }
 
     await this.assertStudentInOrganization(dto.organizationId, dto.studentId);
+    const [pdfUrl, qrImageUrl] = await Promise.all([
+      this.resolveMedia(dto.pdfUrl, dto.organizationId, 'CERTIFICATE_PDF'),
+      this.resolveMedia(dto.qrImageUrl, dto.organizationId, 'CERTIFICATE_QR'),
+    ]);
 
     const certificate = await this.issueWithUniqueCodes({
       organizationId: dto.organizationId,
@@ -136,7 +142,8 @@ export class CertificateService {
       courseId: dto.courseId,
       batchId: dto.batchId ?? null,
       templateId: dto.templateId ?? null,
-      pdfUrl: dto.pdfUrl ?? null,
+      pdfUrl: pdfUrl ?? null,
+      qrImageUrl: qrImageUrl ?? null,
       issuedAt: new Date(),
     });
     await this.businessEmail?.certificateIssued(certificate.id);
@@ -166,10 +173,15 @@ export class CertificateService {
     if (certificate.status === 'ISSUED' && dto.status !== undefined) {
       throw new InvalidCertificateException('Issued certificates cannot change status via update.');
     }
+    const [pdfUrl, qrImageUrl] = await Promise.all([
+      this.resolveMedia(dto.pdfUrl, certificate.organizationId, 'CERTIFICATE_PDF'),
+      this.resolveMedia(dto.qrImageUrl, certificate.organizationId, 'CERTIFICATE_QR'),
+    ]);
 
     const updated = await this.certificateRepository.update(id, {
       templateId: dto.templateId,
-      pdfUrl: dto.pdfUrl,
+      pdfUrl,
+      qrImageUrl,
       status: dto.status,
     });
 
@@ -386,5 +398,17 @@ export class CertificateService {
       !user.roles.includes(AUTH_ROLES.admin) &&
       !user.roles.includes(AUTH_ROLES.teacher)
     );
+  }
+
+  private async resolveMedia(
+    reference: string | null | undefined,
+    organizationId: string,
+    entityType: 'CERTIFICATE_PDF' | 'CERTIFICATE_QR',
+  ): Promise<string | null | undefined> {
+    if (reference === undefined || reference === null) return reference;
+    if (!this.storageService) {
+      throw new InvalidCertificateException('Storage service is unavailable.');
+    }
+    return this.storageService.resolveAssetUrl(reference, { organizationId, entityType });
   }
 }

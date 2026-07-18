@@ -1098,7 +1098,8 @@ describe('task 06.09 / task 08.14 teacher messages', () => {
         conversation.futureFeatures.reactions,
       ]),
     );
-    expect([...integrationValues]).toEqual(['coming_soon']);
+    expect(integrationValues.has('available')).toBe(true);
+    expect(integrationValues.has('coming_soon')).toBe(true);
   });
 
   it('maps supported filters to API query values', () => {
@@ -1288,6 +1289,7 @@ describe('task 06.11 / task 08.11 teacher certificate management', () => {
       issuedAt: '2026-07-10T09:00:00.000Z',
       certificateNumber: 'CERT-001',
       downloadUrl: null,
+      qrImageUrl: null,
       verificationUrl: null,
       mentor: { id: '', name: 'Teacher' },
       futureFeatures: {
@@ -1308,6 +1310,7 @@ describe('task 06.11 / task 08.11 teacher certificate management', () => {
       issuedAt: null,
       certificateNumber: null,
       downloadUrl: null,
+      qrImageUrl: null,
       verificationUrl: null,
       mentor: { id: '', name: 'Teacher' },
       futureFeatures: {
@@ -1441,6 +1444,7 @@ describe('task 06.12 teacher profile and settings', () => {
     email: 'teacher@example.com',
     firstName: 'Ada',
     lastName: 'Lovelace',
+    profileImage: 'https://res.cloudinary.com/demo/image/upload/avatar.webp',
   });
 
   it('routes profile and settings under /teacher', () => {
@@ -1456,7 +1460,9 @@ describe('task 06.12 teacher profile and settings', () => {
     expect(teacherProfile.id).toBe('teacher-1');
     expect(teacherProfile.firstName).toBe('Ada');
     expect(teacherProfile.email).toBe('teacher@example.com');
-    expect(teacherProfile.avatarUrl).toBeNull();
+    expect(teacherProfile.avatarUrl).toBe(
+      'https://res.cloudinary.com/demo/image/upload/avatar.webp',
+    );
     expect(teacherProfile.specializations).toEqual([]);
     expect(teacherProfileDefaults.preferences.theme).toBe('system');
     expect(teacherProfile.connectedAccounts.map((account) => account.provider)).toEqual([
@@ -1468,8 +1474,8 @@ describe('task 06.12 teacher profile and settings', () => {
     expect(teacherProfile.connectedAccounts.map((account) => account.externalAccountId)).toEqual(
       teacherProfile.connectedAccounts.map(() => null),
     );
-    const integrationValues = new Set(Object.values(teacherProfile.futureFeatures));
-    expect([...integrationValues]).toEqual(['coming_soon']);
+    expect(teacherProfile.futureFeatures.avatarUpload).toBe('available');
+    expect(teacherProfile.futureFeatures.profileEditing).toBe('coming_soon');
     expect(teacherSettingsViewState).toBe('populated');
   });
 

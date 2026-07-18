@@ -4,7 +4,7 @@ export type TeacherConversationType = 'student' | 'batch' | 'announcement';
 export type TeacherMessageStatus = 'sent' | 'delivered' | 'read' | 'failed';
 export type TeacherMessagesViewState = 'loading' | 'empty' | 'error' | 'populated';
 export type TeacherMessageFilter = 'all' | 'unread' | 'students' | 'batches' | 'announcements';
-export type TeacherMessageIntegrationAvailability = 'coming_soon';
+export type TeacherMessageIntegrationAvailability = 'available' | 'coming_soon';
 
 export interface TeacherParticipantDto {
   id: string;
@@ -13,7 +13,7 @@ export interface TeacherParticipantDto {
   initials: string;
 }
 
-/** Non-downloadable display metadata derived from backend attachment references. */
+/** Display metadata derived from backend storage attachment references. */
 export interface TeacherAttachmentDto {
   id: string;
   label: string;
@@ -51,7 +51,7 @@ export interface TeacherConversationDto {
 
 export const teacherMessageComingSoonFeatures: TeacherConversationFutureFeaturesDto = {
   realtime: 'coming_soon',
-  uploads: 'coming_soon',
+  uploads: 'available',
   notifications: 'coming_soon',
   reactions: 'coming_soon',
 };
@@ -85,7 +85,7 @@ export const teacherMessagesPageCopy = {
   typeLabel: 'Type',
   lastUpdatedLabel: 'Last updated',
   futureFeaturesLabel: 'Future integrations',
-  attachmentsPlaceholder: 'Attachment downloads are not enabled in this workspace.',
+  attachmentsPlaceholder: 'No files are attached to this message.',
 } as const;
 
 export const teacherConversationTypeLabel: Record<TeacherConversationType, string> = {

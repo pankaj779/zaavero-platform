@@ -173,7 +173,8 @@ export class UpdateOrganizationDto {
   slug?: string;
 
   @IsOptional()
-  @IsUrl({ require_protocol: true })
+  @IsString()
+  @MaxLength(2000)
   logo?: string | null;
 
   @IsOptional()

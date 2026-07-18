@@ -10,6 +10,7 @@ const userSelect = {
   firstName: true,
   lastName: true,
   phone: true,
+  profileImage: true,
   passwordHash: true,
   emailVerified: true,
   isActive: true,
@@ -43,6 +44,13 @@ export class PrismaUserRepository implements UserRepository {
     return this.prisma.user.findUnique({
       where: { id },
       select: userSelect,
+    });
+  }
+
+  async updateProfileImage(userId: string, profileImage: string | null): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { profileImage },
     });
   }
 

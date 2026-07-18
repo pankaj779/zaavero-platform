@@ -43,6 +43,7 @@ export function createRepositoryMock(): MockedRepository {
     recordPaymentFailure: vi.fn(),
     listInvoices: vi.fn(),
     findInvoiceById: vi.fn(),
+    updateInvoicePdf: vi.fn(),
     findCurrentSubscription: vi.fn(),
     listSubscriptions: vi.fn(),
     assignSubscription: vi.fn(),

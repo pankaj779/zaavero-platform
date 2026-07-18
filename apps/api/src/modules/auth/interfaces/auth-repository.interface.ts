@@ -4,6 +4,7 @@ export interface AuthUserRecord {
   firstName: string;
   lastName: string;
   phone: string | null;
+  profileImage?: string | null;
   passwordHash: string;
   emailVerified: boolean;
   isActive: boolean;
@@ -102,9 +103,7 @@ export interface AuthRepository {
     input: CreateEmailVerificationTokenInput,
   ): Promise<EmailVerificationTokenRecord>;
 
-  findEmailVerificationTokenByHash(
-    tokenHash: string,
-  ): Promise<EmailVerificationTokenRecord | null>;
+  findEmailVerificationTokenByHash(tokenHash: string): Promise<EmailVerificationTokenRecord | null>;
 
   deleteEmailVerificationTokensForUser(userId: string): Promise<void>;
 
@@ -120,13 +119,9 @@ export interface AuthRepository {
 
   revokeAllRefreshTokensForUser(userId: string): Promise<void>;
 
-  createPasswordResetToken(
-    input: CreatePasswordResetTokenInput,
-  ): Promise<PasswordResetTokenRecord>;
+  createPasswordResetToken(input: CreatePasswordResetTokenInput): Promise<PasswordResetTokenRecord>;
 
-  findPasswordResetTokenByHash(
-    tokenHash: string,
-  ): Promise<PasswordResetTokenRecord | null>;
+  findPasswordResetTokenByHash(tokenHash: string): Promise<PasswordResetTokenRecord | null>;
 
   deletePasswordResetTokensForUser(userId: string): Promise<void>;
 

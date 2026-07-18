@@ -15,6 +15,7 @@ export interface AssignmentApiRecord {
   status: string;
   maxScore: number | null;
   dueAt: string | null;
+  attachmentUrls?: string[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -139,14 +140,11 @@ export function mapAssignmentApiToTeacherSummary(
       averageScore: null,
       maxScore,
     },
-    // TEMPORARY: attachment metadata is not on AssignmentResponseDto.
-    attachments: [
-      {
-        id: 'attachment_placeholder',
-        label: 'Submission attachment placeholder',
-        kind: 'document',
-      },
-    ],
+    attachments: (record.attachmentUrls ?? []).map((url, index) => ({
+      id: `${record.id}-attachment-${String(index + 1)}`,
+      label: url,
+      kind: 'document',
+    })),
     // TEMPORARY: full status-transition history is not on AssignmentResponseDto.
     timeline: buildTimeline(status, record.createdAt, record.updatedAt),
     integrations: {

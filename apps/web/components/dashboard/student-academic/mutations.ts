@@ -4,19 +4,26 @@ import type { UpdateSubmissionInput } from '../../../lib/api';
  * Student submission payloads — content/status only.
  * Never include score or feedback (teacher grading fields).
  */
-export function buildCreateSubmissionPayload(content: string): {
+export function buildCreateSubmissionPayload(
+  content: string,
+  attachments: string[] = [],
+): {
   content: string;
   attachments: string[];
 } {
   return {
     content: content.trim(),
-    attachments: [],
+    attachments,
   };
 }
 
-export function buildUpdateOwnSubmissionPayload(content: string): UpdateSubmissionInput {
+export function buildUpdateOwnSubmissionPayload(
+  content: string,
+  attachments?: string[],
+): UpdateSubmissionInput {
   return {
     content: content.trim(),
+    ...(attachments ? { attachments } : {}),
     status: 'SUBMITTED',
   };
 }

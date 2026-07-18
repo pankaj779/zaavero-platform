@@ -16,6 +16,7 @@ export interface CertificateApiRecord {
   certificateNumber: string;
   verificationCode: string;
   pdfUrl: string | null;
+  qrImageUrl?: string | null;
   issuedAt: string | null;
   revokedAt: string | null;
   createdAt: string;
@@ -70,7 +71,7 @@ function mapStatus(status: string): StudentCertificateStatus {
  * - batch name (enriched via lookups when available)
  * - mentor name
  * - template preview metadata
- * - downloadUrl / verificationUrl kept null for the current UI contract
+ * - verificationUrl remains null until a verification route is exposed
  */
 export function mapCertificateApiToTeacherSummary(
   record: CertificateApiRecord,
@@ -103,8 +104,8 @@ export function mapCertificateApiToTeacherSummary(
     status,
     issuedAt: record.issuedAt,
     certificateNumber: record.certificateNumber.trim().length > 0 ? record.certificateNumber : null,
-    // UI contract keeps these null until download/verify surfaces are wired.
-    downloadUrl: null,
+    downloadUrl: record.pdfUrl,
+    qrImageUrl: record.qrImageUrl ?? null,
     verificationUrl: null,
     mentor: {
       id: '',

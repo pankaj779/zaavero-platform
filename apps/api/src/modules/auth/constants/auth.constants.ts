@@ -47,6 +47,8 @@ export const AUTH_PERMISSIONS = {
   emailManage: 'email.manage',
   emailTemplateManage: 'email.template.manage',
   emailRetry: 'email.retry',
+  storageUpload: 'storage.upload',
+  storageManage: 'storage.manage',
 } as const;
 
 export type AuthPermissionName = (typeof AUTH_PERMISSIONS)[keyof typeof AUTH_PERMISSIONS];

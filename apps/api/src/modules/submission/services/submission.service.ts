@@ -4,6 +4,7 @@ import type { ControllerSuccessPayload } from '../../../common/interfaces/api-re
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { StorageService } from '../../storage/services/storage.service';
 import {
   SUBMISSION_STATUS_TRANSITIONS,
   type SubmissionStatusValue,
@@ -47,6 +48,7 @@ export class SubmissionService {
     @Inject(SUBMISSION_REPOSITORY)
     private readonly submissionRepository: SubmissionRepository,
     private readonly businessEmail?: BusinessEmailService,
+    private readonly storageService?: StorageService,
   ) {}
 
   async list(
@@ -125,6 +127,7 @@ export class SubmissionService {
 
     const submitStatus = this.resolveSubmitStatus(initialStatus, assignment);
     const submittedAt = this.isSubmitStatus(submitStatus) ? new Date() : null;
+    const attachments = await this.resolveAttachments(dto.attachments, dto.organizationId, user.id);
 
     try {
       const submission = await this.submissionRepository.create({
@@ -133,7 +136,7 @@ export class SubmissionService {
         studentId,
         status: submitStatus,
         content: dto.content,
-        attachments: dto.attachments,
+        attachments,
         submittedAt,
       });
       if (this.isSubmitStatus(submission.status)) {
@@ -205,10 +208,15 @@ export class SubmissionService {
       dto.status !== undefined && this.isSubmitStatus(resolvedStatus)
         ? new Date()
         : submission.submittedAt;
+    const attachments = await this.resolveAttachments(
+      dto.attachments,
+      submission.organizationId,
+      user.id,
+    );
 
     const updated = await this.submissionRepository.update(submission.id, {
       content: dto.content,
-      attachments: dto.attachments,
+      attachments,
       status: dto.status !== undefined ? resolvedStatus : undefined,
       submittedAt: dto.status !== undefined ? submittedAt : undefined,
     });
@@ -512,6 +520,22 @@ export class SubmissionService {
 
   private isStaff(user: AuthenticatedUser): boolean {
     return user.roles.includes(AUTH_ROLES.admin) || user.roles.includes(AUTH_ROLES.teacher);
+  }
+
+  private async resolveAttachments(
+    references: string[] | undefined,
+    organizationId: string,
+    ownerUserId: string,
+  ): Promise<string[] | undefined> {
+    if (references === undefined) return undefined;
+    if (!this.storageService) {
+      throw new InvalidSubmissionException('Storage service is unavailable.');
+    }
+    return this.storageService.resolveAssetUrls(references, {
+      organizationId,
+      entityType: 'SUBMISSION_ATTACHMENT',
+      ownerUserId,
+    });
   }
 
   private isStudentOnly(user: AuthenticatedUser): boolean {

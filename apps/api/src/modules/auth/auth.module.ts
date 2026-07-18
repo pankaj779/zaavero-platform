@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import type { EnvConfig } from '../../config/env.schema';
 import { DatabaseModule } from '../../database/database.module';
 import { EmailModule } from '../email/email.module';
+import { StorageModule } from '../storage/storage.module';
 import {
   AUTH_REPOSITORY,
   AUTHORIZATION_REPOSITORY,
@@ -26,6 +27,7 @@ import { TokenService } from './services/token.service';
   imports: [
     DatabaseModule,
     forwardRef(() => EmailModule),
+    forwardRef(() => StorageModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

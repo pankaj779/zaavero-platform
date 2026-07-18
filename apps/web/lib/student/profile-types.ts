@@ -29,8 +29,7 @@ export interface StudentProfileDto {
   email: string;
   roles: AuthRole[];
   organizationIds: string[];
-  /** Always null until avatar upload is integrated. */
-  avatarUrl: null;
+  avatarUrl: string | null;
   /** Derived from fetched progress/certificates when provided; otherwise null fields. */
   learning: StudentProgressOverviewDto | null;
   certificates: StudentCertificateDto[];

@@ -20,6 +20,7 @@ import { LiveSessionModule } from './modules/live-session/live-session.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { SubmissionModule } from './modules/submission/submission.module';
 
 @Module({
@@ -44,6 +45,7 @@ import { SubmissionModule } from './modules/submission/submission.module';
     NotificationModule,
     CalendarModule,
     PaymentsModule,
+    StorageModule,
   ],
 })
 export class AppModule implements NestModule {

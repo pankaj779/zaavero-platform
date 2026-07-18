@@ -9,6 +9,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  FileUpload,
   Label,
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
   Textarea,
 } from '@graphology/ui';
 import { cn } from '@graphology/utils';
+import { StorageApi } from '../../../lib/api';
 import type { StudentAssignmentDto } from '../../../lib/student';
 import {
   formatTeacherAssignmentDate,
@@ -231,12 +233,18 @@ export function StudentAssignmentCard({
 
 export function StudentAssignmentDetails({
   assignment,
+  organizationId,
   onClose,
   onSubmit,
 }: {
   assignment: StudentAssignmentDto;
+  organizationId: string;
   onClose: () => void;
-  onSubmit: (assignment: StudentAssignmentDto, content: string) => Promise<void>;
+  onSubmit: (
+    assignment: StudentAssignmentDto,
+    content: string,
+    attachments: string[],
+  ) => Promise<void>;
 }): React.JSX.Element {
   const copy = studentAssignmentsPageCopy;
   const contentId = useId();
@@ -246,6 +254,7 @@ export function StudentAssignmentDetails({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastAttempt, setLastAttempt] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   useEffect(() => {
     setContent(assignment.submission?.content ?? '');
@@ -260,8 +269,22 @@ export function StudentAssignmentDetails({
     setSaved(false);
     setLastAttempt(nextContent);
     try {
-      await onSubmit(assignment, nextContent);
+      const assets = await Promise.all(
+        files.map((file) =>
+          StorageApi.upload(file, {
+            organizationId,
+            entityType: 'SUBMISSION_ATTACHMENT',
+            entityId: assignment.submission?.id ?? assignment.id,
+          }),
+        ),
+      );
+      await onSubmit(
+        assignment,
+        nextContent,
+        assets.map((asset) => asset.id),
+      );
       setSaved(true);
+      setFiles([]);
     } catch {
       setError('Could not save your submission. You can retry.');
     } finally {
@@ -331,10 +354,15 @@ export function StudentAssignmentDetails({
             {assignment.instructions?.trim() ?? 'No instructions provided.'}
           </p>
         </section>
-        <p className="text-caption text-muted-foreground">{copy.attachmentsDisabled}</p>
-        <Button type="button" variant="outline" size="sm" disabled>
-          Attach files
-        </Button>
+        <FileUpload
+          multiple
+          disabled={!editable || saving}
+          label="Attach files"
+          helperText={files.length ? `${String(files.length)} file(s) selected` : undefined}
+          onFilesChange={(selected) => {
+            setFiles(Array.from(selected ?? []));
+          }}
+        />
       </div>
 
       <section className="space-y-3" aria-label={copy.contentLabel}>

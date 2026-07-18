@@ -19,6 +19,7 @@ const assignmentSelect = {
   batchId: true,
   title: true,
   instructions: true,
+  attachmentUrls: true,
   status: true,
   maxScore: true,
   dueAt: true,
@@ -188,6 +189,7 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
         batchId: data.batchId ?? null,
         title: data.title,
         instructions: data.instructions ?? null,
+        attachmentUrls: data.attachmentUrls ?? [],
         status: data.status,
         maxScore: data.maxScore ?? null,
         dueAt: data.dueAt ?? null,
@@ -202,6 +204,7 @@ export class PrismaAssignmentRepository implements AssignmentRepository {
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.instructions !== undefined ? { instructions: data.instructions } : {}),
+        ...(data.attachmentUrls !== undefined ? { attachmentUrls: data.attachmentUrls } : {}),
         ...(data.status !== undefined ? { status: data.status } : {}),
         ...(data.maxScore !== undefined ? { maxScore: data.maxScore } : {}),
         ...(data.dueAt !== undefined ? { dueAt: data.dueAt } : {}),

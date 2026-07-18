@@ -153,6 +153,7 @@ export interface InvoiceDto {
   lines: OrderSummaryLineDto[];
   billedToName: string | null;
   billedToEmail: string | null;
+  pdfUrl: string | null;
   issuedAt: string | null;
   paidAt: string | null;
   createdAt: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useAuth } from '../../../lib/auth';
+import { useAuth, useOrganization } from '../../../lib/auth';
 import {
   buildTeacherProfileFromAuth,
   type TeacherProfileDto,
@@ -26,6 +26,7 @@ export function TeacherProfileView({
   viewState?: TeacherProfileViewState;
 } = {}): React.JSX.Element {
   const { user, loading, isAuthenticated } = useAuth();
+  const { primaryOrganizationId } = useOrganization();
   const profile = useMemo(() => {
     if (profileOverride !== undefined) {
       return profileOverride;
@@ -68,7 +69,7 @@ export function TeacherProfileView({
     <div className="space-y-8">
       <TeacherProfileHeader />
       <div className="grid gap-6 laptop:grid-cols-[18rem_minmax(0,1fr)] laptop:items-start">
-        <TeacherProfileSummary profile={profile} />
+        <TeacherProfileSummary profile={profile} organizationId={primaryOrganizationId ?? ''} />
         <div className="min-w-0 space-y-4">
           <PersonalInformation profile={profile} />
           <ProfessionalInformation profile={profile} />
