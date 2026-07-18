@@ -3,21 +3,32 @@
 import { Button } from '@graphology/ui';
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
-import { icons, ROUTES, TEACHER_ROUTES } from '../../../lib/constants';
-import { teacherProfilePlaceholder } from '../../../lib/teacher';
+import { LogoutButton } from '../../auth/logout-button';
+import { icons, TEACHER_ROUTES } from '../../../lib/constants';
+import { useAuth } from '../../../lib/auth';
 
 const UserIcon = icons.user;
 
 export function TeacherProfileMenu(): React.JSX.Element {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const firstItemRef = useRef<HTMLAnchorElement>(null);
   const menuId = useId();
-  const profile = teacherProfilePlaceholder;
+  const firstName = user?.firstName.trim() ?? '';
+  const lastName = user?.lastName.trim() ?? '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  const name = fullName.length > 0 ? fullName : 'Teacher';
+  const userInitials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const initials = userInitials.length > 0 ? userInitials : name.slice(0, 2).toUpperCase();
+  const email = user?.email ?? '';
 
   useEffect(() => {
     if (!open) {
       return;
     }
+    firstItemRef.current?.focus();
     const onPointerDown = (event: MouseEvent): void => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false);
@@ -26,6 +37,7 @@ export function TeacherProfileMenu(): React.JSX.Element {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setOpen(false);
+        triggerRef.current?.focus();
       }
     };
     document.addEventListener('mousedown', onPointerDown);
@@ -39,6 +51,7 @@ export function TeacherProfileMenu(): React.JSX.Element {
   return (
     <div className="relative" ref={containerRef}>
       <Button
+        ref={triggerRef}
         type="button"
         variant="ghost"
         size="icon"
@@ -51,7 +64,7 @@ export function TeacherProfileMenu(): React.JSX.Element {
         }}
       >
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted text-caption font-semibold">
-          {profile.initials}
+          {initials}
         </span>
       </Button>
       {open ? (
@@ -65,12 +78,13 @@ export function TeacherProfileMenu(): React.JSX.Element {
               <UserIcon className="h-4 w-4" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{profile.name}</p>
-              <p className="truncate text-caption text-muted-foreground">{profile.email}</p>
+              <p className="truncate text-sm font-medium text-foreground">{name}</p>
+              <p className="truncate text-caption text-muted-foreground">{email}</p>
             </div>
           </div>
           <div className="my-1 h-px bg-border" role="separator" />
           <Link
+            ref={firstItemRef}
             href={TEACHER_ROUTES.profile}
             role="menuitem"
             className="block rounded-md px-3 py-2 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -90,16 +104,9 @@ export function TeacherProfileMenu(): React.JSX.Element {
           >
             Settings
           </Link>
-          <Link
-            href={ROUTES.home}
-            role="menuitem"
-            className="block rounded-md px-3 py-2 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={() => {
-              setOpen(false);
-            }}
-          >
+          <LogoutButton className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Logout
-          </Link>
+          </LogoutButton>
         </div>
       ) : null}
     </div>

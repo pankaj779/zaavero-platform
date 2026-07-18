@@ -1,8 +1,5 @@
-import { icons } from '../../../lib/constants';
 import { teacherCalendarPageCopy } from '../../../lib/teacher';
-import { DashboardEmptyState } from '../../dashboard/shared';
-
-const CalendarIcon = icons.calendar;
+import { TeacherModuleEmptyState } from '../shared';
 
 export function CalendarEmptyState({
   variant = 'empty',
@@ -29,11 +26,5 @@ export function CalendarEmptyState({
           ? copy.noSelectionDescription
           : copy.emptyDescription;
 
-  return (
-    <DashboardEmptyState
-      title={title}
-      description={description}
-      illustration={<CalendarIcon className="h-7 w-7" aria-hidden />}
-    />
-  );
+  return <TeacherModuleEmptyState title={title} description={description} icon="calendar" />;
 }

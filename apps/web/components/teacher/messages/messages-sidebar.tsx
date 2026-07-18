@@ -7,6 +7,7 @@ import {
   type TeacherMessageFilter,
 } from '../../../lib/teacher';
 import { MessagesEmptyState } from './messages-empty-state';
+import type { MessagesPortalMode } from './conversation-details-panel';
 
 export function MessagesSidebar({
   conversations,
@@ -16,6 +17,7 @@ export function MessagesSidebar({
   onQueryChange,
   onFilterChange,
   onSelect,
+  portalMode = 'teacher',
 }: {
   conversations: TeacherConversationDto[];
   query: string;
@@ -24,6 +26,7 @@ export function MessagesSidebar({
   onQueryChange: (value: string) => void;
   onFilterChange: (value: TeacherMessageFilter) => void;
   onSelect: (conversationId: string) => void;
+  portalMode?: MessagesPortalMode;
 }): React.JSX.Element {
   return (
     <aside
@@ -32,7 +35,11 @@ export function MessagesSidebar({
     >
       <div className="space-y-3">
         <MessageSearch value={query} onChange={onQueryChange} />
-        <MessageFilters value={filter} onChange={onFilterChange} />
+        <MessageFilters
+          value={filter}
+          onChange={onFilterChange}
+          studentMode={portalMode === 'student'}
+        />
       </div>
       {conversations.length === 0 ? (
         <MessagesEmptyState variant="no-matches" />

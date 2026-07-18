@@ -6,6 +6,7 @@ import {
   type AttendanceSessionDto,
   type TeacherAttendanceViewMode,
 } from '../../../lib/teacher';
+import { teacherCardSurfaceClass } from '../shared';
 import { SessionStatusBadge } from './session-status-badge';
 
 function SessionMetrics({
@@ -143,12 +144,7 @@ export function SessionCard({
 
   if (layout === 'list') {
     return (
-      <Card
-        className={cn(
-          'rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md',
-          selectedRing,
-        )}
-      >
+      <Card className={cn(teacherCardSurfaceClass, selectedRing)}>
         <CardContent className="flex flex-col gap-4 p-5">
           <div className="flex flex-col gap-3 laptop:flex-row laptop:items-start">
             <div className="min-w-0 flex-1 space-y-2">
@@ -168,12 +164,7 @@ export function SessionCard({
   }
 
   return (
-    <Card
-      className={cn(
-        'flex h-full flex-col rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md',
-        selectedRing,
-      )}
-    >
+    <Card className={cn('flex h-full flex-col', teacherCardSurfaceClass, selectedRing)}>
       <CardHeader className="space-y-2 p-5 pb-0">
         <div className="flex flex-wrap items-center gap-2">
           <SessionStatusBadge status={session.status} />

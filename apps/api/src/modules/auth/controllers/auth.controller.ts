@@ -1,6 +1,16 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
+import { CurrentUser } from '../decorators/current-user.decorator';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { LogoutDto } from '../dto/logout.dto';
@@ -9,11 +19,10 @@ import { RegisterDto } from '../dto/register.dto';
 import { ResendVerificationDto } from '../dto/resend-verification.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { VerifyEmailDto } from '../dto/verify-email.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AuthService } from '../services/auth.service';
-import type {
-  LoginResponseData,
-  RefreshResponseData,
-} from '../types/login-response.type';
+import type { AuthenticatedUser } from '../types/authenticated-user.type';
+import type { LoginResponseData, RefreshResponseData } from '../types/login-response.type';
 import type { RegisterResponseData } from '../types/register-response.type';
 
 @ApiTags('Auth')
@@ -27,9 +36,7 @@ export class AuthController {
     summary: 'Register a new user account',
     description: 'Creates a Student in Graphology Academy and sends email verification.',
   })
-  register(
-    @Body() dto: RegisterDto,
-  ): Promise<ControllerSuccessPayload<RegisterResponseData>> {
+  register(@Body() dto: RegisterDto): Promise<ControllerSuccessPayload<RegisterResponseData>> {
     return this.authService.register(dto);
   }
 
@@ -49,9 +56,7 @@ export class AuthController {
     summary: 'Rotate refresh token and issue a new access token',
     description: 'Replay of a revoked refresh token revokes the entire token family.',
   })
-  refresh(
-    @Body() dto: RefreshTokenDto,
-  ): Promise<ControllerSuccessPayload<RefreshResponseData>> {
+  refresh(@Body() dto: RefreshTokenDto): Promise<ControllerSuccessPayload<RefreshResponseData>> {
     return this.authService.refresh(dto);
   }
 
@@ -62,21 +67,39 @@ export class AuthController {
     return this.authService.logout(dto);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Current authenticated user',
+    description: 'Returns roles, permissions, and organization membership for the access token.',
+  })
+  me(@CurrentUser() user: AuthenticatedUser): Promise<
+    ControllerSuccessPayload<
+      AuthenticatedUser & {
+        firstName: string;
+        lastName: string;
+        phone: string | null;
+        emailVerified: boolean;
+        isActive: boolean;
+      }
+    >
+  > {
+    return this.authService.getCurrentUser(user);
+  }
+
   @Get('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email address using a verification token' })
-  verifyEmail(
-    @Query() dto: VerifyEmailDto,
-  ): Promise<ControllerSuccessPayload<{ email: string }>> {
+  verifyEmail(@Query() dto: VerifyEmailDto): Promise<ControllerSuccessPayload<{ email: string }>> {
     return this.authService.verifyEmail(dto);
   }
 
   @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resend email verification link' })
-  resendVerification(
-    @Body() dto: ResendVerificationDto,
-  ): Promise<ControllerSuccessPayload<null>> {
+  resendVerification(@Body() dto: ResendVerificationDto): Promise<ControllerSuccessPayload<null>> {
     return this.authService.resendVerification(dto);
   }
 
@@ -86,9 +109,7 @@ export class AuthController {
     summary: 'Request a password reset email',
     description: 'Always returns the same success message to avoid email enumeration.',
   })
-  forgotPassword(
-    @Body() dto: ForgotPasswordDto,
-  ): Promise<ControllerSuccessPayload<null>> {
+  forgotPassword(@Body() dto: ForgotPasswordDto): Promise<ControllerSuccessPayload<null>> {
     return this.authService.forgotPassword(dto);
   }
 
@@ -98,9 +119,7 @@ export class AuthController {
     summary: 'Reset password using a one-time reset token',
     description: 'Invalidates reset tokens and revokes all refresh sessions for the user.',
   })
-  resetPassword(
-    @Body() dto: ResetPasswordDto,
-  ): Promise<ControllerSuccessPayload<null>> {
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<ControllerSuccessPayload<null>> {
     return this.authService.resetPassword(dto);
   }
 }

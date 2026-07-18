@@ -8,6 +8,7 @@ import {
   ProgressBar,
 } from '@graphology/ui';
 import { cn } from '@graphology/utils';
+import { teacherCardSurfaceClass } from '../shared';
 import {
   formatTeacherBatchDate,
   formatTeacherBatchDateTime,
@@ -28,7 +29,11 @@ function BatchMetrics({
   const metrics = [
     { id: 'students', label: copy.studentsLabel, value: batch.studentsEnrolled },
     { id: 'capacity', label: copy.capacityLabel, value: batch.capacity },
-    { id: 'start-date', label: copy.startDateLabel, value: formatTeacherBatchDate(batch.startDate) },
+    {
+      id: 'start-date',
+      label: copy.startDateLabel,
+      value: formatTeacherBatchDate(batch.startDate),
+    },
     { id: 'end-date', label: copy.endDateLabel, value: formatTeacherBatchDate(batch.endDate) },
   ];
 
@@ -121,7 +126,7 @@ export function BatchCard({
 
   if (layout === 'list') {
     return (
-      <Card className="rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md">
+      <Card className={teacherCardSurfaceClass}>
         <CardContent className="flex flex-col gap-4 p-5">
           <div className="flex flex-col gap-3 laptop:flex-row laptop:items-start laptop:justify-between">
             <div className="min-w-0 space-y-2">
@@ -142,7 +147,7 @@ export function BatchCard({
   }
 
   return (
-    <Card className="flex h-full flex-col rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md">
+    <Card className={cn('flex h-full flex-col', teacherCardSurfaceClass)}>
       <CardHeader className="space-y-3 p-5 pb-0">
         <div className="flex flex-wrap items-center gap-2">
           <BatchStatusBadge status={batch.status} />

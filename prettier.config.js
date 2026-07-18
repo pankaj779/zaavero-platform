@@ -1,3 +1,3 @@
-import prettierConfig from '@graphology/config/prettier';
+import prettierConfig from './packages/config/prettier/index.js';
 
 export default prettierConfig;

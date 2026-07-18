@@ -1,8 +1,5 @@
-import { icons } from '../../../lib/constants';
-import { DashboardEmptyState } from '../../dashboard/shared';
 import { teacherCoursesPageCopy } from '../../../lib/teacher';
-
-const BookIcon = icons.book;
+import { TeacherModuleEmptyState } from '../shared';
 
 export function CoursesEmptyState({
   variant = 'empty',
@@ -14,10 +11,10 @@ export function CoursesEmptyState({
   const isEmpty = variant === 'empty';
 
   return (
-    <DashboardEmptyState
+    <TeacherModuleEmptyState
       title={isEmpty ? copy.emptyTitle : copy.noMatchesTitle}
       description={isEmpty ? copy.emptyDescription : copy.noMatchesDescription}
-      illustration={<BookIcon className="h-7 w-7" aria-hidden />}
+      icon="book"
     />
   );
 }

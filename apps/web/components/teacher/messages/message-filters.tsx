@@ -10,11 +10,22 @@ import {
 export function MessageFilters({
   value,
   onChange,
+  studentMode = false,
 }: {
   value: TeacherMessageFilter;
   onChange: (value: TeacherMessageFilter) => void;
+  studentMode?: boolean;
 }): React.JSX.Element {
   const selectId = useId();
+  const options = studentMode
+    ? ([
+        { value: 'all', label: 'All conversations' },
+        { value: 'unread', label: 'Unread' },
+        { value: 'students', label: 'Direct / mentor' },
+        { value: 'batches', label: 'Course cohorts' },
+        { value: 'announcements', label: 'Support' },
+      ] satisfies { value: TeacherMessageFilter; label: string }[])
+    : teacherMessageFilterOptions;
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
@@ -30,7 +41,7 @@ export function MessageFilters({
           onChange(event.target.value as TeacherMessageFilter);
         }}
       >
-        {teacherMessageFilterOptions.map((option) => (
+        {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>

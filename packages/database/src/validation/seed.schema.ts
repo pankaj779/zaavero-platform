@@ -7,6 +7,20 @@ export const seedAdminEnvSchema = z.object({
   SEED_ADMIN_LAST_NAME: z.string().min(1).default('Administrator'),
 });
 
+export const seedTeacherEnvSchema = z.object({
+  SEED_TEACHER_EMAIL: z.string().email().default('teacher@graphology.local'),
+  SEED_TEACHER_PASSWORD: z.string().min(8).optional(),
+  SEED_TEACHER_FIRST_NAME: z.string().min(1).default('Sample'),
+  SEED_TEACHER_LAST_NAME: z.string().min(1).default('Teacher'),
+});
+
+export const seedStudentEnvSchema = z.object({
+  SEED_STUDENT_EMAIL: z.string().email().default('student@graphology.local'),
+  SEED_STUDENT_PASSWORD: z.string().min(8).optional(),
+  SEED_STUDENT_FIRST_NAME: z.string().min(1).default('Sample'),
+  SEED_STUDENT_LAST_NAME: z.string().min(1).default('Student'),
+});
+
 export const seedRoleSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -38,8 +52,28 @@ export const seedOrganizationSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+export const seedPlanSchema = z.object({
+  tier: z.enum(['FREE', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE']),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  interval: z.enum(['MONTHLY', 'QUARTERLY', 'YEARLY']),
+  amountMinor: z.number().int().nonnegative(),
+  currency: z.string().regex(/^[A-Z]{3}$/, 'Currency must be a 3-letter ISO code'),
+  trialDays: z.number().int().nonnegative(),
+  features: z.object({
+    maxStudents: z.number().int().positive().nullable(),
+    maxTeachers: z.number().int().positive().nullable(),
+    analytics: z.boolean(),
+    prioritySupport: z.boolean(),
+  }),
+  isActive: z.boolean(),
+});
+
 export type SeedAdminEnv = z.infer<typeof seedAdminEnvSchema>;
+export type SeedTeacherEnv = z.infer<typeof seedTeacherEnvSchema>;
+export type SeedStudentEnv = z.infer<typeof seedStudentEnvSchema>;
 export type SeedRole = z.infer<typeof seedRoleSchema>;
 export type SeedPermission = z.infer<typeof seedPermissionSchema>;
 export type SeedSystemSetting = z.infer<typeof seedSystemSettingSchema>;
 export type SeedOrganization = z.infer<typeof seedOrganizationSchema>;
+export type SeedPlan = z.infer<typeof seedPlanSchema>;

@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import '@graphology/ui/globals.css';
 import './globals.css';
 import { ThemeProvider } from '../components/providers/theme-provider';
+import { AuthProvider } from '../lib/auth';
 import { companySettings } from '../lib/config';
 import { buildPageMetadata } from '../lib/seo';
 import { themeConfig } from '../lib/theme';
@@ -32,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang={companySettings.languages[0] ?? 'en'} suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

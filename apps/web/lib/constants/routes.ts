@@ -7,9 +7,9 @@ export const ROUTES = {
   contact: '/#contact',
   privacy: '/#privacy',
   terms: '/#terms',
-  login: '#',
+  login: '/login',
   register: '#',
-  /** Post-login destination for authenticated users */
+  /** Post-login destination for authenticated users (role-aware override in auth-session). */
   dashboard: '/dashboard',
   mentor: '/#mentor',
   journey: '/#journey',
@@ -22,16 +22,23 @@ export const ROUTES = {
 export const DASHBOARD_ROUTES = {
   root: '/dashboard',
   learning: '/dashboard/learning',
+  progress: '/dashboard/progress',
   liveClasses: '/dashboard/live',
   assignments: '/dashboard/assignments',
+  attendance: '/dashboard/attendance',
   certificates: '/dashboard/certificates',
-  notifications: '/dashboard/notifications',
-  calendar: '/dashboard/calendar',
-  messages: '/dashboard/messages',
   payments: '/dashboard/payments',
+  calendar: '/dashboard/calendar',
+  notifications: '/dashboard/notifications',
+  messages: '/dashboard/messages',
   profile: '/dashboard/profile',
   settings: '/dashboard/settings',
 } as const;
+
+/** Printable invoice receipt path. */
+export function getPaymentReceiptPath(invoiceId: string): string {
+  return `${DASHBOARD_ROUTES.payments}/receipts/${encodeURIComponent(invoiceId)}`;
+}
 
 /**
  * Teacher Portal routes.
@@ -45,6 +52,7 @@ export const TEACHER_ROUTES = {
   lessons: '/teacher/lessons',
   liveClasses: '/teacher/live',
   assignments: '/teacher/assignments',
+  submissions: '/teacher/submissions',
   students: '/teacher/students',
   attendance: '/teacher/attendance',
   certificates: '/teacher/certificates',
@@ -52,13 +60,38 @@ export const TEACHER_ROUTES = {
   messages: '/teacher/messages',
   analytics: '/teacher/analytics',
   calendar: '/teacher/calendar',
+  notifications: '/teacher/notifications',
   profile: '/teacher/profile',
   settings: '/teacher/settings',
+} as const;
+
+export const ADMIN_ROUTES = {
+  root: '/admin',
+  dashboard: '/admin/dashboard',
+  users: '/admin/users',
+  teachers: '/admin/teachers',
+  students: '/admin/students',
+  academic: '/admin/academic',
+  courses: '/admin/academic/courses',
+  batches: '/admin/academic/batches',
+  lessons: '/admin/academic/lessons',
+  assignments: '/admin/academic/assignments',
+  attendance: '/admin/academic/attendance',
+  liveClasses: '/admin/academic/live',
+  certificates: '/admin/academic/certificates',
+  organization: '/admin/organization',
+  roles: '/admin/roles',
+  analytics: '/admin/analytics',
+  payments: '/admin/payments',
+  notifications: '/admin/notifications',
+  auditLogs: '/admin/audit-logs',
+  settings: '/admin/settings',
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
 export type DashboardRoute = (typeof DASHBOARD_ROUTES)[keyof typeof DASHBOARD_ROUTES];
 export type TeacherRoute = (typeof TEACHER_ROUTES)[keyof typeof TEACHER_ROUTES];
+export type AdminRoute = (typeof ADMIN_ROUTES)[keyof typeof ADMIN_ROUTES];
 
 /** Where auth should send users after successful login. */
 export const POST_LOGIN_REDIRECT = DASHBOARD_ROUTES.root;

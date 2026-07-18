@@ -1,0 +1,1 @@
+export const LESSON_REPOSITORY = Symbol('LESSON_REPOSITORY');

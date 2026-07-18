@@ -1,11 +1,11 @@
 import { Badge } from '@graphology/ui';
 import {
-  notificationPriorityLabel,
-  type NotificationPriority,
-} from '../../../lib/dashboard';
+  teacherNotificationPriorityLabel,
+  type TeacherNotificationPriority,
+} from '../../../lib/teacher';
 
 const priorityVariant: Record<
-  NotificationPriority,
+  TeacherNotificationPriority,
   'neutral' | 'secondary' | 'warning' | 'danger'
 > = {
   low: 'neutral',
@@ -17,9 +17,9 @@ const priorityVariant: Record<
 export function NotificationPriorityBadge({
   priority,
 }: {
-  priority: NotificationPriority;
+  priority: TeacherNotificationPriority;
 }): React.JSX.Element {
   return (
-    <Badge variant={priorityVariant[priority]}>{notificationPriorityLabel[priority]}</Badge>
+    <Badge variant={priorityVariant[priority]}>{teacherNotificationPriorityLabel[priority]}</Badge>
   );
 }

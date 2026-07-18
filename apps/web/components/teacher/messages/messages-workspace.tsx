@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   filterTeacherConversations,
   getTeacherConversationById,
@@ -8,7 +8,7 @@ import {
   type TeacherMessageFilter,
 } from '../../../lib/teacher';
 import { ComposePanel } from './compose-panel';
-import { ConversationDetailsPanel } from './conversation-details-panel';
+import { ConversationDetailsPanel, type MessagesPortalMode } from './conversation-details-panel';
 import { ConversationHeader } from './conversation-header';
 import { MessageThread } from './message-thread';
 import { MessagesEmptyState } from './messages-empty-state';
@@ -17,20 +17,54 @@ import { MessagesSidebar } from './messages-sidebar';
 /** Client boundary for search, filters, selection, and compose state. */
 export function MessagesWorkspace({
   conversations,
+  query: controlledQuery,
+  filter: controlledFilter,
+  onQueryChange,
+  onFilterChange,
+  onSendMessage,
+  serverFiltered = false,
+  portalMode = 'teacher',
 }: {
   conversations: TeacherConversationDto[];
+  query?: string;
+  filter?: TeacherMessageFilter;
+  onQueryChange?: (value: string) => void;
+  onFilterChange?: (value: TeacherMessageFilter) => void;
+  onSendMessage?: (conversationId: string, body: string) => Promise<void>;
+  /** Parent already applied backend and client completion filters. */
+  serverFiltered?: boolean;
+  portalMode?: MessagesPortalMode;
 }): React.JSX.Element {
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<TeacherMessageFilter>('all');
+  const [localQuery, setLocalQuery] = useState('');
+  const [localFilter, setLocalFilter] = useState<TeacherMessageFilter>('all');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
     conversations[0]?.id ?? null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const query = controlledQuery ?? localQuery;
+  const filter = controlledFilter ?? localFilter;
 
-  const visibleConversations = useMemo(
-    () => filterTeacherConversations(conversations, query, filter),
-    [conversations, query, filter],
-  );
+  const visibleConversations = useMemo(() => {
+    if (serverFiltered) {
+      return conversations;
+    }
+    return filterTeacherConversations(conversations, query, filter);
+  }, [conversations, filter, query, serverFiltered]);
+
+  useEffect(() => {
+    if (visibleConversations.length === 0) {
+      setSelectedConversationId(null);
+      setDetailsOpen(false);
+      return;
+    }
+    if (
+      selectedConversationId === null ||
+      !visibleConversations.some((conversation) => conversation.id === selectedConversationId)
+    ) {
+      setSelectedConversationId(visibleConversations[0]?.id ?? null);
+      setDetailsOpen(false);
+    }
+  }, [selectedConversationId, visibleConversations]);
 
   const selectedConversation = useMemo(
     () =>
@@ -47,8 +81,9 @@ export function MessagesWorkspace({
         query={query}
         filter={filter}
         selectedConversationId={selectedConversationId}
-        onQueryChange={setQuery}
-        onFilterChange={setFilter}
+        onQueryChange={onQueryChange ?? setLocalQuery}
+        onFilterChange={onFilterChange ?? setLocalFilter}
+        portalMode={portalMode}
         onSelect={(conversationId) => {
           setSelectedConversationId(conversationId);
           setDetailsOpen(false);
@@ -65,7 +100,14 @@ export function MessagesWorkspace({
               }}
             />
             <MessageThread conversation={selectedConversation} />
-            <ComposePanel />
+            <ComposePanel
+              onSend={(body) => {
+                if (!onSendMessage) {
+                  return Promise.reject(new Error('Messaging is unavailable.'));
+                }
+                return onSendMessage(selectedConversation.id, body);
+              }}
+            />
           </>
         ) : (
           <MessagesEmptyState variant="no-selection" />
@@ -76,6 +118,7 @@ export function MessagesWorkspace({
         {selectedConversation && detailsOpen ? (
           <ConversationDetailsPanel
             conversation={selectedConversation}
+            portalMode={portalMode}
             onClose={() => {
               setDetailsOpen(false);
             }}

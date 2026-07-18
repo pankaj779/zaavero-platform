@@ -31,6 +31,18 @@ describe('validateEnv', () => {
     expect(config.RAZORPAY_SECRET).toBe('rzp_secret_alias');
   });
 
+  it('allows Razorpay credentials to remain unset locally', () => {
+    const config = validateEnv({
+      ...validEnv,
+      RAZORPAY_KEY_ID: undefined,
+      RAZORPAY_SECRET: undefined,
+    });
+
+    expect(config.RAZORPAY_KEY_ID).toBeUndefined();
+    expect(config.RAZORPAY_SECRET).toBeUndefined();
+    expect(config.RAZORPAY_API_URL).toBe('https://api.razorpay.com/v1');
+  });
+
   it('accepts JWT_ACCESS_EXPIRATION as an alias for JWT_EXPIRES_IN', () => {
     const config = validateEnv({
       ...validEnv,

@@ -1,0 +1,10 @@
+export { CalendarEventNotFoundException } from './calendar-event-not-found.exception';
+export { OrganizationAccessDeniedException } from './organization-access-denied.exception';
+export { TeacherCalendarMutationForbiddenException } from './teacher-calendar-mutation-forbidden.exception';
+export { InvalidCalendarEventException } from './invalid-calendar-event.exception';
+export { CourseNotFoundException } from './course-not-found.exception';
+export { BatchNotFoundException } from './batch-not-found.exception';
+export { LiveSessionNotFoundException } from './live-session-not-found.exception';
+export { AssignmentNotFoundException } from './assignment-not-found.exception';
+export { CalendarEventForbiddenException } from './calendar-event-forbidden.exception';
+export { StudentProfileNotFoundException } from './student-profile-not-found.exception';

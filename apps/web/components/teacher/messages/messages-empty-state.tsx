@@ -1,8 +1,5 @@
-import { icons } from '../../../lib/constants';
 import { teacherMessagesPageCopy } from '../../../lib/teacher';
-import { DashboardEmptyState } from '../../dashboard/shared';
-
-const MessageIcon = icons.message;
+import { TeacherModuleEmptyState } from '../shared';
 
 export function MessagesEmptyState({
   variant = 'empty',
@@ -25,11 +22,5 @@ export function MessagesEmptyState({
         ? copy.noSelectionDescription
         : copy.emptyDescription;
 
-  return (
-    <DashboardEmptyState
-      title={title}
-      description={description}
-      illustration={<MessageIcon className="h-7 w-7" aria-hidden />}
-    />
-  );
+  return <TeacherModuleEmptyState title={title} description={description} icon="message" />;
 }

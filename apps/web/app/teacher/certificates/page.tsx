@@ -1,9 +1,5 @@
-import { TeacherComingSoonPage } from '../../../components/teacher/shared';
-import { TEACHER_ROUTES } from '../../../lib/constants';
-import { getTeacherPageMeta } from '../../../lib/teacher';
+import { CertificatesView } from '../../../components/teacher/certificates';
 
-const meta = getTeacherPageMeta(TEACHER_ROUTES.certificates);
-
-export default function Page(): React.JSX.Element {
-  return <TeacherComingSoonPage title={meta.title} description={meta.description} />;
+export default function TeacherCertificatesPage(): React.JSX.Element {
+  return <CertificatesView />;
 }

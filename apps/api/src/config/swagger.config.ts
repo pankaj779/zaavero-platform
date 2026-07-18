@@ -44,6 +44,77 @@ export const SWAGGER_TAGS = [
     description: 'Registration, login, tokens, email verification, password reset',
   },
   {
+    name: 'Courses',
+    description: 'Organization-scoped course management (CRUD, list filters, soft delete)',
+  },
+  {
+    name: 'Batches',
+    description: 'Organization-scoped batch management (CRUD, list filters, soft delete)',
+  },
+  {
+    name: 'Enrollments',
+    description:
+      'Organization-scoped enrollment management (CRUD, list filters, soft delete via DROPPED)',
+  },
+  {
+    name: 'Lessons',
+    description: 'Course module lessons (CRUD, ordering, content types, soft delete)',
+  },
+  {
+    name: 'Lesson Progress',
+    description: 'Per-student lesson progress, resume position, and completion',
+  },
+  {
+    name: 'Live Sessions',
+    description: 'Batch live sessions (CRUD, meeting provider, schedule, soft delete)',
+  },
+  {
+    name: 'Attendances',
+    description: 'Live session attendance marking and updates',
+  },
+  {
+    name: 'Assignments',
+    description: 'Course/batch assignments (CRUD, due dates, soft delete)',
+  },
+  {
+    name: 'Submissions',
+    description: 'Assignment submissions, grading, and status transitions',
+  },
+  {
+    name: 'Certificates',
+    description: 'Certificate issuance, verification lookup, and revocation',
+  },
+  {
+    name: 'Notifications',
+    description: 'In-app notifications with read/unread state',
+  },
+  {
+    name: 'Conversations',
+    description: 'Messaging conversations and participants',
+  },
+  {
+    name: 'Messages',
+    description: 'Conversation messages and soft delete',
+  },
+  {
+    name: 'Calendar Events',
+    description: 'Standalone and LMS-derived calendar events',
+  },
+  {
+    name: 'Payments',
+    description:
+      'Checkout configuration, catalog, orders, verification, history, invoices, subscription',
+  },
+  {
+    name: 'Payments Admin',
+    description:
+      'Admin payment operations: overview, plans, transactions, invoices, refunds, subscriptions, coupons, retries',
+  },
+  {
+    name: 'Payment Webhooks',
+    description: 'Public provider webhooks authenticated via HMAC signatures',
+  },
+  {
     name: 'RBAC Test',
     description: 'Temporary protected routes for authorization verification (remove later)',
   },

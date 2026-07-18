@@ -25,17 +25,36 @@ model User {
   createdById   String?   @map("created_by_id") @db.Uuid
   updatedById   String?   @map("updated_by_id") @db.Uuid
 
-  createdBy     User?  @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy     User?  @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
-  createdUsers  User[] @relation("UserCreatedBy")
-  updatedUsers  User[] @relation("UserUpdatedBy")
+  createdBy    User?  @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?  @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdUsers User[] @relation("UserCreatedBy")
+  updatedUsers User[] @relation("UserUpdatedBy")
 
-  userRoles             UserRole[]
-  refreshTokens         RefreshToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  passwordResetTokens   PasswordResetToken[]
-  auditLogs             AuditLog[]
-  organizationMembers   OrganizationMember[]
+  userRoles                UserRole[]
+  refreshTokens            RefreshToken[]
+  emailVerificationTokens  EmailVerificationToken[]
+  passwordResetTokens      PasswordResetToken[]
+  auditLogs                AuditLog[]
+  organizationMembers      OrganizationMember[]
+  teacherProfiles          TeacherProfile[]
+  studentProfiles          StudentProfile[]
+  conversationParticipants ConversationParticipant[]
+  sentMessages             Message[]
+  notifications            Notification[]
+  announcements            Announcement[]
+  paymentOrders            Order[]                   @relation("OrderCustomer")
+  createdPaymentOrders     Order[]                   @relation("OrderCreatedBy")
+  payments                 Payment[]                 @relation("PaymentCustomer")
+  plansCreated             Plan[]                    @relation("PlanCreatedBy")
+  couponsCreated           Coupon[]                  @relation("CouponCreatedBy")
+  subscriptionsCreated     Subscription[]            @relation("SubscriptionCreatedBy")
+  subscriptionsCancelled   Subscription[]            @relation("SubscriptionCancelledBy")
+  refundsRequested         Refund[]                  @relation("RefundRequestedBy")
+  invoices                 Invoice[]                 @relation("InvoiceCustomer")
+  invoicesCreated          Invoice[]                 @relation("InvoiceCreatedBy")
+  invoicesVoided           Invoice[]                 @relation("InvoiceVoidedBy")
+  paymentMethods           PaymentMethod[]
+  billingAddresses         BillingAddress[]
 
   @@index([email])
   @@index([deletedAt])
@@ -69,7 +88,37 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  members OrganizationMember[]
+  members                  OrganizationMember[]
+  teacherProfiles          TeacherProfile[]
+  studentProfiles          StudentProfile[]
+  courses                  Course[]
+  courseModules            CourseModule[]
+  batches                  Batch[]
+  enrollments              Enrollment[]
+  lessons                  Lesson[]
+  lessonProgress           LessonProgress[]
+  liveSessions             LiveSession[]
+  attendances              Attendance[]
+  assignments              Assignment[]
+  assignmentSubmissions    AssignmentSubmission[]
+  certificateTemplates     CertificateTemplate[]
+  certificates             Certificate[]
+  conversations            Conversation[]
+  conversationParticipants ConversationParticipant[]
+  messages                 Message[]
+  notifications            Notification[]
+  announcements            Announcement[]
+  calendarEvents           CalendarEvent[]
+  paymentOrders            Order[]
+  payments                 Payment[]
+  invoices                 Invoice[]
+  subscriptions            Subscription[]
+  plans                    Plan[]
+  coupons                  Coupon[]
+  refunds                  Refund[]
+  paymentEvents            PaymentEvent[]
+  paymentMethods           PaymentMethod[]
+  billingAddresses         BillingAddress[]
 
   @@index([slug])
   @@index([isActive])
@@ -163,8 +212,8 @@ model RefreshToken {
   createdAt         DateTime  @default(now()) @map("created_at")
   replacedByTokenId String?   @map("replaced_by_token_id") @db.Uuid
 
-  user       User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  replacedBy RefreshToken? @relation("RefreshTokenReplacement", fields: [replacedByTokenId], references: [id], onDelete: SetNull)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  replacedBy RefreshToken?  @relation("RefreshTokenReplacement", fields: [replacedByTokenId], references: [id], onDelete: SetNull)
   replaces   RefreshToken[] @relation("RefreshTokenReplacement")
 
   @@index([userId])
@@ -222,11 +271,1241 @@ model AuditLog {
 }
 
 model SystemSetting {
-  id          String @id @default(uuid(7)) @db.Uuid
-  key         String @unique
+  id          String  @id @default(uuid(7)) @db.Uuid
+  key         String  @unique
   value       String
   description String?
 
   @@index([key])
   @@map("system_settings")
+}
+
+// ---------------------------------------------------------------------------
+// LMS Phase 1 — profiles, catalog, batches, enrollments (Sprint 06.15)
+// Course-agnostic by design: no program-specific columns or values.
+// Every LMS row carries organization_id for tenant-scoped queries at scale.
+// ---------------------------------------------------------------------------
+
+enum CourseDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+
+  @@map("course_difficulty")
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("course_status")
+}
+
+enum BatchStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+
+  @@map("batch_status")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  SUSPENDED
+
+  @@map("enrollment_status")
+}
+
+/// Professional teaching identity — one per user per organization.
+model TeacherProfile {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  bio             String?
+  qualifications  String[]  @default([])
+  specializations String[]  @default([])
+  experienceYears Int       @default(0) @map("experience_years")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  courses           Course[]
+  batches           Batch[]
+  gradedSubmissions AssignmentSubmission[]
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@map("teacher_profiles")
+}
+
+/// Learner identity — one per user per organization.
+model StudentProfile {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  enrollments    Enrollment[]
+  lessonProgress LessonProgress[]
+  attendances    Attendance[]
+  submissions    AssignmentSubmission[]
+  certificates   Certificate[]
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@map("student_profiles")
+}
+
+/// Generic program container — never tied to a specific subject.
+model Course {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  teacherId      String           @map("teacher_id") @db.Uuid
+  title          String
+  slug           String
+  description    String?
+  difficulty     CourseDifficulty @default(BEGINNER)
+  status         CourseStatus     @default(DRAFT)
+  language       String           @default("en")
+  priceMinor     Int              @default(0) @map("price_minor")
+  currency       String           @default("INR") @db.Char(3)
+  isPurchasable  Boolean          @default(false) @map("is_purchasable")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  deletedAt      DateTime?        @map("deleted_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  teacher      TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  modules              CourseModule[]
+  batches              Batch[]
+  enrollments          Enrollment[]
+  assignments          Assignment[]
+  certificateTemplates CertificateTemplate[]
+  certificates         Certificate[]
+  announcements        Announcement[]
+  calendarEvents       CalendarEvent[]
+  paymentOrders        Order[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status])
+  @@index([organizationId, isPurchasable])
+  @@index([teacherId])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@map("courses")
+}
+
+/// Curriculum section within a course; ordered lessons hang off this node.
+model CourseModule {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  courseId       String    @map("course_id") @db.Uuid
+  title          String
+  description    String?
+  displayOrder   Int       @default(0) @map("display_order")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  lessons Lesson[]
+
+  @@index([courseId, displayOrder])
+  @@index([organizationId])
+  @@index([deletedAt])
+  @@map("course_modules")
+}
+
+/// Teaching unit: a scheduled cohort of a course led by a teacher.
+model Batch {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  courseId       String      @map("course_id") @db.Uuid
+  teacherId      String      @map("teacher_id") @db.Uuid
+  name           String
+  status         BatchStatus @default(UPCOMING)
+  startDate      DateTime    @map("start_date")
+  endDate        DateTime?   @map("end_date")
+  maxStudents    Int?        @map("max_students")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deletedAt      DateTime?   @map("deleted_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  teacher      TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  enrollments    Enrollment[]
+  liveSessions   LiveSession[]
+  assignments    Assignment[]
+  certificates   Certificate[]
+  announcements  Announcement[]
+  calendarEvents CalendarEvent[]
+  paymentOrders  Order[]
+
+  @@unique([courseId, name])
+  @@index([organizationId, status])
+  @@index([courseId])
+  @@index([teacherId])
+  @@index([startDate])
+  @@index([deletedAt])
+  @@map("batches")
+}
+
+/// Links a student to a batch (and its course). One enrollment per student per batch.
+model Enrollment {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  courseId       String           @map("course_id") @db.Uuid
+  batchId        String           @map("batch_id") @db.Uuid
+  studentId      String           @map("student_id") @db.Uuid
+  status         EnrollmentStatus @default(ACTIVE)
+  enrolledAt     DateTime         @default(now()) @map("enrolled_at")
+  completedAt    DateTime?        @map("completed_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  batch        Batch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([batchId, studentId])
+  @@index([organizationId, status])
+  @@index([courseId])
+  @@index([studentId])
+  @@index([enrolledAt])
+  @@map("enrollments")
+}
+
+// ---------------------------------------------------------------------------
+// LMS Phase 2 — learning delivery: lessons, progress, live, attendance (06.16)
+// Attendance is session-scoped (not batch+date). Progress is student-scoped.
+// ---------------------------------------------------------------------------
+
+enum LessonContentType {
+  VIDEO
+  PDF
+  READING
+  EXERCISE
+  QUIZ
+  ASSIGNMENT
+  LIVE
+  AI_TUTOR
+
+  @@map("lesson_content_type")
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+
+  @@map("lesson_progress_status")
+}
+
+enum LiveSessionStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+
+  @@map("live_session_status")
+}
+
+enum MeetingProvider {
+  NONE
+  ZOOM
+  GOOGLE_MEET
+  CUSTOM
+
+  @@map("meeting_provider")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+
+  @@map("attendance_status")
+}
+
+/// Atomic learning unit inside a module. contentType future-proofs player kinds.
+model Lesson {
+  id              String            @id @default(uuid(7)) @db.Uuid
+  organizationId  String            @map("organization_id") @db.Uuid
+  moduleId        String            @map("module_id") @db.Uuid
+  title           String
+  description     String?
+  contentType     LessonContentType @default(VIDEO) @map("content_type")
+  contentUrl      String?           @map("content_url")
+  durationSeconds Int?              @map("duration_seconds")
+  displayOrder    Int               @default(0) @map("display_order")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  module       CourseModule @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+
+  progress LessonProgress[]
+
+  @@index([moduleId, displayOrder])
+  @@index([organizationId])
+  @@index([contentType])
+  @@index([deletedAt])
+  @@map("lessons")
+}
+
+/// Per-student completion state for a lesson. Mutable ledger — no soft delete.
+model LessonProgress {
+  id                  String               @id @default(uuid(7)) @db.Uuid
+  organizationId      String               @map("organization_id") @db.Uuid
+  lessonId            String               @map("lesson_id") @db.Uuid
+  studentId           String               @map("student_id") @db.Uuid
+  status              LessonProgressStatus @default(NOT_STARTED)
+  progressPercent     Int                  @default(0) @map("progress_percent")
+  lastPositionSeconds Int?                 @map("last_position_seconds")
+  completedAt         DateTime?            @map("completed_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  lesson       Lesson         @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([lessonId, studentId])
+  @@index([organizationId, status])
+  @@index([studentId])
+  @@index([lessonId])
+  @@index([completedAt])
+  @@map("lesson_progress")
+}
+
+/// One scheduled (or live) class occurrence for a batch. Supports Zoom / Meet / custom.
+model LiveSession {
+  id              String            @id @default(uuid(7)) @db.Uuid
+  organizationId  String            @map("organization_id") @db.Uuid
+  batchId         String            @map("batch_id") @db.Uuid
+  title           String
+  description     String?
+  status          LiveSessionStatus @default(SCHEDULED)
+  meetingProvider MeetingProvider   @default(NONE) @map("meeting_provider")
+  meetingUrl      String?           @map("meeting_url")
+  recordingUrl    String?           @map("recording_url")
+  startsAt        DateTime          @map("starts_at")
+  endsAt          DateTime?         @map("ends_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  batch        Batch        @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  attendances    Attendance[]
+  calendarEvents CalendarEvent[]
+
+  @@index([batchId, startsAt])
+  @@index([organizationId, status])
+  @@index([startsAt])
+  @@index([deletedAt])
+  @@map("live_sessions")
+}
+
+/// Roll-call row for one student in one live session. Source of truth for attendance.
+model Attendance {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  liveSessionId  String           @map("live_session_id") @db.Uuid
+  studentId      String           @map("student_id") @db.Uuid
+  status         AttendanceStatus @default(ABSENT)
+  markedAt       DateTime?        @map("marked_at")
+  notes          String?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  liveSession  LiveSession    @relation(fields: [liveSessionId], references: [id], onDelete: Restrict)
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([liveSessionId, studentId])
+  @@index([organizationId, status])
+  @@index([studentId])
+  @@index([liveSessionId])
+  @@index([markedAt])
+  @@map("attendances")
+}
+
+// ---------------------------------------------------------------------------
+// LMS Phase 3 — assessment, certificates, communication, announcements,
+// calendar (Sprint 06.17). Final schema layer; APIs come in later sprints.
+// ---------------------------------------------------------------------------
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+
+  @@map("assignment_status")
+}
+
+enum SubmissionStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  RETURNED
+  LATE
+
+  @@map("submission_status")
+}
+
+enum CertificateStatus {
+  ELIGIBLE
+  PENDING
+  ISSUED
+  REVOKED
+
+  @@map("certificate_status")
+}
+
+enum ConversationType {
+  DIRECT
+  BATCH
+  SUPPORT
+
+  @@map("conversation_type")
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+
+  @@map("notification_channel")
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+
+  @@map("announcement_status")
+}
+
+enum CalendarProvider {
+  NONE
+  GOOGLE
+  OUTLOOK
+
+  @@map("calendar_provider")
+}
+
+/// Graded work item scoped to a course; optional batch for cohort-specific work.
+model Assignment {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  courseId       String           @map("course_id") @db.Uuid
+  batchId        String?          @map("batch_id") @db.Uuid
+  title          String
+  instructions   String?
+  status         AssignmentStatus @default(DRAFT)
+  maxScore       Int?             @map("max_score")
+  dueAt          DateTime?        @map("due_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  deletedAt      DateTime?        @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  batch        Batch?       @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  submissions    AssignmentSubmission[]
+  calendarEvents CalendarEvent[]
+
+  @@index([organizationId, status])
+  @@index([courseId])
+  @@index([batchId])
+  @@index([dueAt])
+  @@index([deletedAt])
+  @@map("assignments")
+}
+
+/// One submission per student per assignment; grading captured in place.
+model AssignmentSubmission {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  assignmentId   String           @map("assignment_id") @db.Uuid
+  studentId      String           @map("student_id") @db.Uuid
+  status         SubmissionStatus @default(PENDING)
+  content        String?
+  attachments    String[]         @default([])
+  score          Int?
+  feedback       String?
+  submittedAt    DateTime?        @map("submitted_at")
+  gradedAt       DateTime?        @map("graded_at")
+  gradedById     String?          @map("graded_by_id") @db.Uuid
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assignment   Assignment      @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  student      StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  gradedBy     TeacherProfile? @relation(fields: [gradedById], references: [id], onDelete: Restrict)
+
+  @@unique([assignmentId, studentId])
+  @@index([organizationId, status])
+  @@index([studentId])
+  @@index([assignmentId])
+  @@index([submittedAt])
+  @@map("assignment_submissions")
+}
+
+/// Reusable certificate design; courseId null means org-wide default template.
+model CertificateTemplate {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  courseId       String?   @map("course_id") @db.Uuid
+  name           String
+  description    String?
+  design         Json?
+  isDefault      Boolean   @default(false) @map("is_default")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  certificates Certificate[]
+
+  @@index([organizationId])
+  @@index([courseId])
+  @@index([deletedAt])
+  @@map("certificate_templates")
+}
+
+/// Issuance ledger. Number and verification code support PDF + QR verification.
+model Certificate {
+  id                String            @id @default(uuid(7)) @db.Uuid
+  organizationId    String            @map("organization_id") @db.Uuid
+  studentId         String            @map("student_id") @db.Uuid
+  courseId          String            @map("course_id") @db.Uuid
+  batchId           String?           @map("batch_id") @db.Uuid
+  templateId        String?           @map("template_id") @db.Uuid
+  status            CertificateStatus @default(PENDING)
+  certificateNumber String            @unique @map("certificate_number")
+  verificationCode  String            @unique @map("verification_code")
+  pdfUrl            String?           @map("pdf_url")
+  issuedAt          DateTime?         @map("issued_at")
+  revokedAt         DateTime?         @map("revoked_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  student      StudentProfile       @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  batch        Batch?               @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  template     CertificateTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, status])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([issuedAt])
+  @@map("certificates")
+}
+
+/// Message thread. Type distinguishes direct, batch-wide, and support threads.
+model Conversation {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  type           ConversationType @default(DIRECT)
+  title          String?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([organizationId, type])
+  @@index([updatedAt])
+  @@map("conversations")
+}
+
+/// Membership + read cursor for a user within a conversation.
+model ConversationParticipant {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  joinedAt       DateTime  @default(now()) @map("joined_at")
+  lastReadAt     DateTime? @map("last_read_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("conversation_participants")
+}
+
+/// Single message; attachments hold file URLs for future upload support.
+model Message {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  body           String
+  attachments    String[]  @default([])
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([organizationId])
+  @@map("messages")
+}
+
+/// Per-user, per-channel notification row. Type is a domain string, data is payload.
+model Notification {
+  id             String              @id @default(uuid(7)) @db.Uuid
+  organizationId String              @map("organization_id") @db.Uuid
+  userId         String              @map("user_id") @db.Uuid
+  channel        NotificationChannel @default(IN_APP)
+  type           String
+  title          String
+  body           String?
+  data           Json?
+  readAt         DateTime?           @map("read_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, readAt, createdAt])
+  @@index([organizationId])
+  @@index([type])
+  @@map("notifications")
+}
+
+/// One-to-many broadcast from a teacher/admin, optionally scoped to course/batch.
+model Announcement {
+  id             String             @id @default(uuid(7)) @db.Uuid
+  organizationId String             @map("organization_id") @db.Uuid
+  authorId       String             @map("author_id") @db.Uuid
+  courseId       String?            @map("course_id") @db.Uuid
+  batchId        String?            @map("batch_id") @db.Uuid
+  title          String
+  body           String
+  status         AnnouncementStatus @default(DRAFT)
+  publishedAt    DateTime?          @map("published_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  batch        Batch?       @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, publishedAt])
+  @@index([courseId])
+  @@index([batchId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("announcements")
+}
+
+/// First-class calendar entry; optional refs tie it to LMS sources, external
+/// provider fields support Google/Outlook sync.
+model CalendarEvent {
+  id               String           @id @default(uuid(7)) @db.Uuid
+  organizationId   String           @map("organization_id") @db.Uuid
+  courseId         String?          @map("course_id") @db.Uuid
+  batchId          String?          @map("batch_id") @db.Uuid
+  liveSessionId    String?          @map("live_session_id") @db.Uuid
+  assignmentId     String?          @map("assignment_id") @db.Uuid
+  title            String
+  description      String?
+  startsAt         DateTime         @map("starts_at")
+  endsAt           DateTime?        @map("ends_at")
+  allDay           Boolean          @default(false) @map("all_day")
+  externalProvider CalendarProvider @default(NONE) @map("external_provider")
+  externalEventId  String?          @map("external_event_id")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  deletedAt        DateTime?        @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  batch        Batch?       @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  liveSession  LiveSession? @relation(fields: [liveSessionId], references: [id], onDelete: Restrict)
+  assignment   Assignment?  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, startsAt])
+  @@index([courseId])
+  @@index([batchId])
+  @@index([liveSessionId])
+  @@index([assignmentId])
+  @@index([deletedAt])
+  @@map("calendar_events")
+}
+
+// ---------------------------------------------------------------------------
+// Payments — provider-neutral, tenant-scoped ledger for course purchases and
+// organization subscriptions. Monetary values are integer minor units.
+// ---------------------------------------------------------------------------
+
+enum PaymentProvider {
+  RAZORPAY
+  STRIPE
+  MANUAL
+
+  @@map("payment_provider")
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  CANCELLED
+  PARTIALLY_REFUNDED
+  REFUNDED
+
+  @@map("payment_status")
+}
+
+enum OrderStatus {
+  DRAFT
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  EXPIRED
+  PARTIALLY_REFUNDED
+  REFUNDED
+
+  @@map("payment_order_status")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+
+  @@map("invoice_status")
+}
+
+enum SubscriptionStatus {
+  CREATED
+  AUTHENTICATED
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  COMPLETED
+  EXPIRED
+
+  @@map("subscription_status")
+}
+
+enum PlanTier {
+  FREE
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+
+  @@map("plan_tier")
+}
+
+enum BillingInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+
+  @@map("billing_interval")
+}
+
+enum OrderPurpose {
+  COURSE_PURCHASE
+  ORGANIZATION_SUBSCRIPTION
+
+  @@map("order_purpose")
+}
+
+enum CouponType {
+  FIXED_AMOUNT
+  PERCENTAGE
+
+  @@map("coupon_type")
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  CANCELLED
+
+  @@map("refund_status")
+}
+
+enum PaymentEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+
+  @@map("payment_event_status")
+}
+
+enum PaymentEventType {
+  ORDER_PAID
+  PAYMENT_AUTHORIZED
+  PAYMENT_CAPTURED
+  PAYMENT_FAILED
+  REFUND_CREATED
+  REFUND_PROCESSED
+  REFUND_FAILED
+  SUBSCRIPTION_ACTIVATED
+  SUBSCRIPTION_CHARGED
+  SUBSCRIPTION_PAUSED
+  SUBSCRIPTION_CANCELLED
+  OTHER
+
+  @@map("payment_event_type")
+}
+
+enum PaymentMethodType {
+  CARD
+  UPI
+  NETBANKING
+  WALLET
+  EMI
+  BANK_TRANSFER
+  OTHER
+
+  @@map("payment_method_type")
+}
+
+/// Provider checkout order. `payment_orders` avoids the SQL ORDER keyword.
+/// Pricing and target labels are snapshots and must not be mutated after issue.
+model Order {
+  id                  String           @id @default(uuid(7)) @db.Uuid
+  organizationId      String           @map("organization_id") @db.Uuid
+  customerId          String           @map("customer_id") @db.Uuid
+  createdById         String?          @map("created_by_id") @db.Uuid
+  provider            PaymentProvider  @default(RAZORPAY)
+  purpose             OrderPurpose
+  status              OrderStatus      @default(DRAFT)
+  courseId            String?          @map("course_id") @db.Uuid
+  batchId             String?          @map("batch_id") @db.Uuid
+  planId              String?          @map("plan_id") @db.Uuid
+  couponId            String?          @map("coupon_id") @db.Uuid
+  courseTitleSnapshot String?          @map("course_title_snapshot")
+  batchNameSnapshot   String?          @map("batch_name_snapshot")
+  planNameSnapshot    String?          @map("plan_name_snapshot")
+  planTierSnapshot    PlanTier?        @map("plan_tier_snapshot")
+  intervalSnapshot    BillingInterval? @map("interval_snapshot")
+  subtotalMinor       Int              @map("subtotal_minor")
+  discountMinor       Int              @default(0) @map("discount_minor")
+  taxMinor            Int              @default(0) @map("tax_minor")
+  totalMinor          Int              @map("total_minor")
+  currency            String           @db.Char(3)
+  idempotencyKey      String           @map("idempotency_key")
+  receipt             String
+  providerOrderId     String?          @map("provider_order_id")
+  expiresAt           DateTime?        @map("expires_at")
+  paidAt              DateTime?        @map("paid_at")
+  cancelledAt         DateTime?        @map("cancelled_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  customer     User         @relation("OrderCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  batch        Batch?       @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  plan         Plan?        @relation(fields: [planId], references: [id], onDelete: Restrict)
+  coupon       Coupon?      @relation(fields: [couponId], references: [id], onDelete: Restrict)
+
+  payments     Payment[]
+  refunds      Refund[]
+  invoice      Invoice?
+  subscription Subscription?
+  events       PaymentEvent[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@unique([provider, receipt])
+  @@unique([provider, providerOrderId])
+  @@index([organizationId, status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([courseId])
+  @@index([batchId])
+  @@index([planId])
+  @@index([couponId])
+  @@index([expiresAt])
+  @@map("payment_orders")
+}
+
+/// Captured provider payment. Failure details are diagnostic provider metadata.
+model Payment {
+  id                 String          @id @default(uuid(7)) @db.Uuid
+  organizationId     String          @map("organization_id") @db.Uuid
+  orderId            String          @map("order_id") @db.Uuid
+  customerId         String          @map("customer_id") @db.Uuid
+  paymentMethodId    String?         @map("payment_method_id") @db.Uuid
+  provider           PaymentProvider
+  providerPaymentId  String?         @map("provider_payment_id")
+  providerOrderId    String?         @map("provider_order_id")
+  idempotencyKey     String?         @map("idempotency_key")
+  amountMinor        Int             @map("amount_minor")
+  currency           String          @db.Char(3)
+  status             PaymentStatus   @default(CREATED)
+  failureCode        String?         @map("failure_code")
+  failureDescription String?         @map("failure_description")
+  failureSource      String?         @map("failure_source")
+  failureStep        String?         @map("failure_step")
+  failureReason      String?         @map("failure_reason")
+  authorizedAt       DateTime?       @map("authorized_at")
+  capturedAt         DateTime?       @map("captured_at")
+  refundedMinor      Int             @default(0) @map("refunded_minor")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  customer      User           @relation("PaymentCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+
+  refunds Refund[]
+  events  PaymentEvent[]
+
+  @@unique([provider, providerPaymentId])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, status, createdAt])
+  @@index([orderId])
+  @@index([customerId, createdAt])
+  @@index([providerOrderId])
+  @@index([paymentMethodId])
+  @@map("payments")
+}
+
+/// Immutable invoice totals with both a reusable address reference and snapshot.
+model Invoice {
+  id                     String        @id @default(uuid(7)) @db.Uuid
+  organizationId         String        @map("organization_id") @db.Uuid
+  orderId                String        @unique @map("order_id") @db.Uuid
+  subscriptionId         String?       @map("subscription_id") @db.Uuid
+  customerId             String        @map("customer_id") @db.Uuid
+  billingAddressId       String?       @map("billing_address_id") @db.Uuid
+  createdById            String?       @map("created_by_id") @db.Uuid
+  voidedById             String?       @map("voided_by_id") @db.Uuid
+  invoiceNumber          String        @unique @map("invoice_number")
+  status                 InvoiceStatus @default(DRAFT)
+  subtotalMinor          Int           @map("subtotal_minor")
+  discountMinor          Int           @default(0) @map("discount_minor")
+  taxMinor               Int           @default(0) @map("tax_minor")
+  totalMinor             Int           @map("total_minor")
+  currency               String        @db.Char(3)
+  billingAddressSnapshot Json          @map("billing_address_snapshot")
+  issuedAt               DateTime?     @map("issued_at")
+  dueAt                  DateTime?     @map("due_at")
+  paidAt                 DateTime?     @map("paid_at")
+  voidedAt               DateTime?     @map("voided_at")
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  subscription   Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  customer       User            @relation("InvoiceCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  billingAddress BillingAddress? @relation(fields: [billingAddressId], references: [id], onDelete: SetNull)
+  createdBy      User?           @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  voidedBy       User?           @relation("InvoiceVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([subscriptionId])
+  @@index([billingAddressId])
+  @@map("invoices")
+}
+
+/// Configurable tenant plan. Multiple billing intervals may exist per tier.
+model Plan {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  organizationId String          @map("organization_id") @db.Uuid
+  createdById    String?         @map("created_by_id") @db.Uuid
+  tier           PlanTier
+  name           String
+  description    String?
+  interval       BillingInterval
+  amountMinor    Int             @map("amount_minor")
+  currency       String          @default("INR") @db.Char(3)
+  trialDays      Int             @default(0) @map("trial_days")
+  features       Json?
+  isActive       Boolean         @default(true) @map("is_active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("PlanCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  orders        Order[]
+  subscriptions Subscription[]
+
+  @@unique([organizationId, tier, interval])
+  @@index([organizationId, isActive])
+  @@index([tier])
+  @@map("plans")
+}
+
+/// Organization subscription. One intended active subscription is enforced by
+/// the service because Prisma cannot portably express the required partial key.
+model Subscription {
+  id                     String             @id @default(uuid(7)) @db.Uuid
+  organizationId         String             @map("organization_id") @db.Uuid
+  planId                 String             @map("plan_id") @db.Uuid
+  sourceOrderId          String?            @unique @map("source_order_id") @db.Uuid
+  createdById            String?            @map("created_by_id") @db.Uuid
+  cancelledById          String?            @map("cancelled_by_id") @db.Uuid
+  provider               PaymentProvider
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  status                 SubscriptionStatus @default(CREATED)
+  planNameSnapshot       String             @map("plan_name_snapshot")
+  planTierSnapshot       PlanTier           @map("plan_tier_snapshot")
+  intervalSnapshot       BillingInterval    @map("interval_snapshot")
+  amountMinorSnapshot    Int                @map("amount_minor_snapshot")
+  currency               String             @db.Char(3)
+  currentPeriodStart     DateTime           @map("current_period_start")
+  currentPeriodEnd       DateTime           @map("current_period_end")
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  cancelAt               DateTime?          @map("cancel_at")
+  cancelledAt            DateTime?          @map("cancelled_at")
+  cancellationReason     String?            @map("cancellation_reason")
+  trialEndsAt            DateTime?          @map("trial_ends_at")
+  endedAt                DateTime?          @map("ended_at")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+  sourceOrder  Order?       @relation(fields: [sourceOrderId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  cancelledBy  User?        @relation("SubscriptionCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  invoices Invoice[]
+  events   PaymentEvent[]
+
+  @@unique([provider, providerSubscriptionId])
+  @@index([organizationId, status])
+  @@index([planId])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+/// Discount definition. Percentage values use basis points (10000 = 100%).
+model Coupon {
+  id                   String     @id @default(uuid(7)) @db.Uuid
+  organizationId       String     @map("organization_id") @db.Uuid
+  createdById          String?    @map("created_by_id") @db.Uuid
+  code                 String
+  name                 String
+  description          String?
+  type                 CouponType
+  amountOffMinor       Int?       @map("amount_off_minor")
+  percentOffBps        Int?       @map("percent_off_bps")
+  currency             String?    @db.Char(3)
+  minimumOrderMinor    Int?       @map("minimum_order_minor")
+  maximumDiscountMinor Int?       @map("maximum_discount_minor")
+  maxRedemptions       Int?       @map("max_redemptions")
+  redemptionCount      Int        @default(0) @map("redemption_count")
+  startsAt             DateTime?  @map("starts_at")
+  expiresAt            DateTime?  @map("expires_at")
+  isActive             Boolean    @default(true) @map("is_active")
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("CouponCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  orders Order[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, isActive])
+  @@index([expiresAt])
+  @@map("coupons")
+}
+
+model Refund {
+  id               String          @id @default(uuid(7)) @db.Uuid
+  organizationId   String          @map("organization_id") @db.Uuid
+  paymentId        String          @map("payment_id") @db.Uuid
+  orderId          String          @map("order_id") @db.Uuid
+  requestedById    String?         @map("requested_by_id") @db.Uuid
+  provider         PaymentProvider
+  providerRefundId String?         @map("provider_refund_id")
+  idempotencyKey   String          @map("idempotency_key")
+  amountMinor      Int             @map("amount_minor")
+  currency         String          @db.Char(3)
+  status           RefundStatus    @default(PENDING)
+  reason           String?
+  failureCode      String?         @map("failure_code")
+  failureReason    String?         @map("failure_reason")
+  processedAt      DateTime?       @map("processed_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  payment      Payment      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  requestedBy  User?        @relation("RefundRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+
+  events PaymentEvent[]
+
+  @@unique([provider, providerRefundId])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, status, createdAt])
+  @@index([paymentId])
+  @@index([orderId])
+  @@map("refunds")
+}
+
+/// Durable webhook inbox. Only a one-way signature hash is retained.
+model PaymentEvent {
+  id             String             @id @default(uuid(7)) @db.Uuid
+  organizationId String?            @map("organization_id") @db.Uuid
+  orderId        String?            @map("order_id") @db.Uuid
+  paymentId      String?            @map("payment_id") @db.Uuid
+  refundId       String?            @map("refund_id") @db.Uuid
+  subscriptionId String?            @map("subscription_id") @db.Uuid
+  provider       PaymentProvider
+  eventId        String             @map("event_id")
+  type           PaymentEventType
+  status         PaymentEventStatus @default(PENDING)
+  payload        Json
+  signatureHash  String             @map("signature_hash")
+  attempts       Int                @default(0)
+  lastError      String?            @map("last_error")
+  processedAt    DateTime?          @map("processed_at")
+  receivedAt     DateTime           @default(now()) @map("received_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  order        Order?        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  payment      Payment?      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  refund       Refund?       @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, eventId])
+  @@index([status, receivedAt])
+  @@index([organizationId, receivedAt])
+  @@index([orderId])
+  @@index([paymentId])
+  @@index([refundId])
+  @@index([subscriptionId])
+  @@map("payment_events")
+}
+
+/// Reusable safe payment metadata. Never store PAN, CVV, raw UPI IDs, or secrets.
+model PaymentMethod {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  organizationId   String            @map("organization_id") @db.Uuid
+  userId           String            @map("user_id") @db.Uuid
+  provider         PaymentProvider
+  providerMethodId String?           @map("provider_method_id")
+  type             PaymentMethodType
+  displayName      String?           @map("display_name")
+  cardNetwork      String?           @map("card_network")
+  cardLast4        String?           @map("card_last4") @db.Char(4)
+  cardIssuer       String?           @map("card_issuer")
+  expiryMonth      Int?              @map("expiry_month")
+  expiryYear       Int?              @map("expiry_year")
+  upiHandleMasked  String?           @map("upi_handle_masked")
+  bankName         String?           @map("bank_name")
+  walletName       String?           @map("wallet_name")
+  isDefault        Boolean           @default(false) @map("is_default")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deletedAt        DateTime?         @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  payments Payment[]
+
+  @@unique([provider, providerMethodId])
+  @@index([organizationId, userId])
+  @@index([userId, isDefault])
+  @@index([deletedAt])
+  @@map("payment_methods")
+}
+
+/// Reusable user or organization billing address; invoices retain JSON snapshots.
+model BillingAddress {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String?   @map("user_id") @db.Uuid
+  label          String?
+  fullName       String    @map("full_name")
+  line1          String
+  line2          String?
+  city           String
+  state          String
+  postalCode     String    @map("postal_code")
+  countryCode    String    @map("country_code") @db.Char(2)
+  phone          String?
+  isDefault      Boolean   @default(false) @map("is_default")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  invoices Invoice[]
+
+  @@index([organizationId, userId])
+  @@index([organizationId, isDefault])
+  @@index([deletedAt])
+  @@map("billing_addresses")
 }

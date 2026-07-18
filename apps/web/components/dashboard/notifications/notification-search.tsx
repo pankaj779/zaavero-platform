@@ -1,6 +1,6 @@
 'use client';
 
-import { notificationsPageCopy } from '../../../lib/dashboard';
+import { teacherNotificationsPageCopy } from '../../../lib/teacher';
 import { DashboardSearch } from '../shared';
 
 export function NotificationSearch({
@@ -14,8 +14,8 @@ export function NotificationSearch({
     <DashboardSearch
       value={value}
       onChange={onChange}
-      placeholder={notificationsPageCopy.searchPlaceholder}
-      ariaLabel={notificationsPageCopy.searchLabel}
+      placeholder={teacherNotificationsPageCopy.searchPlaceholder}
+      ariaLabel={teacherNotificationsPageCopy.searchLabel}
     />
   );
 }

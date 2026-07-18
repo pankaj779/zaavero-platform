@@ -5,10 +5,46 @@ import { RequestLoggingMiddleware } from './common/middleware/request-logging.mi
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { AssignmentModule } from './modules/assignment/assignment.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { BatchModule } from './modules/batch/batch.module';
+import { CalendarModule } from './modules/calendar/calendar.module';
+import { CertificateModule } from './modules/certificate/certificate.module';
+import { CourseModule } from './modules/course/course.module';
+import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 import { EmailModule } from './modules/email/email.module';
+import { LessonModule } from './modules/lesson/lesson.module';
+import { LessonProgressModule } from './modules/lesson-progress/lesson-progress.module';
+import { LiveSessionModule } from './modules/live-session/live-session.module';
+import { MessagingModule } from './modules/messaging/messaging.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { SubmissionModule } from './modules/submission/submission.module';
 
 @Module({
-  imports: [AppConfigModule, DatabaseModule, EmailModule, HealthModule, AuthModule],
+  imports: [
+    AppConfigModule,
+    DatabaseModule,
+    EmailModule,
+    HealthModule,
+    AuthModule,
+    AdminModule,
+    CourseModule,
+    BatchModule,
+    EnrollmentModule,
+    LessonModule,
+    LessonProgressModule,
+    LiveSessionModule,
+    AttendanceModule,
+    AssignmentModule,
+    SubmissionModule,
+    CertificateModule,
+    MessagingModule,
+    NotificationModule,
+    CalendarModule,
+    PaymentsModule,
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

@@ -15,6 +15,7 @@ async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
+    rawBody: true,
   });
 
   const configService = app.get(ConfigService<EnvConfig, true>);
@@ -37,7 +38,13 @@ async function bootstrap(): Promise<void> {
     origin: corsOrigin.split(',').map((origin) => origin.trim()),
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Idempotency-Key',
+      'x-request-id',
+      'x-razorpay-signature',
+    ],
     exposedHeaders: ['x-request-id'],
   });
 
@@ -86,10 +93,7 @@ async function bootstrap(): Promise<void> {
   });
 
   const httpAdapter = app.getHttpAdapter().getInstance() as {
-    get: (
-      path: string,
-      handler: (req: Request, res: Response, next: NextFunction) => void,
-    ) => void;
+    get: (path: string, handler: (req: Request, res: Response, next: NextFunction) => void) => void;
   };
 
   httpAdapter.get('/', (_req: Request, res: Response) => {

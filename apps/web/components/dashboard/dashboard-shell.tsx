@@ -5,9 +5,11 @@ import { cn } from '@graphology/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
+import { LogoutButton } from '../auth/logout-button';
 import { brandConfig } from '../../lib/brand';
-import { dashboardNavItems, getDashboardPageMeta, notificationPlaceholders } from '../../lib/dashboard';
-import { DASHBOARD_ROUTES, icons, ROUTES } from '../../lib/constants';
+import { dashboardNavItems, getDashboardPageMeta } from '../../lib/dashboard';
+import { DASHBOARD_ROUTES, icons } from '../../lib/constants';
+import { StudentNotificationsMenu } from './engagement';
 import { ThemeToggle } from './theme-toggle';
 
 const SIDEBAR_STORAGE_KEY = 'zaavero-dashboard-sidebar-collapsed';
@@ -23,18 +25,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const mobilePanelId = useId();
-  const notificationsId = useId();
   const profileId = useId();
 
   const MenuIcon = icons.menu;
   const CloseIcon = icons.close;
-  const BellIcon = icons.bell;
-  const LogoutIcon = icons.logout;
   const PanelCloseIcon = icons.panelClose;
   const PanelOpenIcon = icons.panelOpen;
   const UserIcon = icons.user;
@@ -48,7 +45,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
 
   useEffect(() => {
     setMobileOpen(false);
-    setNotificationsOpen(false);
     setProfileOpen(false);
   }, [pathname]);
 
@@ -72,9 +68,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
   useEffect(() => {
     const onPointerDown = (event: MouseEvent): void => {
       const target = event.target as Node;
-      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
-        setNotificationsOpen(false);
-      }
       if (profileRef.current && !profileRef.current.contains(target)) {
         setProfileOpen(false);
       }
@@ -179,16 +172,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
         ) : null}
         {nav}
         <div className="border-t border-sidebar-border p-3">
-          <Link
-            href={ROUTES.home}
+          <LogoutButton
+            collapsed={collapsed}
             className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-normal hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-normal hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               collapsed && 'justify-center px-2',
             )}
-          >
-            <LogoutIcon className="h-4 w-4 shrink-0" aria-hidden />
-            <span className={cn(collapsed && 'sr-only')}>Logout</span>
-          </Link>
+          />
         </div>
       </aside>
 
@@ -224,16 +214,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
             </div>
             {nav}
             <div className="border-t border-sidebar-border p-3">
-              <Link
-                href={ROUTES.home}
-                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent"
-                onClick={() => {
-                  setMobileOpen(false);
-                }}
-              >
-                <LogoutIcon className="h-4 w-4" aria-hidden />
-                Logout
-              </Link>
+              <LogoutButton className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-sidebar-accent" />
             </div>
           </aside>
         </div>
@@ -279,46 +260,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
                 <SearchInput placeholder="Search courses, lessons, and more" aria-label="Search" />
               </div>
 
-              <div className="relative" ref={notificationsRef}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Notifications"
-                  aria-expanded={notificationsOpen}
-                  aria-controls={notificationsId}
-                  onClick={() => {
-                    setNotificationsOpen((value) => !value);
-                    setProfileOpen(false);
-                  }}
-                >
-                  <BellIcon className="h-4 w-4" aria-hidden />
-                </Button>
-                {notificationsOpen ? (
-                  <div
-                    id={notificationsId}
-                    role="menu"
-                    aria-label="Notifications"
-                    className="absolute right-0 mt-2 w-80 rounded-xl border border-border bg-card p-2 shadow-lg"
-                  >
-                    <p className="px-2 py-1.5 text-sm font-semibold text-foreground">Notifications</p>
-                    <ul className="max-h-80 space-y-1 overflow-y-auto">
-                      {notificationPlaceholders.map((item) => (
-                        <li key={item.id}>
-                          <div className="rounded-lg px-2 py-2 hover:bg-muted">
-                            <p className="text-sm font-medium text-foreground">{item.title}</p>
-                            <p className="text-caption text-muted-foreground">{item.body}</p>
-                            <p className="mt-1 text-caption text-muted-foreground">{item.timeLabel}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="px-2 py-2 text-caption text-muted-foreground">
-                      Notifications are placeholders until backend integration.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
+              <StudentNotificationsMenu />
 
               <ThemeToggle />
 
@@ -332,7 +274,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
                   aria-controls={profileId}
                   onClick={() => {
                     setProfileOpen((value) => !value);
-                    setNotificationsOpen(false);
                   }}
                 >
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted">
@@ -365,16 +306,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
                     >
                       Settings
                     </Link>
-                    <Link
-                      href={ROUTES.home}
-                      role="menuitem"
-                      className="block rounded-md px-3 py-2 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      onClick={() => {
-                        setProfileOpen(false);
-                      }}
-                    >
+                    <LogoutButton className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                       Logout
-                    </Link>
+                    </LogoutButton>
                   </div>
                 ) : null}
               </div>
@@ -383,7 +317,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }): Rea
         </header>
 
         <main id="dashboard-content" className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl px-4 py-6 tablet:px-6 laptop:py-8">{children}</div>
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 tablet:px-6 laptop:py-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

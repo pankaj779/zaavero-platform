@@ -14,6 +14,7 @@ import {
   type TeacherCourseSummaryDto,
   type TeacherCoursesViewMode,
 } from '../../../lib/teacher';
+import { teacherCardSurfaceClass } from '../shared';
 import { CourseStatusBadge } from './course-status-badge';
 import { CourseThumbnail } from './course-thumbnail';
 
@@ -97,7 +98,7 @@ export function CourseCard({
 
   if (layout === 'list') {
     return (
-      <Card className="rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md">
+      <Card className={teacherCardSurfaceClass}>
         <CardContent className="flex flex-col gap-4 p-5 laptop:flex-row">
           <CourseThumbnail
             label={course.media.thumbnailAlt}
@@ -122,7 +123,7 @@ export function CourseCard({
   }
 
   return (
-    <Card className="flex h-full flex-col rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md">
+    <Card className={cn('flex h-full flex-col', teacherCardSurfaceClass)}>
       <CardHeader className="space-y-4 p-5 pb-0">
         <CourseThumbnail label={course.media.thumbnailAlt} />
         <div className="flex flex-wrap items-center gap-2">

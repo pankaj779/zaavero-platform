@@ -1,9 +1,9 @@
-import { PageHeader } from '@graphology/ui';
 import { teacherStudentsPageCopy } from '../../../lib/teacher';
+import { TeacherPageHeader } from '../shared';
 
 export function StudentsHeader(): React.JSX.Element {
   return (
-    <PageHeader
+    <TeacherPageHeader
       title={teacherStudentsPageCopy.title}
       description={teacherStudentsPageCopy.description}
     />

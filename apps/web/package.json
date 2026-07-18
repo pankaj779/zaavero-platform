@@ -13,6 +13,7 @@
     "clean": "rimraf .next"
   },
   "dependencies": {
+    "@graphology/auth": "workspace:^",
     "@graphology/types": "workspace:*",
     "@graphology/ui": "workspace:*",
     "@graphology/utils": "workspace:*",

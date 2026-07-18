@@ -1,5 +1,5 @@
-import { NotificationsView } from '../../../components/dashboard/notifications';
+import { StudentNotificationsView } from '../../../components/dashboard/engagement';
 
 export default function NotificationsPage(): React.JSX.Element {
-  return <NotificationsView />;
+  return <StudentNotificationsView />;
 }

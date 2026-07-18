@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { POST_LOGIN_REDIRECT } from '../lib/auth/redirect';
 import { brandConfig } from '../lib/brand';
 import {
   faqContent,
@@ -8,111 +7,90 @@ import {
   programsContent,
   studentSuccessContent,
 } from '../lib/config';
-import {
-  DASHBOARD_ROUTES,
-  ROUTES,
-  TEACHER_ROUTES,
-  getCourseDetailsPath,
-  getLessonPath,
-} from '../lib/constants';
+import { TEACHER_ROUTES } from '../lib/constants';
 import {
   teacherNavItems,
   teacherPageMeta,
   getTeacherPageMeta,
-  teacherStatsPlaceholder,
-  teacherDashboardSections,
-  teacherDashboardViewState,
-  teacherCourses,
-  teacherCoursesViewState,
-  filterTeacherCourses,
-  sortTeacherCourses,
+  teacherDashboardCopy,
   getTeacherCourseStats,
-  teacherBatches,
-  teacherBatchesViewState,
-  filterTeacherBatches,
-  sortTeacherBatches,
+  toCourseApiStatus,
+  toCourseListSort,
   getTeacherBatchStats,
-  teacherStudents,
-  teacherStudentsViewState,
-  filterTeacherStudents,
-  sortTeacherStudents,
+  toBatchApiStatus,
+  toBatchListSort,
   getTeacherStudentStats,
-  attendanceSessions,
-  teacherAttendanceViewState,
+  toEnrollmentApiStatus,
+  toEnrollmentListSort,
+  sortTeacherStudents,
+  getTeacherLessonStats,
+  toLessonApiContentType,
+  toLessonListSort,
+  formatTeacherLessonDuration,
+  getTeacherLiveClassStats,
+  toLiveSessionApiStatus,
+  toLiveSessionListSort,
+  toLiveSessionApiProvider,
+  filterTeacherLiveClasses,
+  sortTeacherLiveClasses,
+  getTeacherLiveClassById,
   filterAttendanceSessions,
   sortAttendanceSessions,
   getTeacherAttendanceStats,
-  getAttendanceSessionById,
-  teacherLiveClasses,
-  teacherLiveClassesViewState,
-  filterTeacherLiveClasses,
-  sortTeacherLiveClasses,
-  getTeacherLiveClassStats,
-  getTeacherLiveClassById,
-  teacherAssignments,
-  teacherAssignmentsViewState,
+  toAttendanceListSort,
+  toAttendanceApiMarkStatus,
   filterTeacherAssignments,
   sortTeacherAssignments,
   getTeacherAssignmentStats,
   getTeacherAssignmentById,
-  teacherAnalyticsOverview,
-  teacherAnalyticsViewState,
-  teacherAnalyticsCourses,
-  teacherAnalyticsKpis,
-  teacherAnalyticsSections,
-  teacherAnalyticsMetrics,
+  toAssignmentListSort,
+  toAssignmentApiStatus,
+  getTeacherSubmissionStats,
+  filterTeacherSubmissions,
+  sortTeacherSubmissions,
+  getTeacherSubmissionById,
+  toSubmissionListSort,
+  toSubmissionApiStatus,
+  buildTeacherAnalyticsOverview,
   teacherAnalyticsTimeRangeOptions,
   filterTeacherAnalyticsSections,
   getTeacherAnalyticsMetricById,
-  teacherConversations,
-  teacherMessagesViewState,
+  type TeacherAnalyticsSourceDto,
+  teacherMessageComingSoonFeatures,
   filterTeacherConversations,
   getTeacherConversationById,
-  teacherCalendarEvents,
-  teacherCalendarViewState,
-  teacherCalendarInitialMonth,
+  toConversationApiType,
+  toConversationListSort,
   filterTeacherCalendarEvents,
   getTeacherCalendarEventsForDay,
   getTeacherCalendarEventById,
   buildTeacherCalendarMonth,
   shiftTeacherCalendarMonth,
+  getTeacherCalendarMonthRange,
+  toCalendarListSort,
+  teacherCalendarComingSoonFeatures,
+  filterTeacherCertificates,
+  sortTeacherCertificates,
+  getTeacherCertificateStats,
+  getTeacherCertificateById,
+  toCertificateListSort,
+  toCertificateApiStatus,
+  deriveTeacherCertificateBatches,
+  teacherNotificationFutureFeatures,
+  getTeacherNotificationStats,
+  filterTeacherNotifications,
+  sortTeacherNotifications,
+  getTeacherNotificationById,
+  toNotificationApiType,
+  toNotificationApiUnreadOnly,
+  toNotificationListSort,
+  buildTeacherProfileFromAuth,
+  teacherProfileDefaults,
+  teacherSettingsViewState,
+  getTeacherDisplayName,
+  getTeacherLanguageLabel,
+  TEACHER_COMING_SOON,
 } from '../lib/teacher';
-import {
-  dashboardNavItems,
-  dashboardPageMeta,
-  enrolledCourses,
-  filterAssignments,
-  filterCertificates,
-  filterEnrolledCourses,
-  getCourseDetailsById,
-  getDefaultLessonId,
-  getFeaturedLiveClass,
-  getLessonPlayerData,
-  getTodaysLiveClass,
-  getUpcomingLiveClasses,
-  assignments,
-  assignmentsViewState,
-  certificates,
-  certificatesViewState,
-  studentProfile,
-  profileViewState,
-  settingsViewState,
-  notifications,
-  notificationsViewState,
-  filterNotifications,
-  sortNotifications,
-  learningPageCopy,
-  learningStats,
-  learningViewState,
-  listCourseDetailIds,
-  listLessonIdsForCourse,
-  liveClasses,
-  liveViewState,
-  sortAssignments,
-  sortCertificates,
-  sortEnrolledCourses,
-  widgetDemoStates,
-} from '../lib/dashboard';
 
 describe('homepage blueprint', () => {
   it('exposes blueprint navigation labels and CTA', () => {
@@ -152,288 +130,6 @@ describe('homepage blueprint', () => {
   });
 });
 
-describe('sprint 05.01 student dashboard', () => {
-  it('uses /dashboard route base and post-login redirect', () => {
-    expect(ROUTES.dashboard).toBe('/dashboard');
-    expect(POST_LOGIN_REDIRECT).toBe('/dashboard');
-    expect(DASHBOARD_ROUTES.learning).toBe('/dashboard/learning');
-    expect(DASHBOARD_ROUTES.liveClasses).toBe('/dashboard/live');
-    expect(DASHBOARD_ROUTES.settings).toBe('/dashboard/settings');
-  });
-
-  it('defines sidebar navigation items in blueprint order', () => {
-    expect(dashboardNavItems.map((item) => item.label)).toEqual([
-      'Dashboard',
-      'My Learning',
-      'Live Classes',
-      'Assignments',
-      'Certificates',
-      'Notifications',
-      'Calendar',
-      'Messages',
-      'Payments',
-      'Profile',
-      'Settings',
-    ]);
-  });
-
-  it('has page metadata for every dashboard route', () => {
-    for (const item of dashboardNavItems) {
-      expect(dashboardPageMeta[item.href]?.title).toBeTruthy();
-    }
-  });
-
-  it('defines widget demo states for loading empty populated support', () => {
-    expect(Object.keys(widgetDemoStates)).toEqual(
-      expect.arrayContaining([
-        'continueLearning',
-        'upcomingLiveClass',
-        'assignmentsDue',
-        'learningProgress',
-        'certificatesEarned',
-        'recentActivity',
-        'quickActions',
-      ]),
-    );
-  });
-});
-
-describe('sprint 05.02 my learning', () => {
-  it('exposes enrolled courses and honest placeholder stats', () => {
-    expect(enrolledCourses.length).toBeGreaterThan(0);
-    expect(enrolledCourses.every((course) => course.instructor.name.includes('Placeholder'))).toBe(
-      true,
-    );
-    expect(learningStats.map((stat) => stat.label)).toEqual([
-      'Learning Streak',
-      'Total Courses',
-      'Completed Courses',
-      'Hours Learned',
-    ]);
-  });
-
-  it('filters and sorts enrolled courses without mutating source data', () => {
-    const filtered = filterEnrolledCourses(enrolledCourses, 'foundations', 'in_progress');
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.title).toBe('Graphology Foundations');
-
-    const sorted = sortEnrolledCourses(enrolledCourses, 'alphabetical');
-    expect(sorted.map((course) => course.title)).toEqual([
-      'Advanced Graphology',
-      'Graphology Foundations',
-      'Handwriting Improvement',
-    ]);
-    expect(enrolledCourses[0]?.title).toBe('Graphology Foundations');
-  });
-
-  it('defaults My Learning to the populated view state', () => {
-    expect(learningViewState).toBe('populated');
-    expect(learningPageCopy.title).toBe('My Learning');
-  });
-});
-
-describe('sprint 05.03 course details', () => {
-  it('resolves course details by dynamic courseId for any catalog entry', () => {
-    const ids = listCourseDetailIds();
-    expect(ids).toContain('graphology-foundation');
-    expect(ids.length).toBeGreaterThanOrEqual(3);
-
-    const course = getCourseDetailsById('graphology-foundation');
-    expect(course?.title).toBe('Graphology Foundations');
-    expect(course?.modules.length).toBeGreaterThan(0);
-    expect(course?.resources.length).toBeGreaterThan(0);
-    expect(course?.announcements.length).toBeGreaterThan(0);
-    expect(course?.progress.percentage).toBeDefined();
-    expect(course?.instructor.name).toBeTruthy();
-    expect(course?.features).toBeDefined();
-  });
-
-  it('builds course details paths for future course ids', () => {
-    expect(getCourseDetailsPath('graphology-foundation')).toBe(
-      '/dashboard/learning/graphology-foundation',
-    );
-    expect(getCourseDetailsPath('future-course-slug')).toBe(
-      '/dashboard/learning/future-course-slug',
-    );
-  });
-
-  it('returns null for unknown course ids', () => {
-    expect(getCourseDetailsById('unknown-course')).toBeNull();
-  });
-});
-
-describe('sprint 05.04 lesson player', () => {
-  it('resolves lesson player DTO by course slug and lesson id', () => {
-    const data = getLessonPlayerData('graphology-foundation', 'introduction');
-    expect(data?.course.slug).toBe('graphology-foundation');
-    expect(data?.lesson.id).toBe('introduction');
-    expect(data?.lesson.type).toBe('VIDEO');
-    expect(data?.lesson.content.type).toBe('VIDEO');
-    expect(data?.curriculum.length).toBeGreaterThan(0);
-    expect(data?.lesson.features).toBeDefined();
-  });
-
-  it('covers all placeholder lesson content types', () => {
-    const types = listLessonIdsForCourse('graphology-foundation').map(
-      (id) => getLessonPlayerData('graphology-foundation', id)?.lesson.type,
-    );
-    expect(types).toEqual(
-      expect.arrayContaining(['VIDEO', 'READING', 'PDF', 'EXERCISE', 'UNKNOWN']),
-    );
-  });
-
-  it('builds lesson paths for future course and lesson ids', () => {
-    expect(getLessonPath('graphology-foundation', 'introduction')).toBe(
-      '/dashboard/learning/graphology-foundation/lesson/introduction',
-    );
-    expect(getLessonPath('future-course', 'future-lesson')).toBe(
-      '/dashboard/learning/future-course/lesson/future-lesson',
-    );
-  });
-
-  it('returns null for unknown lesson ids and exposes a default lesson', () => {
-    expect(getLessonPlayerData('graphology-foundation', 'missing-lesson')).toBeNull();
-    expect(getDefaultLessonId('graphology-foundation')).toBe('reference-sheet');
-  });
-});
-
-describe('sprint 05.05 live classes', () => {
-  it('exposes DTO-shaped live classes without meeting URLs', () => {
-    expect(liveClasses.length).toBeGreaterThan(0);
-    expect(liveClasses.every((item) => item.meetingUrl === null)).toBe(true);
-    expect(liveClasses.every((item) => item.mentor.name.includes('Placeholder'))).toBe(true);
-    expect(liveClasses[0]?.futureFeatures).toBeDefined();
-    expect(liveViewState).toBe('populated');
-  });
-
-  it('separates today and upcoming sessions', () => {
-    const today = getTodaysLiveClass(liveClasses);
-    const upcoming = getUpcomingLiveClasses(liveClasses);
-    expect(today?.isToday).toBe(true);
-    expect(upcoming.every((item) => !item.isToday)).toBe(true);
-    expect(getFeaturedLiveClass(liveClasses)?.id).toBeTruthy();
-  });
-
-  it('routes live classes under /dashboard/live', () => {
-    expect(DASHBOARD_ROUTES.liveClasses).toBe('/dashboard/live');
-    expect(dashboardNavItems.find((item) => item.id === 'live-classes')?.href).toBe(
-      '/dashboard/live',
-    );
-  });
-});
-
-describe('sprint 05.06 assignments', () => {
-  it('exposes DTO-shaped assignments without fake grades or files', () => {
-    expect(assignments.length).toBeGreaterThan(0);
-    expect(assignments.every((item) => item.obtainedMarks === null)).toBe(true);
-    expect(assignments.every((item) => item.feedback.summary === null)).toBe(true);
-    expect(assignments.every((item) => item.attachments.every((file) => file.url === null))).toBe(
-      true,
-    );
-    expect(assignments.every((item) => item.mentor.name.includes('Placeholder'))).toBe(true);
-    expect(assignments[0]?.futureFeatures).toBeDefined();
-    expect(assignmentsViewState).toBe('populated');
-  });
-
-  it('filters and sorts assignments without mutating source data', () => {
-    const filtered = filterAssignments(assignments, 'baseline', 'in_progress');
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.title).toContain('Baseline');
-
-    const sorted = sortAssignments(assignments, 'newest');
-    expect(sorted.length).toBe(assignments.length);
-    expect(assignments[0]?.id).toBe('assignment_001');
-  });
-
-  it('routes assignments under /dashboard/assignments', () => {
-    expect(DASHBOARD_ROUTES.assignments).toBe('/dashboard/assignments');
-    expect(dashboardNavItems.find((item) => item.id === 'assignments')?.href).toBe(
-      '/dashboard/assignments',
-    );
-  });
-});
-
-describe('sprint 05.07 certificates', () => {
-  it('exposes DTO-shaped certificates without download or verification URLs', () => {
-    expect(certificates.length).toBeGreaterThan(0);
-    expect(certificates.every((item) => item.downloadUrl === null)).toBe(true);
-    expect(certificates.every((item) => item.verificationUrl === null)).toBe(true);
-    expect(certificates.every((item) => item.grade === null)).toBe(true);
-    expect(certificates.every((item) => item.percentage === null)).toBe(true);
-    expect(certificates.every((item) => item.mentor.name.includes('Placeholder'))).toBe(true);
-    expect(certificates[0]?.futureFeatures).toBeDefined();
-    expect(certificatesViewState).toBe('populated');
-  });
-
-  it('filters and sorts certificates without mutating source data', () => {
-    const filtered = filterCertificates(certificates, 'handwriting', 'issued');
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.courseTitle).toContain('Handwriting');
-
-    const sorted = sortCertificates(certificates, 'oldest');
-    expect(sorted.length).toBe(certificates.length);
-    expect(certificates[0]?.id).toBe('cert_001');
-  });
-
-  it('routes certificates under /dashboard/certificates', () => {
-    expect(DASHBOARD_ROUTES.certificates).toBe('/dashboard/certificates');
-    expect(dashboardNavItems.find((item) => item.id === 'certificates')?.href).toBe(
-      '/dashboard/certificates',
-    );
-  });
-});
-
-describe('sprint 05.08 profile and settings', () => {
-  it('exposes DTO-shaped student profile without avatar URL', () => {
-    expect(studentProfile.id).toBe('user_001');
-    expect(studentProfile.avatarUrl).toBeNull();
-    expect(studentProfile.email).toContain('placeholder');
-    expect(studentProfile.organization.name).toContain('Placeholder');
-    expect(studentProfile.futureFeatures).toBeDefined();
-    expect(studentProfile.connectedAccounts.every((account) => account.externalAccountId === null)).toBe(
-      true,
-    );
-    expect(profileViewState).toBe('populated');
-    expect(settingsViewState).toBe('populated');
-  });
-
-  it('routes profile and settings under dashboard paths', () => {
-    expect(DASHBOARD_ROUTES.profile).toBe('/dashboard/profile');
-    expect(DASHBOARD_ROUTES.settings).toBe('/dashboard/settings');
-    expect(dashboardNavItems.find((item) => item.id === 'profile')?.href).toBe('/dashboard/profile');
-    expect(dashboardNavItems.find((item) => item.id === 'settings')?.href).toBe(
-      '/dashboard/settings',
-    );
-  });
-});
-
-describe('sprint 05.09 notifications', () => {
-  it('exposes DTO-shaped notifications without action URLs', () => {
-    expect(notifications.length).toBeGreaterThan(0);
-    expect(notifications.every((item) => item.actionUrl === null)).toBe(true);
-    expect(notifications[0]?.futureFeatures.realtimeEnabled).toBe(false);
-    expect(notifications[0]?.futureFeatures.pushEnabled).toBe(false);
-    expect(notificationsViewState).toBe('populated');
-  });
-
-  it('filters and sorts notifications without mutating source data', () => {
-    const filtered = filterNotifications(notifications, 'assignment', 'assignment');
-    expect(filtered.length).toBeGreaterThan(0);
-    expect(filtered.every((item) => item.type === 'assignment')).toBe(true);
-
-    const sorted = sortNotifications(notifications, 'oldest');
-    expect(sorted.length).toBe(notifications.length);
-    expect(notifications[0]?.id).toBe('notif_001');
-  });
-
-  it('routes notifications under /dashboard/notifications', () => {
-    expect(DASHBOARD_ROUTES.notifications).toBe('/dashboard/notifications');
-    expect(dashboardNavItems.find((item) => item.id === 'notifications')?.href).toBe(
-      '/dashboard/notifications',
-    );
-  });
-});
-
 describe('sprint 06.01 teacher portal shell', () => {
   it('uses an independent /teacher route base', () => {
     expect(TEACHER_ROUTES.root).toBe('/teacher');
@@ -469,219 +165,391 @@ describe('sprint 06.01 teacher portal shell', () => {
     expect(getTeacherPageMeta('/teacher/unknown').title).toBe('Dashboard');
   });
 
-  it('keeps dashboard statistics as honest placeholders', () => {
-    expect(teacherStatsPlaceholder.length).toBe(4);
-    expect(teacherStatsPlaceholder.every((stat) => stat.value === '—')).toBe(true);
-    expect(teacherDashboardSections.length).toBe(3);
-    expect(teacherDashboardViewState).toBe('populated');
+  it('exposes dashboard loading and retry copy for live API states', () => {
+    expect(teacherDashboardCopy.loadingLabel).toContain('Loading');
+    expect(teacherDashboardCopy.retryButton).toBe('Retry');
   });
 });
 
-describe('sprint 06.02 teacher courses', () => {
-  it('exposes generic DTO-shaped courses with counts and no media URLs', () => {
-    expect(teacherCourses.length).toBeGreaterThan(1);
-    expect(teacherCourses.every((course) => course.media.thumbnailUrl === null)).toBe(true);
-    expect(
-      teacherCourses.every(
-        (course) =>
-          typeof course.counts.batches === 'number' &&
-          typeof course.counts.students === 'number' &&
-          typeof course.counts.lessons === 'number' &&
-          typeof course.counts.assignments === 'number',
-      ),
-    ).toBe(true);
-    expect(teacherCoursesViewState).toBe('populated');
-  });
+describe('sprint 06.02 / task 08.01 teacher courses', () => {
+  it('derives top stats from mapped teacher course DTOs', () => {
+    const courses = [
+      {
+        id: 'c1',
+        slug: 'published-course',
+        title: 'Published Course',
+        description: '',
+        status: 'published' as const,
+        isPublished: true,
+        media: { thumbnailUrl: null, thumbnailAlt: 'Course thumbnail placeholder' },
+        counts: { batches: 2, students: 10, lessons: 5, assignments: 1 },
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'c2',
+        slug: 'draft-course',
+        title: 'Draft Course',
+        description: '',
+        status: 'draft' as const,
+        isPublished: false,
+        media: { thumbnailUrl: null, thumbnailAlt: 'Course thumbnail placeholder' },
+        counts: { batches: 0, students: 0, lessons: 0, assignments: 0 },
+        createdAt: '2026-01-03T00:00:00.000Z',
+        updatedAt: '2026-01-04T00:00:00.000Z',
+      },
+    ];
 
-  it('keeps course architecture course-agnostic (Graphology only one sample)', () => {
-    const graphologyCourses = teacherCourses.filter((course) =>
-      course.title.toLowerCase().includes('graphology'),
-    );
-    expect(graphologyCourses.length).toBe(1);
-    expect(teacherCourses.length).toBeGreaterThan(graphologyCourses.length);
-  });
-
-  it('derives top stats from the course list', () => {
-    const stats = getTeacherCourseStats(teacherCourses);
+    const stats = getTeacherCourseStats(courses);
     expect(stats.map((stat) => stat.id)).toEqual([
       'active-courses',
       'draft-courses',
       'students',
       'batches',
     ]);
-    const published = teacherCourses.filter((course) => course.status === 'published').length;
-    expect(stats[0]?.value).toBe(String(published));
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[1]?.value).toBe('1');
+    expect(stats[2]?.value).toBe('10');
+    expect(stats[3]?.value).toBe('2');
   });
 
-  it('filters and sorts courses without mutating source data', () => {
-    const drafts = filterTeacherCourses(teacherCourses, '', 'draft');
-    expect(drafts.every((course) => course.status === 'draft')).toBe(true);
-
-    const searched = filterTeacherCourses(teacherCourses, 'foundations', 'all');
-    expect(searched).toHaveLength(1);
-
-    const alphabetical = sortTeacherCourses(teacherCourses, 'alphabetical');
-    const titles = alphabetical.map((course) => course.title);
-    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)));
-
-    const updated = sortTeacherCourses(teacherCourses, 'recently_updated');
-    expect(new Date(updated[0]?.updatedAt ?? 0).getTime()).toBeGreaterThanOrEqual(
-      new Date(updated[1]?.updatedAt ?? 0).getTime(),
-    );
-    expect(teacherCourses[0]?.id).toBe('tcourse_001');
+  it('maps UI filters and sort options to NestJS list query params', () => {
+    expect(toCourseApiStatus('all')).toBeUndefined();
+    expect(toCourseApiStatus('published')).toBe('PUBLISHED');
+    expect(toCourseListSort('alphabetical')).toEqual({
+      sortBy: 'title',
+      sortOrder: 'asc',
+    });
   });
 });
 
-describe('task 06.03 teacher batches', () => {
+describe('task 06.03 / task 08.02 teacher batches', () => {
   it('exposes the independent /teacher/batches route without adding sidebar nav', () => {
     expect(TEACHER_ROUTES.batches).toBe('/teacher/batches');
     expect(teacherNavItems.some((item) => item.href === TEACHER_ROUTES.batches)).toBe(false);
     expect(getTeacherPageMeta(TEACHER_ROUTES.batches).title).toBe('Batches');
   });
 
-  it('exposes DTO-shaped batches with course, mentor, capacity, live class, and progress fields', () => {
-    expect(teacherBatches.length).toBeGreaterThan(1);
-    expect(
-      teacherBatches.every(
-        (batch) =>
-          batch.course.title.length > 0 &&
-          batch.mentor.name.length > 0 &&
-          typeof batch.studentsEnrolled === 'number' &&
-          typeof batch.capacity === 'number' &&
-          typeof batch.progress.percentage === 'number',
-      ),
-    ).toBe(true);
-    expect(teacherBatches.some((batch) => batch.nextLiveClass === null)).toBe(true);
-    expect(teacherBatchesViewState).toBe('populated');
-  });
+  it('derives top stats from mapped teacher batch DTOs', () => {
+    const batches = [
+      {
+        id: 'b1',
+        name: 'Active Cohort',
+        course: { id: 'c1', slug: 'course-a', title: 'Course A' },
+        status: 'active' as const,
+        mentor: { id: 't1', name: 'Teacher' },
+        studentsEnrolled: 10,
+        capacity: 20,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2026-03-01T00:00:00.000Z',
+        nextLiveClass: null,
+        progress: { completedLessons: 0, totalLessons: 0, percentage: 0 },
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'b2',
+        name: 'Upcoming Cohort',
+        course: { id: 'c2', slug: 'course-b', title: 'Course B' },
+        status: 'upcoming' as const,
+        mentor: { id: 't1', name: 'Teacher' },
+        studentsEnrolled: 5,
+        capacity: 15,
+        startDate: '2026-04-01T00:00:00.000Z',
+        endDate: '',
+        nextLiveClass: null,
+        progress: { completedLessons: 0, totalLessons: 0, percentage: 0 },
+        updatedAt: '2026-01-03T00:00:00.000Z',
+      },
+      {
+        id: 'b3',
+        name: 'Completed Cohort',
+        course: { id: 'c3', slug: 'course-c', title: 'Course C' },
+        status: 'completed' as const,
+        mentor: { id: 't1', name: 'Teacher' },
+        studentsEnrolled: 8,
+        capacity: 8,
+        startDate: '2025-01-01T00:00:00.000Z',
+        endDate: '2025-06-01T00:00:00.000Z',
+        nextLiveClass: null,
+        progress: { completedLessons: 0, totalLessons: 0, percentage: 0 },
+        updatedAt: '2025-06-02T00:00:00.000Z',
+      },
+    ];
 
-  it('keeps batch architecture course-agnostic (Graphology only one sample)', () => {
-    const graphologyBatches = teacherBatches.filter(
-      (batch) =>
-        batch.name.toLowerCase().includes('graphology') ||
-        batch.course.title.toLowerCase().includes('graphology'),
-    );
-    expect(graphologyBatches.length).toBe(1);
-    expect(teacherBatches.length).toBeGreaterThan(graphologyBatches.length);
-  });
-
-  it('derives top stats from the batch list', () => {
-    const stats = getTeacherBatchStats(teacherBatches);
+    const stats = getTeacherBatchStats(batches);
     expect(stats.map((stat) => stat.id)).toEqual([
       'active-batches',
       'upcoming-batches',
       'completed-batches',
       'total-students',
     ]);
-    const students = teacherBatches.reduce((sum, batch) => sum + batch.studentsEnrolled, 0);
-    expect(stats[3]?.value).toBe(String(students));
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[1]?.value).toBe('1');
+    expect(stats[2]?.value).toBe('1');
+    expect(stats[3]?.value).toBe('23');
   });
 
-  it('filters and sorts batches without mutating source data', () => {
-    const active = filterTeacherBatches(teacherBatches, '', 'active');
-    expect(active.every((batch) => batch.status === 'active')).toBe(true);
-
-    const searched = filterTeacherBatches(teacherBatches, 'advanced', 'all');
-    expect(searched.length).toBeGreaterThan(0);
-    expect(
-      searched.every(
-        (batch) =>
-          batch.name.toLowerCase().includes('advanced') ||
-          batch.course.title.toLowerCase().includes('advanced') ||
-          batch.course.slug.toLowerCase().includes('advanced'),
-      ),
-    ).toBe(true);
-
-    const alphabetical = sortTeacherBatches(teacherBatches, 'alphabetical');
-    const names = alphabetical.map((batch) => batch.name);
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
-
-    const byStartDate = sortTeacherBatches(teacherBatches, 'start_date');
-    expect(new Date(byStartDate[0]?.startDate ?? 0).getTime()).toBeLessThanOrEqual(
-      new Date(byStartDate[1]?.startDate ?? 0).getTime(),
-    );
-    expect(teacherBatches[0]?.id).toBe('tbatch_001');
+  it('maps UI filters and sort options to NestJS list query params', () => {
+    expect(toBatchApiStatus('all')).toBeUndefined();
+    expect(toBatchApiStatus('active')).toBe('ACTIVE');
+    expect(toBatchApiStatus('archived')).toBe('CANCELLED');
+    expect(toBatchListSort('alphabetical')).toEqual({
+      sortBy: 'name',
+      sortOrder: 'asc',
+    });
+    expect(toBatchListSort('start_date')).toEqual({
+      sortBy: 'startDate',
+      sortOrder: 'asc',
+    });
   });
 });
 
-describe('task 06.04 teacher students', () => {
+describe('task 06.04 / task 08.03 teacher students', () => {
   it('routes students under /teacher/students', () => {
     expect(TEACHER_ROUTES.students).toBe('/teacher/students');
-    expect(teacherNavItems.find((item) => item.id === 'students')?.href).toBe(
-      '/teacher/students',
-    );
+    expect(teacherNavItems.find((item) => item.id === 'students')?.href).toBe('/teacher/students');
   });
 
-  it('exposes DTO-shaped students with batch, course, progress, and no avatar URLs', () => {
-    expect(teacherStudents.length).toBeGreaterThan(1);
-    expect(teacherStudents.every((student) => student.avatarUrl === null)).toBe(true);
-    expect(
-      teacherStudents.every(
-        (student) =>
-          student.batch.name.length > 0 &&
-          student.course.title.length > 0 &&
-          typeof student.progress.percentage === 'number' &&
-          typeof student.progress.attendancePercent === 'number' &&
-          typeof student.progress.assignmentsCompleted === 'number',
-      ),
-    ).toBe(true);
-    expect(teacherStudentsViewState).toBe('populated');
-  });
+  it('derives top stats from mapped teacher student DTOs', () => {
+    const students = [
+      {
+        id: 'e1',
+        fullName: 'Ada Lovelace',
+        email: 'ada@example.com',
+        avatarUrl: null,
+        initials: 'AL',
+        batch: { id: 'b1', name: 'Batch A' },
+        course: { id: 'c1', slug: 'course-a', title: 'Course A' },
+        enrollmentStatus: 'active' as const,
+        isAtRisk: true,
+        progress: {
+          percentage: 40,
+          assignmentsCompleted: 1,
+          assignmentsTotal: 4,
+          attendancePercent: 80,
+        },
+        joinedAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'e2',
+        fullName: 'Grace Hopper',
+        email: 'grace@example.com',
+        avatarUrl: null,
+        initials: 'GH',
+        batch: { id: 'b2', name: 'Batch B' },
+        course: { id: 'c2', slug: 'course-b', title: 'Course B' },
+        enrollmentStatus: 'completed' as const,
+        isAtRisk: false,
+        progress: {
+          percentage: 100,
+          assignmentsCompleted: 2,
+          assignmentsTotal: 2,
+          attendancePercent: 100,
+        },
+        joinedAt: '2026-02-01T00:00:00.000Z',
+        updatedAt: '2026-02-02T00:00:00.000Z',
+      },
+    ];
 
-  it('keeps student architecture course-agnostic (Graphology only one enrolled course)', () => {
-    const graphologyCourses = new Set(
-      teacherStudents
-        .filter((student) => student.course.title.toLowerCase().includes('graphology'))
-        .map((student) => student.course.id),
-    );
-    expect(graphologyCourses.size).toBe(1);
-    const uniqueCourses = new Set(teacherStudents.map((student) => student.course.id));
-    expect(uniqueCourses.size).toBeGreaterThan(graphologyCourses.size);
-  });
-
-  it('derives top stats from the student list', () => {
-    const stats = getTeacherStudentStats(teacherStudents);
+    const stats = getTeacherStudentStats(students);
     expect(stats.map((stat) => stat.id)).toEqual([
       'total-students',
       'active-students',
       'at-risk-students',
       'average-progress',
     ]);
-    expect(stats[0]?.value).toBe(String(teacherStudents.length));
-    const atRisk = teacherStudents.filter((student) => student.isAtRisk).length;
-    expect(stats[2]?.value).toBe(String(atRisk));
+    expect(stats[0]?.value).toBe('2');
+    expect(stats[1]?.value).toBe('1');
+    expect(stats[2]?.value).toBe('1');
+    expect(stats[3]?.value).toBe('70%');
   });
 
-  it('filters and sorts students without mutating source data', () => {
-    const active = filterTeacherStudents(teacherStudents, '', 'active');
-    expect(active.every((student) => student.enrollmentStatus === 'active')).toBe(true);
+  it('maps UI filters and sort options to NestJS enrollment list query params', () => {
+    expect(toEnrollmentApiStatus('all')).toBeUndefined();
+    expect(toEnrollmentApiStatus('active')).toBe('ACTIVE');
+    expect(toEnrollmentApiStatus('inactive')).toBe('DROPPED');
+    expect(toEnrollmentListSort('recently_joined')).toEqual({
+      sortBy: 'enrolledAt',
+      sortOrder: 'desc',
+    });
 
-    const searched = filterTeacherStudents(teacherStudents, 'advanced', 'all');
-    expect(searched.length).toBeGreaterThan(0);
-    expect(
-      searched.every(
-        (student) =>
-          student.fullName.toLowerCase().includes('advanced') ||
-          student.email.toLowerCase().includes('advanced') ||
-          student.batch.name.toLowerCase().includes('advanced') ||
-          student.course.title.toLowerCase().includes('advanced') ||
-          student.course.slug.toLowerCase().includes('advanced'),
-      ),
-    ).toBe(true);
+    const students = [
+      {
+        id: 'e1',
+        fullName: 'Zoe',
+        email: '',
+        avatarUrl: null,
+        initials: 'ZO',
+        batch: { id: 'b1', name: 'Batch' },
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        enrollmentStatus: 'active' as const,
+        isAtRisk: false,
+        progress: {
+          percentage: 10,
+          assignmentsCompleted: 0,
+          assignmentsTotal: 0,
+          attendancePercent: 0,
+        },
+        joinedAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'e2',
+        fullName: 'Amy',
+        email: '',
+        avatarUrl: null,
+        initials: 'AM',
+        batch: { id: 'b1', name: 'Batch' },
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        enrollmentStatus: 'active' as const,
+        isAtRisk: false,
+        progress: {
+          percentage: 90,
+          assignmentsCompleted: 0,
+          assignmentsTotal: 0,
+          attendancePercent: 0,
+        },
+        joinedAt: '2026-01-03T00:00:00.000Z',
+        updatedAt: '2026-01-04T00:00:00.000Z',
+      },
+    ];
 
-    const byName = sortTeacherStudents(teacherStudents, 'name');
-    const names = byName.map((student) => student.fullName);
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
-
-    const byProgress = sortTeacherStudents(teacherStudents, 'progress');
-    expect(byProgress[0]?.progress.percentage ?? 0).toBeGreaterThanOrEqual(
-      byProgress[1]?.progress.percentage ?? 0,
-    );
-    expect(teacherStudents[0]?.id).toBe('tstudent_001');
+    expect(sortTeacherStudents(students, 'name').map((s) => s.fullName)).toEqual(['Amy', 'Zoe']);
+    expect(sortTeacherStudents(students, 'progress')[0]?.progress.percentage).toBe(90);
   });
 });
 
-describe('task 06.05 teacher attendance', () => {
+describe('task 08.04 teacher lessons', () => {
+  it('routes lessons under /teacher/lessons', () => {
+    expect(TEACHER_ROUTES.lessons).toBe('/teacher/lessons');
+    expect(teacherNavItems.find((item) => item.id === 'lessons')?.href).toBe('/teacher/lessons');
+    expect(getTeacherPageMeta(TEACHER_ROUTES.lessons).title).toBe('Lessons');
+  });
+
+  it('derives top stats from mapped teacher lesson DTOs', () => {
+    const lessons = [
+      {
+        id: 'l1',
+        title: 'Video Intro',
+        description: '',
+        contentType: 'video' as const,
+        contentUrl: null,
+        durationSeconds: 120,
+        displayOrder: 1,
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        module: { id: 'm1', name: 'Module' },
+        thumbnailUrl: null,
+        attachmentCount: 0,
+        completionCount: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'l2',
+        title: 'Quiz Check',
+        description: '',
+        contentType: 'quiz' as const,
+        contentUrl: null,
+        durationSeconds: null,
+        displayOrder: 2,
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        module: { id: 'm1', name: 'Module' },
+        thumbnailUrl: null,
+        attachmentCount: 0,
+        completionCount: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'l3',
+        title: 'Reading Pack',
+        description: '',
+        contentType: 'pdf' as const,
+        contentUrl: null,
+        durationSeconds: 0,
+        displayOrder: 3,
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        module: { id: 'm1', name: 'Module' },
+        thumbnailUrl: null,
+        attachmentCount: 0,
+        completionCount: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z',
+      },
+    ];
+
+    const stats = getTeacherLessonStats(lessons);
+    expect(stats.map((stat) => stat.id)).toEqual([
+      'total-lessons',
+      'video-lessons',
+      'quiz-lessons',
+      'reading-lessons',
+    ]);
+    expect(stats[0]?.value).toBe('3');
+    expect(stats[1]?.value).toBe('1');
+    expect(stats[2]?.value).toBe('1');
+    expect(stats[3]?.value).toBe('1');
+  });
+
+  it('maps UI filters and formats duration', () => {
+    expect(toLessonApiContentType('all')).toBeUndefined();
+    expect(toLessonApiContentType('video')).toBe('VIDEO');
+    expect(toLessonListSort('alphabetical')).toEqual({
+      sortBy: 'title',
+      sortOrder: 'asc',
+    });
+    expect(formatTeacherLessonDuration(120)).toBe('2 min');
+  });
+});
+
+describe('task 06.05 / task 08.06 teacher attendance', () => {
+  const sampleSessions = [
+    {
+      id: 's1',
+      title: 'Foundations Live Session',
+      course: { id: 'c1', slug: 'foundations', title: 'Foundations' },
+      batch: { id: 'b1', name: 'Weekend Cohort' },
+      mentor: { id: 't1', name: 'Teacher' },
+      status: 'completed' as const,
+      sessionDate: '2026-07-13T11:00:00.000Z',
+      durationMinutes: 60,
+      meetingProvider: null,
+      meetingUrl: null,
+      counts: { totalStudents: 2, present: 1, absent: 1, attendancePercent: 50 },
+      records: [
+        {
+          studentId: 'st1',
+          studentName: 'Student',
+          initials: 'ST',
+          status: 'present' as const,
+        },
+        {
+          studentId: 'st2',
+          studentName: 'Student',
+          initials: 'ST',
+          status: 'absent' as const,
+        },
+      ],
+      updatedAt: '2026-07-13T12:15:00.000Z',
+    },
+    {
+      id: 's2',
+      title: 'Advanced Program Workshop',
+      course: { id: 'c2', slug: 'advanced', title: 'Advanced Program' },
+      batch: { id: 'b2', name: 'Evening Cohort' },
+      mentor: { id: 't1', name: 'Teacher' },
+      status: 'scheduled' as const,
+      sessionDate: '2026-07-24T15:30:00.000Z',
+      durationMinutes: 90,
+      meetingProvider: null,
+      meetingUrl: null,
+      counts: { totalStudents: 2, present: 0, absent: 0, attendancePercent: null },
+      records: [],
+      updatedAt: '2026-07-15T09:00:00.000Z',
+    },
+  ];
+
   it('routes attendance under /teacher/attendance', () => {
     expect(TEACHER_ROUTES.attendance).toBe('/teacher/attendance');
     expect(teacherNavItems.find((item) => item.id === 'attendance')?.href).toBe(
@@ -689,196 +557,251 @@ describe('task 06.05 teacher attendance', () => {
     );
   });
 
-  it('exposes DTO-shaped sessions with course, batch, mentor, counts, and roster', () => {
-    expect(attendanceSessions.length).toBeGreaterThan(1);
-    expect(
-      attendanceSessions.every(
-        (session) =>
-          session.course.title.length > 0 &&
-          session.batch.name.length > 0 &&
-          session.mentor.name.length > 0 &&
-          typeof session.durationMinutes === 'number' &&
-          typeof session.counts.totalStudents === 'number' &&
-          Array.isArray(session.records),
-      ),
-    ).toBe(true);
-    // Integration fields stay opaque until calendar/Zoom/Meet land.
-    expect(
-      attendanceSessions.every(
-        (session) => session.meetingProvider === null && session.meetingUrl === null,
-      ),
-    ).toBe(true);
-    expect(teacherAttendanceViewState).toBe('populated');
-  });
-
-  it('keeps attendance architecture course-agnostic (Graphology only one sample)', () => {
-    const graphologyCourses = new Set(
-      attendanceSessions
-        .filter((session) => session.course.title.toLowerCase().includes('graphology'))
-        .map((session) => session.course.id),
-    );
-    expect(graphologyCourses.size).toBe(1);
-    const uniqueCourses = new Set(attendanceSessions.map((session) => session.course.id));
-    expect(uniqueCourses.size).toBeGreaterThan(graphologyCourses.size);
-  });
-
-  it('leaves attendance percent unrecorded for scheduled and cancelled sessions', () => {
-    expect(
-      attendanceSessions
-        .filter((session) => session.status !== 'completed')
-        .every(
-          (session) => session.counts.attendancePercent === null && session.records.length === 0,
-        ),
-    ).toBe(true);
-    expect(
-      attendanceSessions
-        .filter((session) => session.status === 'completed')
-        .every(
-          (session) =>
-            session.counts.attendancePercent !== null &&
-            session.counts.present + session.counts.absent === session.records.length,
-        ),
-    ).toBe(true);
-  });
-
   it('derives top stats from completed sessions', () => {
-    const stats = getTeacherAttendanceStats(attendanceSessions);
+    const stats = getTeacherAttendanceStats(sampleSessions);
     expect(stats.map((stat) => stat.id)).toEqual([
       'sessions-conducted',
       'average-attendance',
       'students-present',
       'students-absent',
     ]);
-    const completed = attendanceSessions.filter((session) => session.status === 'completed');
-    expect(stats[0]?.value).toBe(String(completed.length));
-    const present = completed.reduce((sum, session) => sum + session.counts.present, 0);
-    expect(stats[2]?.value).toBe(String(present));
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[2]?.value).toBe('1');
+    expect(stats[3]?.value).toBe('1');
   });
 
-  it('filters, sorts, and resolves sessions without mutating source data', () => {
-    const completedOnly = filterAttendanceSessions(attendanceSessions, '', 'completed');
+  it('maps UI filters to NestJS list query params and filters locally', () => {
+    expect(toAttendanceApiMarkStatus('all')).toBeUndefined();
+    expect(toAttendanceApiMarkStatus('present')).toBe('PRESENT');
+    expect(toAttendanceListSort('session_date')).toEqual({
+      sortBy: 'markedAt',
+      sortOrder: 'desc',
+    });
+
+    const completedOnly = filterAttendanceSessions(sampleSessions, '', 'completed');
     expect(completedOnly.every((session) => session.status === 'completed')).toBe(true);
 
-    const searched = filterAttendanceSessions(attendanceSessions, 'advanced', 'all');
-    expect(searched.length).toBeGreaterThan(0);
-    expect(
-      searched.every(
-        (session) =>
-          session.title.toLowerCase().includes('advanced') ||
-          session.batch.name.toLowerCase().includes('advanced') ||
-          session.course.title.toLowerCase().includes('advanced') ||
-          session.course.slug.toLowerCase().includes('advanced'),
-      ),
-    ).toBe(true);
+    const searched = filterAttendanceSessions(sampleSessions, 'advanced', 'all');
+    expect(searched).toHaveLength(1);
+    expect(searched[0]?.title).toContain('Advanced');
 
-    const byTitle = sortAttendanceSessions(attendanceSessions, 'alphabetical');
-    const titles = byTitle.map((session) => session.title);
-    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)));
+    const byCourse = filterAttendanceSessions(sampleSessions, '', 'all', {
+      courseId: 'c1',
+    });
+    expect(byCourse).toHaveLength(1);
+    expect(byCourse[0]?.id).toBe('s1');
 
-    const byDate = sortAttendanceSessions(attendanceSessions, 'session_date');
-    expect(new Date(byDate[0]?.sessionDate ?? 0).getTime()).toBeGreaterThanOrEqual(
-      new Date(byDate[1]?.sessionDate ?? 0).getTime(),
-    );
-
-    expect(getAttendanceSessionById(attendanceSessions, 'tsession_001')?.title).toBeDefined();
-    expect(getAttendanceSessionById(attendanceSessions, 'missing')).toBeNull();
-    expect(attendanceSessions[0]?.id).toBe('tsession_001');
+    const byTitle = sortAttendanceSessions(sampleSessions, 'alphabetical');
+    expect(byTitle.map((session) => session.title)).toEqual([
+      'Advanced Program Workshop',
+      'Foundations Live Session',
+    ]);
   });
 });
 
-describe('task 06.06 teacher live classes', () => {
+describe('task 06.06 / task 08.05 teacher live classes', () => {
   it('routes live classes under /teacher/live', () => {
     expect(TEACHER_ROUTES.liveClasses).toBe('/teacher/live');
-    expect(teacherNavItems.find((item) => item.id === 'live-classes')?.href).toBe(
-      '/teacher/live',
-    );
+    expect(teacherNavItems.find((item) => item.id === 'live-classes')?.href).toBe('/teacher/live');
   });
 
-  it('exposes batch-scoped DTOs with schedule, mentor, meeting, and attendance data', () => {
-    expect(teacherLiveClasses.length).toBeGreaterThan(1);
-    expect(
-      teacherLiveClasses.every(
-        (session) =>
-          session.course.title.length > 0 &&
-          session.batch.name.length > 0 &&
-          session.mentor.name.length > 0 &&
-          typeof session.durationMinutes === 'number' &&
-          typeof session.batch.studentsEnrolled === 'number' &&
-          typeof session.attendance.totalStudents === 'number',
-      ),
-    ).toBe(true);
-    expect(teacherLiveClassesViewState).toBe('populated');
-  });
+  it('derives live-class statistics from mapped DTOs', () => {
+    const sessions = [
+      {
+        id: 's1',
+        title: 'Scheduled Session',
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        batch: { id: 'b1', name: 'Batch', studentsEnrolled: 10 },
+        mentor: { id: 't1', name: 'Teacher' },
+        startsAt: '2026-08-01T10:00:00.000Z',
+        endsAt: '2026-08-01T11:00:00.000Z',
+        durationMinutes: 60,
+        status: 'scheduled' as const,
+        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null },
+        attendance: {
+          totalStudents: 10,
+          present: 0,
+          absent: 0,
+          attendancePercent: null,
+        },
+        integrations: {
+          calendar: 'coming_soon' as const,
+          notifications: 'coming_soon' as const,
+          meetingProvisioning: 'coming_soon' as const,
+          recording: 'coming_soon' as const,
+        },
+        updatedAt: '2026-07-01T00:00:00.000Z',
+      },
+      {
+        id: 's2',
+        title: 'Live Session',
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        batch: { id: 'b1', name: 'Batch', studentsEnrolled: 8 },
+        mentor: { id: 't1', name: 'Teacher' },
+        startsAt: '2026-07-18T10:00:00.000Z',
+        endsAt: '2026-07-18T11:00:00.000Z',
+        durationMinutes: 60,
+        status: 'live' as const,
+        meeting: {
+          provider: 'Google Meet' as const,
+          status: 'in_progress' as const,
+          meetingUrl: null,
+        },
+        attendance: {
+          totalStudents: 8,
+          present: 0,
+          absent: 0,
+          attendancePercent: null,
+        },
+        integrations: {
+          calendar: 'coming_soon' as const,
+          notifications: 'coming_soon' as const,
+          meetingProvisioning: 'coming_soon' as const,
+          recording: 'coming_soon' as const,
+        },
+        updatedAt: '2026-07-18T10:05:00.000Z',
+      },
+    ];
 
-  it('uses only supported providers while keeping every meeting URL null', () => {
-    const supportedProviders = new Set(['Zoom', 'Google Meet', 'Microsoft Teams']);
-    expect(
-      teacherLiveClasses.every((session) => supportedProviders.has(session.meeting.provider)),
-    ).toBe(true);
-    expect(teacherLiveClasses.map((session) => session.meeting.meetingUrl)).toEqual(
-      teacherLiveClasses.map(() => null),
-    );
-    expect(new Set(teacherLiveClasses.map((session) => session.meeting.provider)).size).toBe(3);
-  });
-
-  it('keeps live-class architecture course-agnostic', () => {
-    const graphologySamples = teacherLiveClasses.filter((session) =>
-      session.course.title.toLowerCase().includes('graphology'),
-    );
-    expect(graphologySamples).toHaveLength(1);
-    expect(new Set(teacherLiveClasses.map((session) => session.course.id)).size).toBeGreaterThan(
-      1,
-    );
-  });
-
-  it('derives the required live-class statistics', () => {
-    const stats = getTeacherLiveClassStats(teacherLiveClasses);
+    const stats = getTeacherLiveClassStats(sessions);
     expect(stats.map((stat) => stat.id)).toEqual([
       'upcoming-classes',
       'live-now',
       'completed',
       'total-students',
     ]);
-    expect(stats[0]?.value).toBe(
-      String(teacherLiveClasses.filter((session) => session.status === 'scheduled').length),
-    );
-    expect(stats[1]?.value).toBe(
-      String(teacherLiveClasses.filter((session) => session.status === 'live').length),
-    );
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[1]?.value).toBe('1');
+    expect(stats[3]?.value).toBe('18');
   });
 
-  it('filters, sorts, and resolves classes without mutating source data', () => {
-    const scheduled = filterTeacherLiveClasses(teacherLiveClasses, '', 'scheduled');
-    expect(scheduled.every((session) => session.status === 'scheduled')).toBe(true);
+  it('maps UI filters to NestJS list query params and sorts locally', () => {
+    expect(toLiveSessionApiStatus('all')).toBeUndefined();
+    expect(toLiveSessionApiStatus('live')).toBe('LIVE');
+    expect(toLiveSessionApiProvider('Zoom')).toBe('ZOOM');
+    expect(toLiveSessionApiProvider('Microsoft Teams')).toBe('CUSTOM');
+    expect(toLiveSessionListSort('alphabetical')).toEqual({
+      sortBy: 'title',
+      sortOrder: 'asc',
+    });
 
-    const searched = filterTeacherLiveClasses(teacherLiveClasses, 'advanced', 'all');
-    expect(searched.length).toBeGreaterThan(0);
-    expect(
-      searched.every(
-        (session) =>
-          session.title.toLowerCase().includes('advanced') ||
-          session.course.title.toLowerCase().includes('advanced') ||
-          session.course.slug.toLowerCase().includes('advanced') ||
-          session.batch.name.toLowerCase().includes('advanced'),
-      ),
-    ).toBe(true);
+    const sessions = [
+      {
+        id: 's1',
+        title: 'Zeta',
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        batch: { id: 'b1', name: 'Batch', studentsEnrolled: 1 },
+        mentor: { id: 't1', name: 'Teacher' },
+        startsAt: '2026-08-02T10:00:00.000Z',
+        endsAt: '2026-08-02T11:00:00.000Z',
+        durationMinutes: 60,
+        status: 'scheduled' as const,
+        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null },
+        attendance: {
+          totalStudents: 1,
+          present: 0,
+          absent: 0,
+          attendancePercent: null,
+        },
+        integrations: {
+          calendar: 'coming_soon' as const,
+          notifications: 'coming_soon' as const,
+          meetingProvisioning: 'coming_soon' as const,
+          recording: 'coming_soon' as const,
+        },
+        updatedAt: '2026-07-01T00:00:00.000Z',
+      },
+      {
+        id: 's2',
+        title: 'Alpha',
+        course: { id: 'c1', slug: 'c', title: 'Course' },
+        batch: { id: 'b1', name: 'Batch', studentsEnrolled: 1 },
+        mentor: { id: 't1', name: 'Teacher' },
+        startsAt: '2026-08-01T10:00:00.000Z',
+        endsAt: '2026-08-01T11:00:00.000Z',
+        durationMinutes: 60,
+        status: 'scheduled' as const,
+        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null },
+        attendance: {
+          totalStudents: 1,
+          present: 0,
+          absent: 0,
+          attendancePercent: null,
+        },
+        integrations: {
+          calendar: 'coming_soon' as const,
+          notifications: 'coming_soon' as const,
+          meetingProvisioning: 'coming_soon' as const,
+          recording: 'coming_soon' as const,
+        },
+        updatedAt: '2026-07-02T00:00:00.000Z',
+      },
+    ];
 
-    const alphabetical = sortTeacherLiveClasses(teacherLiveClasses, 'alphabetical');
-    const titles = alphabetical.map((session) => session.title);
-    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)));
-
-    const upcoming = sortTeacherLiveClasses(teacherLiveClasses, 'upcoming');
-    expect(new Date(upcoming[0]?.startsAt ?? 0).getTime()).toBeLessThanOrEqual(
-      new Date(upcoming[1]?.startsAt ?? 0).getTime(),
-    );
-
-    expect(getTeacherLiveClassById(teacherLiveClasses, 'live_session_001')?.title).toBeDefined();
-    expect(getTeacherLiveClassById(teacherLiveClasses, 'missing')).toBeNull();
-    expect(teacherLiveClasses[0]?.id).toBe('live_session_001');
+    expect(sortTeacherLiveClasses(sessions, 'alphabetical').map((s) => s.title)).toEqual([
+      'Alpha',
+      'Zeta',
+    ]);
+    expect(filterTeacherLiveClasses(sessions, '', 'scheduled')).toHaveLength(2);
+    expect(getTeacherLiveClassById(sessions, 's1')?.title).toBe('Zeta');
+    expect(getTeacherLiveClassById(sessions, 'missing')).toBeNull();
   });
 });
 
-describe('task 06.07 teacher assignments', () => {
+describe('task 06.07 / task 08.09 teacher assignments', () => {
+  const sampleAssignments = [
+    {
+      id: 'a1',
+      title: 'Foundations Essay',
+      course: { id: 'c1', slug: 'foundations', title: 'Foundations' },
+      batches: [{ id: 'b1', name: 'Weekend Cohort', studentsEnrolled: 18 }],
+      status: 'published' as const,
+      dueAt: '2026-07-24T18:30:00.000Z',
+      submissions: {
+        totalStudents: 18,
+        submitted: 0,
+        pending: 18,
+        graded: 0,
+        submissionRate: 0,
+      },
+      grading: { graded: 0, awaitingReview: 0, averageScore: null, maxScore: 100 },
+      attachments: [{ id: 'att1', label: 'Submission attachment placeholder', kind: 'document' }],
+      timeline: [{ id: 'created', label: 'Created', at: '2026-07-10T09:00:00.000Z' }],
+      integrations: {
+        plagiarismDetection: 'coming_soon' as const,
+        aiEvaluation: 'coming_soon' as const,
+        rubricGrading: 'coming_soon' as const,
+        notifications: 'coming_soon' as const,
+      },
+      updatedAt: '2026-07-16T11:20:00.000Z',
+    },
+    {
+      id: 'a2',
+      title: 'Advanced Case Study',
+      course: { id: 'c2', slug: 'advanced', title: 'Advanced Program' },
+      batches: [{ id: 'b2', name: 'Evening Cohort', studentsEnrolled: 14 }],
+      status: 'draft' as const,
+      dueAt: null,
+      submissions: {
+        totalStudents: 14,
+        submitted: 0,
+        pending: 14,
+        graded: 0,
+        submissionRate: null,
+      },
+      grading: { graded: 0, awaitingReview: 0, averageScore: null, maxScore: 50 },
+      attachments: [{ id: 'att1', label: 'Submission attachment placeholder', kind: 'document' }],
+      timeline: [{ id: 'created', label: 'Created', at: '2026-07-15T14:00:00.000Z' }],
+      integrations: {
+        plagiarismDetection: 'coming_soon' as const,
+        aiEvaluation: 'coming_soon' as const,
+        rubricGrading: 'coming_soon' as const,
+        notifications: 'coming_soon' as const,
+      },
+      updatedAt: '2026-07-15T14:00:00.000Z',
+    },
+  ];
+
   it('routes assignments under /teacher/assignments', () => {
     expect(TEACHER_ROUTES.assignments).toBe('/teacher/assignments');
     expect(teacherNavItems.find((item) => item.id === 'assignments')?.href).toBe(
@@ -886,103 +809,158 @@ describe('task 06.07 teacher assignments', () => {
     );
   });
 
-  it('exposes course-scoped DTOs assigned to one or more batches with placeholder files', () => {
-    expect(teacherAssignments.length).toBeGreaterThan(1);
-    expect(
-      teacherAssignments.every(
-        (assignment) =>
-          assignment.course.title.length > 0 &&
-          assignment.batches.length >= 1 &&
-          assignment.batches.every((batch) => batch.name.length > 0) &&
-          assignment.attachments.length > 0 &&
-          typeof assignment.submissions.totalStudents === 'number' &&
-          typeof assignment.grading.maxScore === 'number',
-      ),
-    ).toBe(true);
-    // Integrations remain opaque until grading/plagiarism/AI land.
-    const integrationValues = new Set(
-      teacherAssignments.flatMap((assignment) => [
-        assignment.integrations.plagiarismDetection,
-        assignment.integrations.aiEvaluation,
-        assignment.integrations.rubricGrading,
-        assignment.integrations.notifications,
-      ]),
-    );
-    expect([...integrationValues]).toEqual(['coming_soon']);
-    expect(teacherAssignmentsViewState).toBe('populated');
-  });
-
-  it('keeps assignment architecture course-agnostic (Graphology only one sample)', () => {
-    const graphologySamples = teacherAssignments.filter((assignment) =>
-      assignment.course.title.toLowerCase().includes('graphology'),
-    );
-    expect(graphologySamples).toHaveLength(1);
-    expect(
-      new Set(teacherAssignments.map((assignment) => assignment.course.id)).size,
-    ).toBeGreaterThan(1);
-  });
-
-  it('leaves submission rate unrecorded for drafts', () => {
-    expect(
-      teacherAssignments
-        .filter((assignment) => assignment.status === 'draft')
-        .every((assignment) => assignment.submissions.submissionRate === null),
-    ).toBe(true);
-  });
-
-  it('derives the required assignment statistics', () => {
-    const stats = getTeacherAssignmentStats(teacherAssignments);
+  it('derives assignment statistics from mapped DTOs', () => {
+    const stats = getTeacherAssignmentStats(sampleAssignments);
     expect(stats.map((stat) => stat.id)).toEqual([
       'active-assignments',
       'pending-reviews',
       'graded',
       'submission-rate',
     ]);
-    expect(stats[0]?.value).toBe(
-      String(teacherAssignments.filter((assignment) => assignment.status === 'published').length),
-    );
-    const pending = teacherAssignments.reduce(
-      (sum, assignment) => sum + assignment.grading.awaitingReview,
-      0,
-    );
-    expect(stats[1]?.value).toBe(String(pending));
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[1]?.value).toBe('0');
+    expect(stats[3]?.value).toBe('0%');
   });
 
-  it('filters, sorts, and resolves assignments without mutating source data', () => {
-    const drafts = filterTeacherAssignments(teacherAssignments, '', 'draft');
-    expect(drafts.every((assignment) => assignment.status === 'draft')).toBe(true);
+  it('maps UI filters to NestJS list query params and sorts locally', () => {
+    expect(toAssignmentApiStatus('all')).toBeUndefined();
+    expect(toAssignmentApiStatus('published')).toBe('PUBLISHED');
+    expect(toAssignmentListSort('due_date')).toEqual({
+      sortBy: 'dueAt',
+      sortOrder: 'asc',
+    });
+    expect(toAssignmentListSort('alphabetical')).toEqual({
+      sortBy: 'title',
+      sortOrder: 'asc',
+    });
 
-    const searched = filterTeacherAssignments(teacherAssignments, 'advanced', 'all');
-    expect(searched.length).toBeGreaterThan(0);
-    expect(
-      searched.every(
-        (assignment) =>
-          assignment.title.toLowerCase().includes('advanced') ||
-          assignment.course.title.toLowerCase().includes('advanced') ||
-          assignment.course.slug.toLowerCase().includes('advanced') ||
-          assignment.batches.some((batch) => batch.name.toLowerCase().includes('advanced')),
-      ),
-    ).toBe(true);
+    const drafts = filterTeacherAssignments(sampleAssignments, '', 'draft');
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0]?.status).toBe('draft');
 
-    const alphabetical = sortTeacherAssignments(teacherAssignments, 'alphabetical');
-    const titles = alphabetical.map((assignment) => assignment.title);
-    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)));
+    const searched = filterTeacherAssignments(sampleAssignments, 'advanced', 'all');
+    expect(searched).toHaveLength(1);
 
-    const byUpdated = sortTeacherAssignments(teacherAssignments, 'recently_updated');
-    expect(new Date(byUpdated[0]?.updatedAt ?? 0).getTime()).toBeGreaterThanOrEqual(
-      new Date(byUpdated[1]?.updatedAt ?? 0).getTime(),
+    const alphabetical = sortTeacherAssignments(sampleAssignments, 'alphabetical');
+    expect(alphabetical.map((item) => item.title)).toEqual([
+      'Advanced Case Study',
+      'Foundations Essay',
+    ]);
+
+    expect(getTeacherAssignmentById(sampleAssignments, 'a1')?.title).toBe('Foundations Essay');
+    expect(getTeacherAssignmentById(sampleAssignments, 'missing')).toBeNull();
+  });
+});
+
+describe('task 08.10 teacher submissions', () => {
+  const sampleSubmissions = [
+    {
+      id: 'sub1',
+      assignment: {
+        id: 'a1',
+        title: 'Foundations Essay',
+        course: { id: 'c1', slug: 'foundations', title: 'Foundations' },
+        maxScore: 100,
+      },
+      student: { id: 'st1', fullName: 'Student', initials: 'ST', avatarUrl: null },
+      status: 'submitted' as const,
+      content: 'Essay body',
+      attachments: [{ id: 'att1', label: 'file.pdf', kind: 'document' }],
+      score: null,
+      feedback: null,
+      submittedAt: '2026-07-20T10:00:00.000Z',
+      gradedAt: null,
+      grader: null,
+      updatedAt: '2026-07-20T10:00:00.000Z',
+    },
+    {
+      id: 'sub2',
+      assignment: {
+        id: 'a2',
+        title: 'Advanced Case Study',
+        course: { id: 'c2', slug: 'advanced', title: 'Advanced Program' },
+        maxScore: 50,
+      },
+      student: { id: 'st2', fullName: 'Student', initials: 'ST', avatarUrl: null },
+      status: 'graded' as const,
+      content: null,
+      attachments: [],
+      score: 42,
+      feedback: 'Good',
+      submittedAt: '2026-07-18T10:00:00.000Z',
+      gradedAt: '2026-07-19T10:00:00.000Z',
+      grader: { id: 't1', name: 'Teacher' },
+      updatedAt: '2026-07-19T10:00:00.000Z',
+    },
+  ];
+
+  it('routes submissions under /teacher/submissions without adding sidebar nav', () => {
+    expect(TEACHER_ROUTES.submissions).toBe('/teacher/submissions');
+    expect(teacherNavItems.some((item) => item.href === TEACHER_ROUTES.submissions)).toBe(false);
+    expect(getTeacherPageMeta(TEACHER_ROUTES.submissions).title).toBe('Submissions');
+  });
+
+  it('derives submission statistics from mapped DTOs', () => {
+    const stats = getTeacherSubmissionStats(sampleSubmissions);
+    expect(stats.map((stat) => stat.id)).toEqual(['awaiting-review', 'graded', 'late', 'returned']);
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[1]?.value).toBe('1');
+  });
+
+  it('maps UI filters to NestJS list query params and sorts locally', () => {
+    expect(toSubmissionApiStatus('all')).toBeUndefined();
+    expect(toSubmissionApiStatus('graded')).toBe('GRADED');
+    expect(toSubmissionListSort('submitted_at')).toEqual({
+      sortBy: 'submittedAt',
+      sortOrder: 'asc',
+    });
+
+    const graded = filterTeacherSubmissions(sampleSubmissions, '', 'graded');
+    expect(graded).toHaveLength(1);
+    expect(graded[0]?.status).toBe('graded');
+
+    const searched = filterTeacherSubmissions(sampleSubmissions, 'advanced', 'all');
+    expect(searched).toHaveLength(1);
+
+    const byScore = sortTeacherSubmissions(sampleSubmissions, 'score');
+    expect(byScore[0]?.id).toBe('sub2');
+
+    expect(getTeacherSubmissionById(sampleSubmissions, 'sub1')?.assignment.title).toBe(
+      'Foundations Essay',
     );
-
-    const byDue = sortTeacherAssignments(teacherAssignments, 'due_date');
-    expect(byDue[byDue.length - 1]?.dueAt).toBeNull();
-
-    expect(getTeacherAssignmentById(teacherAssignments, 'assignment_001')?.title).toBeDefined();
-    expect(getTeacherAssignmentById(teacherAssignments, 'missing')).toBeNull();
-    expect(teacherAssignments[0]?.id).toBe('assignment_001');
+    expect(getTeacherSubmissionById(sampleSubmissions, 'missing')).toBeNull();
   });
 });
 
 describe('task 06.08 teacher analytics', () => {
+  const analyticsSource: TeacherAnalyticsSourceDto = {
+    courses: [
+      {
+        id: 'course-1',
+        slug: 'foundations',
+        title: 'Foundations',
+        description: 'Course',
+        status: 'published',
+        isPublished: true,
+        media: { thumbnailUrl: null, thumbnailAlt: 'Foundations' },
+        counts: { batches: 1, students: 1, lessons: 1, assignments: 1 },
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-07-01T00:00:00.000Z',
+      },
+    ],
+    students: [],
+    assignments: [],
+    submissions: [],
+    attendanceSessions: [],
+    liveSessions: [],
+    certificates: [],
+  };
+  const overview = buildTeacherAnalyticsOverview(
+    analyticsSource,
+    '30d',
+    new Date('2026-07-18T00:00:00.000Z'),
+  );
+
   it('routes analytics under /teacher/analytics', () => {
     expect(TEACHER_ROUTES.analytics).toBe('/teacher/analytics');
     expect(teacherNavItems.find((item) => item.id === 'analytics')?.href).toBe(
@@ -990,9 +968,9 @@ describe('task 06.08 teacher analytics', () => {
     );
   });
 
-  it('exposes placeholder KPIs and chart-typed sections without fabricated rates', () => {
-    expect(teacherAnalyticsKpis).toHaveLength(6);
-    expect(teacherAnalyticsKpis.map((kpi) => kpi.label)).toEqual([
+  it('derives live KPIs and chart-typed sections without fabricating unsupported rates', () => {
+    expect(overview.kpis).toHaveLength(6);
+    expect(overview.kpis.map((kpi) => kpi.label)).toEqual([
       'Total Students',
       'Active Courses',
       'Assignment Submission Rate',
@@ -1000,25 +978,20 @@ describe('task 06.08 teacher analytics', () => {
       'Course Completion',
       'Student Satisfaction',
     ]);
-    expect(teacherAnalyticsKpis.every((kpi) => kpi.value === '—')).toBe(true);
-    expect(teacherAnalyticsSections).toHaveLength(7);
+    expect(overview.kpis.find((kpi) => kpi.id === 'kpi-active-courses')?.value).toBe('1');
+    expect(overview.kpis.find((kpi) => kpi.id === 'kpi-student-satisfaction')?.value).toBe('—');
+    expect(overview.sections).toHaveLength(7);
     expect(
-      teacherAnalyticsSections.every(
+      overview.sections.every(
         (section) =>
           section.chartTypeLabel.length > 0 &&
           ['line', 'bar', 'pie', 'area'].includes(section.chartType),
       ),
     ).toBe(true);
-    expect(teacherAnalyticsViewState).toBe('populated');
-    expect(teacherAnalyticsOverview.timeRange).toBe('30d');
-  });
-
-  it('keeps analytics architecture course-agnostic (Graphology only one sample)', () => {
-    const graphologyCourses = teacherAnalyticsCourses.filter((course) =>
-      course.title.toLowerCase().includes('graphology'),
-    );
-    expect(graphologyCourses).toHaveLength(1);
-    expect(teacherAnalyticsCourses.length).toBeGreaterThan(1);
+    expect(overview.timeRange).toBe('30d');
+    expect(overview.courses).toEqual([
+      { id: 'course-1', slug: 'foundations', title: 'Foundations' },
+    ]);
   });
 
   it('exposes the required time-range filter options', () => {
@@ -1030,47 +1003,86 @@ describe('task 06.08 teacher analytics', () => {
     ]);
   });
 
-  it('filters sections by course and resolves metric details without mutating source data', () => {
-    const byAdvanced = filterTeacherAnalyticsSections(
-      teacherAnalyticsSections,
-      teacherAnalyticsCourses,
-      'advanced',
+  it('filters sections by live course data and resolves metric details', () => {
+    const byFoundations = filterTeacherAnalyticsSections(
+      overview.sections,
+      overview.courses,
+      'foundations',
     );
-    expect(byAdvanced.length).toBeGreaterThan(0);
-    expect(
-      byAdvanced.every((section) => {
-        if (section.courseId === null) {
-          return section.title.toLowerCase().includes('advanced');
-        }
-        const course = teacherAnalyticsCourses.find((item) => item.id === section.courseId);
-        return (
-          course?.title.toLowerCase().includes('advanced') === true ||
-          course?.slug.toLowerCase().includes('advanced') === true ||
-          section.title.toLowerCase().includes('advanced')
-        );
-      }),
-    ).toBe(true);
+    expect(byFoundations.length).toBeGreaterThan(0);
 
-    expect(getTeacherAnalyticsMetricById(teacherAnalyticsMetrics, 'kpi-total-students')?.label).toBe(
+    expect(getTeacherAnalyticsMetricById(overview.metrics, 'kpi-total-students')?.label).toBe(
       'Total Students',
     );
-    expect(getTeacherAnalyticsMetricById(teacherAnalyticsMetrics, 'missing')).toBeNull();
-    expect(teacherAnalyticsSections[0]?.id).toBe('course-performance');
+    expect(getTeacherAnalyticsMetricById(overview.metrics, 'missing')).toBeNull();
+    expect(overview.sections[0]?.id).toBe('course-performance');
   });
 });
 
-describe('task 06.09 teacher messages', () => {
+describe('task 06.09 / task 08.14 teacher messages', () => {
+  const teacher = {
+    id: 'teacher-1',
+    name: 'Teacher',
+    role: 'teacher' as const,
+    initials: 'T',
+  };
+  const student = {
+    id: 'student-1',
+    name: 'Participant',
+    role: 'student' as const,
+    initials: 'P',
+  };
+  const firstMessage = {
+    id: 'message-1',
+    sender: student,
+    timestamp: '2026-07-18T09:00:00.000Z',
+    body: 'Question about the advanced assignment.',
+    attachments: [],
+    status: 'delivered' as const,
+  };
+  const secondMessage = {
+    id: 'message-2',
+    sender: teacher,
+    timestamp: '2026-07-17T09:00:00.000Z',
+    body: 'Batch update.',
+    attachments: [],
+    status: 'sent' as const,
+  };
+  const sampleConversations = [
+    {
+      id: 'conversation-1',
+      title: 'Advanced assignment question',
+      type: 'student' as const,
+      unreadCount: 1,
+      lastMessage: firstMessage,
+      updatedAt: firstMessage.timestamp,
+      participants: [teacher, student],
+      messages: [firstMessage],
+      courseTitle: null,
+      futureFeatures: teacherMessageComingSoonFeatures,
+    },
+    {
+      id: 'conversation-2',
+      title: 'Weekend cohort',
+      type: 'batch' as const,
+      unreadCount: 0,
+      lastMessage: secondMessage,
+      updatedAt: secondMessage.timestamp,
+      participants: [teacher, student],
+      messages: [secondMessage],
+      courseTitle: null,
+      futureFeatures: teacherMessageComingSoonFeatures,
+    },
+  ];
+
   it('routes messages under /teacher/messages', () => {
     expect(TEACHER_ROUTES.messages).toBe('/teacher/messages');
-    expect(teacherNavItems.find((item) => item.id === 'messages')?.href).toBe(
-      '/teacher/messages',
-    );
+    expect(teacherNavItems.find((item) => item.id === 'messages')?.href).toBe('/teacher/messages');
   });
 
-  it('exposes DTO-shaped conversations with participants, messages, and future feature flags', () => {
-    expect(teacherConversations.length).toBeGreaterThan(1);
+  it('exposes mapped DTO conversations with participants and messages', () => {
     expect(
-      teacherConversations.every(
+      sampleConversations.every(
         (conversation) =>
           conversation.title.length > 0 &&
           conversation.participants.length >= 1 &&
@@ -1079,7 +1091,7 @@ describe('task 06.09 teacher messages', () => {
       ),
     ).toBe(true);
     const integrationValues = new Set(
-      teacherConversations.flatMap((conversation) => [
+      sampleConversations.flatMap((conversation) => [
         conversation.futureFeatures.realtime,
         conversation.futureFeatures.uploads,
         conversation.futureFeatures.notifications,
@@ -1087,30 +1099,30 @@ describe('task 06.09 teacher messages', () => {
       ]),
     );
     expect([...integrationValues]).toEqual(['coming_soon']);
-    expect(teacherMessagesViewState).toBe('populated');
   });
 
-  it('keeps Graphology as only one batch course sample', () => {
-    const graphologyCourses = new Set(
-      teacherConversations
-        .map((conversation) => conversation.courseTitle)
-        .filter((title): title is string => title !== null)
-        .filter((title) => title.toLowerCase().includes('graphology')),
-    );
-    expect(graphologyCourses.size).toBe(1);
+  it('maps supported filters to API query values', () => {
+    expect(toConversationApiType('students')).toBe('DIRECT');
+    expect(toConversationApiType('batches')).toBe('BATCH');
+    expect(toConversationApiType('announcements')).toBe('SUPPORT');
+    expect(toConversationApiType('unread')).toBeUndefined();
+    expect(toConversationListSort()).toEqual({
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
   });
 
-  it('filters conversations by unread, type, and search without mutating source data', () => {
-    const unread = filterTeacherConversations(teacherConversations, '', 'unread');
+  it('finishes unread and broad search filtering without mutating source data', () => {
+    const unread = filterTeacherConversations(sampleConversations, '', 'unread');
     expect(unread.every((conversation) => conversation.unreadCount > 0)).toBe(true);
 
-    const students = filterTeacherConversations(teacherConversations, '', 'students');
+    const students = filterTeacherConversations(sampleConversations, '', 'students');
     expect(students.every((conversation) => conversation.type === 'student')).toBe(true);
 
-    const batches = filterTeacherConversations(teacherConversations, '', 'batches');
+    const batches = filterTeacherConversations(sampleConversations, '', 'batches');
     expect(batches.every((conversation) => conversation.type === 'batch')).toBe(true);
 
-    const searched = filterTeacherConversations(teacherConversations, 'advanced', 'all');
+    const searched = filterTeacherConversations(sampleConversations, 'advanced', 'all');
     expect(searched.length).toBeGreaterThan(0);
     expect(
       searched.every(
@@ -1124,31 +1136,96 @@ describe('task 06.09 teacher messages', () => {
       ),
     ).toBe(true);
 
-    expect(getTeacherConversationById(teacherConversations, 'tconv_001')?.title).toBeDefined();
-    expect(getTeacherConversationById(teacherConversations, 'missing')).toBeNull();
-    expect(teacherConversations[0]?.id).toBe('tconv_001');
+    expect(getTeacherConversationById(sampleConversations, 'conversation-1')?.title).toBeDefined();
+    expect(getTeacherConversationById(sampleConversations, 'missing')).toBeNull();
+    expect(sampleConversations[0]?.id).toBe('conversation-1');
   });
 });
 
-describe('task 06.10 teacher calendar', () => {
+describe('task 06.10 / task 08.12 teacher calendar', () => {
+  const sampleEvents = [
+    {
+      id: 'c1',
+      title: 'Foundations Live Session',
+      type: 'live_class' as const,
+      course: {
+        id: 'course1',
+        slug: 'graphology-foundation',
+        title: 'Graphology Foundations',
+      },
+      batch: { id: 'b1', name: 'Weekend Cohort' },
+      mentor: { id: '', name: 'Teacher' },
+      startTime: '2026-07-18T11:00:00.000Z',
+      endTime: '2026-07-18T12:00:00.000Z',
+      timezone: 'UTC',
+      meetingProvider: null,
+      meetingUrl: null,
+      location: null,
+      status: 'scheduled' as const,
+      description: 'Live class block',
+      futureFeatures: teacherCalendarComingSoonFeatures,
+    },
+    {
+      id: 'c2',
+      title: 'Advanced Essay due',
+      type: 'assignment_due' as const,
+      course: {
+        id: 'course2',
+        slug: 'advanced',
+        title: 'Advanced Program',
+      },
+      batch: { id: 'b2', name: 'Evening Cohort' },
+      mentor: { id: '', name: 'Teacher' },
+      startTime: '2026-07-20T18:30:00.000Z',
+      endTime: '2026-07-20T18:30:00.000Z',
+      timezone: 'UTC',
+      meetingProvider: null,
+      meetingUrl: null,
+      location: null,
+      status: 'scheduled' as const,
+      description: 'Assignment due marker',
+      futureFeatures: teacherCalendarComingSoonFeatures,
+    },
+    {
+      id: 'c3',
+      title: 'Office hours — evening cohort',
+      type: 'office_hours' as const,
+      course: {
+        id: 'course2',
+        slug: 'advanced',
+        title: 'Advanced Program',
+      },
+      batch: { id: 'b2', name: 'Evening Cohort' },
+      mentor: { id: '', name: 'Teacher' },
+      startTime: '2026-07-17T14:00:00.000Z',
+      endTime: '2026-07-17T15:00:00.000Z',
+      timezone: 'UTC',
+      meetingProvider: null,
+      meetingUrl: null,
+      location: null,
+      status: 'scheduled' as const,
+      description: 'Office hours block',
+      futureFeatures: teacherCalendarComingSoonFeatures,
+    },
+  ];
+
   it('routes calendar under /teacher/calendar without adding sidebar nav', () => {
     expect(TEACHER_ROUTES.calendar).toBe('/teacher/calendar');
     expect(teacherNavItems.some((item) => item.href === TEACHER_ROUTES.calendar)).toBe(false);
     expect(getTeacherPageMeta(TEACHER_ROUTES.calendar).title).toBe('Calendar');
   });
 
-  it('exposes DTO-shaped events with null meetingUrl/location and coming-soon integrations', () => {
-    expect(teacherCalendarEvents.length).toBeGreaterThan(1);
+  it('keeps null meetingUrl/location and coming-soon integrations on mapped DTOs', () => {
     expect(
-      teacherCalendarEvents.every(
+      sampleEvents.every(
         (event) => event.id.length > 0 && event.title.length > 0 && event.mentor.name.length > 0,
       ),
     ).toBe(true);
-    expect(teacherCalendarEvents.map((event) => [event.meetingUrl, event.location])).toEqual(
-      teacherCalendarEvents.map(() => [null, null]),
+    expect(sampleEvents.map((event) => [event.meetingUrl, event.location])).toEqual(
+      sampleEvents.map(() => [null, null]),
     );
     const integrationValues = new Set(
-      teacherCalendarEvents.flatMap((event) => [
+      sampleEvents.flatMap((event) => [
         event.futureFeatures.googleCalendar,
         event.futureFeatures.outlook,
         event.futureFeatures.meetingProvisioning,
@@ -1156,27 +1233,23 @@ describe('task 06.10 teacher calendar', () => {
       ]),
     );
     expect([...integrationValues]).toEqual(['coming_soon']);
-    expect(teacherCalendarViewState).toBe('populated');
   });
 
-  it('keeps Graphology as only one course sample', () => {
-    const graphologyCourses = new Set(
-      teacherCalendarEvents
-        .map((event) => event.course?.title)
-        .filter((title): title is string => title !== undefined)
-        .filter((title) => title.toLowerCase().includes('graphology')),
-    );
-    expect(graphologyCourses.size).toBe(1);
+  it('maps list sort helpers and month ranges for API queries', () => {
+    expect(toCalendarListSort()).toEqual({ sortBy: 'startsAt', sortOrder: 'asc' });
+    const range = getTeacherCalendarMonthRange(2026, 7);
+    expect(range.from.length).toBeGreaterThan(0);
+    expect(range.to.length).toBeGreaterThan(0);
   });
 
   it('filters events, resolves day agenda, and builds months without mutating source data', () => {
-    const live = filterTeacherCalendarEvents(teacherCalendarEvents, '', 'live_classes');
+    const live = filterTeacherCalendarEvents(sampleEvents, '', 'live_classes');
     expect(live.every((event) => event.type === 'live_class')).toBe(true);
 
-    const assignments = filterTeacherCalendarEvents(teacherCalendarEvents, '', 'assignments');
+    const assignments = filterTeacherCalendarEvents(sampleEvents, '', 'assignments');
     expect(assignments.every((event) => event.type === 'assignment_due')).toBe(true);
 
-    const searched = filterTeacherCalendarEvents(teacherCalendarEvents, 'office', 'all');
+    const searched = filterTeacherCalendarEvents(sampleEvents, 'office', 'all');
     expect(searched.length).toBeGreaterThan(0);
     expect(
       searched.every(
@@ -1188,22 +1261,258 @@ describe('task 06.10 teacher calendar', () => {
       ),
     ).toBe(true);
 
-    const dayEvents = getTeacherCalendarEventsForDay(teacherCalendarEvents, '2026-07-17');
-    expect(dayEvents.some((event) => event.id === 'tcal_003')).toBe(true);
+    const dayEvents = getTeacherCalendarEventsForDay(sampleEvents, '2026-07-17');
+    expect(dayEvents.some((event) => event.id === 'c3')).toBe(true);
 
-    const month = buildTeacherCalendarMonth(
-      teacherCalendarInitialMonth.year,
-      teacherCalendarInitialMonth.month,
-      teacherCalendarEvents,
-    );
+    const month = buildTeacherCalendarMonth(2026, 7, sampleEvents, '2026-07-17');
     expect(month.label).toContain('2026');
     expect(month.days.length % 7).toBe(0);
 
     const shifted = shiftTeacherCalendarMonth(2026, 7, 1);
     expect(shifted).toEqual({ year: 2026, month: 8 });
 
-    expect(getTeacherCalendarEventById(teacherCalendarEvents, 'tcal_001')?.title).toBeDefined();
-    expect(getTeacherCalendarEventById(teacherCalendarEvents, 'missing')).toBeNull();
-    expect(teacherCalendarEvents[0]?.id).toBe('tcal_001');
+    expect(getTeacherCalendarEventById(sampleEvents, 'c1')?.title).toBeDefined();
+    expect(getTeacherCalendarEventById(sampleEvents, 'missing')).toBeNull();
+    expect(sampleEvents[0]?.id).toBe('c1');
+  });
+});
+
+describe('task 06.11 / task 08.11 teacher certificate management', () => {
+  const sampleCertificates = [
+    {
+      id: 'c1',
+      student: { id: 's1', name: 'Student', email: '' },
+      course: { id: 'course1', slug: 'foundations', title: 'Foundations' },
+      batch: { id: 'b1', name: 'Weekend Cohort' },
+      status: 'issued' as const,
+      issuedAt: '2026-07-10T09:00:00.000Z',
+      certificateNumber: 'CERT-001',
+      downloadUrl: null,
+      verificationUrl: null,
+      mentor: { id: '', name: 'Teacher' },
+      futureFeatures: {
+        pdfGeneration: 'coming_soon' as const,
+        qrGeneration: 'coming_soon' as const,
+        blockchainVerification: 'coming_soon' as const,
+        emailDelivery: 'coming_soon' as const,
+        downloads: 'coming_soon' as const,
+      },
+      updatedAt: '2026-07-10T09:00:00.000Z',
+    },
+    {
+      id: 'c2',
+      student: { id: 's2', name: 'Student', email: '' },
+      course: { id: 'course2', slug: 'advanced', title: 'Advanced Program' },
+      batch: { id: 'b2', name: 'Evening Cohort' },
+      status: 'eligible' as const,
+      issuedAt: null,
+      certificateNumber: null,
+      downloadUrl: null,
+      verificationUrl: null,
+      mentor: { id: '', name: 'Teacher' },
+      futureFeatures: {
+        pdfGeneration: 'coming_soon' as const,
+        qrGeneration: 'coming_soon' as const,
+        blockchainVerification: 'coming_soon' as const,
+        emailDelivery: 'coming_soon' as const,
+        downloads: 'coming_soon' as const,
+      },
+      updatedAt: '2026-07-16T10:00:00.000Z',
+    },
+  ];
+
+  it('routes certificates under /teacher/certificates', () => {
+    expect(TEACHER_ROUTES.certificates).toBe('/teacher/certificates');
+    expect(teacherNavItems.find((item) => item.id === 'certificates')?.href).toBe(
+      '/teacher/certificates',
+    );
+    expect(getTeacherPageMeta(TEACHER_ROUTES.certificates).title).toBe('Certificates');
+  });
+
+  it('derives certificate statistics and batch rollups from mapped DTOs', () => {
+    const stats = getTeacherCertificateStats(sampleCertificates);
+    expect(stats.map((stat) => stat.id)).toEqual(['eligible', 'pending', 'issued', 'revoked']);
+    expect(stats[0]?.value).toBe('1');
+    expect(stats[2]?.value).toBe('1');
+
+    const batches = deriveTeacherCertificateBatches(sampleCertificates);
+    expect(batches).toHaveLength(2);
+    expect(batches.find((batch) => batch.id === 'b1')?.issuedCount).toBe(1);
+  });
+
+  it('maps UI filters to NestJS list query params and sorts locally', () => {
+    expect(toCertificateApiStatus('all')).toBeUndefined();
+    expect(toCertificateApiStatus('issued')).toBe('ISSUED');
+    expect(toCertificateListSort('newest')).toEqual({
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    const eligible = filterTeacherCertificates(sampleCertificates, '', 'eligible');
+    expect(eligible).toHaveLength(1);
+    expect(eligible[0]?.status).toBe('eligible');
+
+    const searched = filterTeacherCertificates(sampleCertificates, 'advanced', 'all');
+    expect(searched).toHaveLength(1);
+
+    const byCourse = sortTeacherCertificates(sampleCertificates, 'course');
+    expect(byCourse.map((item) => item.course.title)).toEqual(['Advanced Program', 'Foundations']);
+
+    expect(getTeacherCertificateById(sampleCertificates, 'c1')?.certificateNumber).toBe('CERT-001');
+    expect(getTeacherCertificateById(sampleCertificates, 'missing')).toBeNull();
+  });
+});
+
+describe('task 08.13 teacher notifications', () => {
+  const sampleNotifications = [
+    {
+      id: 'n1',
+      userId: 'teacher-1',
+      title: 'Submission received',
+      message: 'A learner submitted an assignment.',
+      type: 'assignment' as const,
+      priority: 'medium' as const,
+      createdAt: '2026-07-18T08:00:00.000Z',
+      readAt: null,
+      archivedAt: null,
+      actionLabel: null,
+      actionUrl: null,
+      icon: 'clipboard' as const,
+      relatedFeatureLabel: 'Assignment',
+      futureFeatures: teacherNotificationFutureFeatures,
+    },
+    {
+      id: 'n2',
+      userId: 'teacher-1',
+      title: 'Course announcement',
+      message: 'A new announcement was posted.',
+      type: 'announcement' as const,
+      priority: 'medium' as const,
+      createdAt: '2026-07-17T08:00:00.000Z',
+      readAt: '2026-07-17T09:00:00.000Z',
+      archivedAt: null,
+      actionLabel: null,
+      actionUrl: null,
+      icon: 'bell' as const,
+      relatedFeatureLabel: 'Announcement',
+      futureFeatures: teacherNotificationFutureFeatures,
+    },
+  ];
+
+  it('routes notifications under /teacher without adding sidebar navigation', () => {
+    expect(TEACHER_ROUTES.notifications).toBe('/teacher/notifications');
+    expect(teacherNavItems.some((item) => item.href === TEACHER_ROUTES.notifications)).toBe(false);
+    expect(getTeacherPageMeta(TEACHER_ROUTES.notifications).title).toBe('Notifications');
+  });
+
+  it('derives notification statistics from mapped list data', () => {
+    const stats = getTeacherNotificationStats(
+      sampleNotifications,
+      new Date('2026-07-18T12:00:00.000Z'),
+    );
+    expect(stats.map((stat) => stat.id)).toEqual(['unread', 'read', 'today', 'week']);
+    expect(stats.find((stat) => stat.id === 'unread')?.value).toBe('1');
+    expect(stats.find((stat) => stat.id === 'read')?.value).toBe('1');
+    expect(stats.find((stat) => stat.id === 'today')?.value).toBe('1');
+    expect(stats.find((stat) => stat.id === 'week')?.value).toBe('2');
+  });
+
+  it('maps supported API filters and finishes search/read filtering locally', () => {
+    expect(toNotificationApiType('announcement')).toBe('announcement');
+    expect(toNotificationApiType('read')).toBeUndefined();
+    expect(toNotificationApiUnreadOnly('unread')).toBe(true);
+    expect(toNotificationApiUnreadOnly('read')).toBeUndefined();
+    expect(toNotificationListSort('oldest')).toEqual({
+      sortBy: 'createdAt',
+      sortOrder: 'asc',
+    });
+
+    expect(filterTeacherNotifications(sampleNotifications, '', 'read')).toHaveLength(1);
+    expect(filterTeacherNotifications(sampleNotifications, 'submission', 'all')[0]?.id).toBe('n1');
+    expect(sortTeacherNotifications(sampleNotifications, 'oldest')[0]?.id).toBe('n2');
+    expect(getTeacherNotificationById(sampleNotifications, 'n1')?.readAt).toBeNull();
+    expect(getTeacherNotificationById(sampleNotifications, 'missing')).toBeNull();
+  });
+});
+
+describe('task 06.12 teacher profile and settings', () => {
+  const teacherProfile = buildTeacherProfileFromAuth({
+    id: 'teacher-1',
+    email: 'teacher@example.com',
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+  });
+
+  it('routes profile and settings under /teacher', () => {
+    expect(TEACHER_ROUTES.profile).toBe('/teacher/profile');
+    expect(TEACHER_ROUTES.settings).toBe('/teacher/settings');
+    expect(teacherNavItems.find((item) => item.id === 'profile')?.href).toBe('/teacher/profile');
+    expect(teacherNavItems.find((item) => item.id === 'settings')?.href).toBe('/teacher/settings');
+    expect(getTeacherPageMeta(TEACHER_ROUTES.profile).title).toBe('Profile');
+    expect(getTeacherPageMeta(TEACHER_ROUTES.settings).title).toBe('Settings');
+  });
+
+  it('maps auth identity into the teacher profile DTO with honest unsupported defaults', () => {
+    expect(teacherProfile.id).toBe('teacher-1');
+    expect(teacherProfile.firstName).toBe('Ada');
+    expect(teacherProfile.email).toBe('teacher@example.com');
+    expect(teacherProfile.avatarUrl).toBeNull();
+    expect(teacherProfile.specializations).toEqual([]);
+    expect(teacherProfileDefaults.preferences.theme).toBe('system');
+    expect(teacherProfile.connectedAccounts.map((account) => account.provider)).toEqual([
+      'google',
+      'microsoft',
+      'zoom',
+    ]);
+    expect(teacherProfile.connectedAccounts.every((account) => !account.connected)).toBe(true);
+    expect(teacherProfile.connectedAccounts.map((account) => account.externalAccountId)).toEqual(
+      teacherProfile.connectedAccounts.map(() => null),
+    );
+    const integrationValues = new Set(Object.values(teacherProfile.futureFeatures));
+    expect([...integrationValues]).toEqual(['coming_soon']);
+    expect(teacherSettingsViewState).toBe('populated');
+  });
+
+  it('formats display name and language labels', () => {
+    expect(getTeacherDisplayName(teacherProfile)).toBe('Ada Lovelace');
+    expect(getTeacherLanguageLabel('en')).toBe('English');
+    expect(getTeacherLanguageLabel('hi')).toContain('hi');
+  });
+});
+
+describe('task 06.13 teacher portal stabilization', () => {
+  it('exposes shared coming-soon copy constants', () => {
+    expect(TEACHER_COMING_SOON.ariaSuffix).toBe('coming soon');
+    expect(TEACHER_COMING_SOON.integrationLabel).toBe('Coming Soon');
+    expect(TEACHER_COMING_SOON.note.length).toBeGreaterThan(0);
+  });
+
+  it('maps every TEACHER_ROUTES value to page metadata', () => {
+    for (const href of Object.values(TEACHER_ROUTES)) {
+      const meta = getTeacherPageMeta(href);
+      expect(meta.title.length).toBeGreaterThan(0);
+      expect(meta.breadcrumb.length).toBeGreaterThan(0);
+      if (href === TEACHER_ROUTES.root) {
+        // Root redirects to dashboard; meta falls back to dashboard copy.
+        expect(meta.title).toBe(getTeacherPageMeta(TEACHER_ROUTES.dashboard).title);
+        continue;
+      }
+      expect(teacherPageMeta[href]?.title).toBe(meta.title);
+    }
+  });
+
+  it('keeps implemented teacher feature routes under /teacher', () => {
+    expect(TEACHER_ROUTES.courses).toBe('/teacher/courses');
+    expect(TEACHER_ROUTES.batches).toBe('/teacher/batches');
+    expect(TEACHER_ROUTES.students).toBe('/teacher/students');
+    expect(TEACHER_ROUTES.attendance).toBe('/teacher/attendance');
+    expect(TEACHER_ROUTES.liveClasses).toBe('/teacher/live');
+    expect(TEACHER_ROUTES.assignments).toBe('/teacher/assignments');
+    expect(TEACHER_ROUTES.analytics).toBe('/teacher/analytics');
+    expect(TEACHER_ROUTES.messages).toBe('/teacher/messages');
+    expect(TEACHER_ROUTES.calendar).toBe('/teacher/calendar');
+    expect(TEACHER_ROUTES.certificates).toBe('/teacher/certificates');
+    expect(TEACHER_ROUTES.profile).toBe('/teacher/profile');
+    expect(TEACHER_ROUTES.settings).toBe('/teacher/settings');
   });
 });

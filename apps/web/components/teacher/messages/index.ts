@@ -1,16 +1,2 @@
 export { MessagesView } from './messages-view';
-export { MessagesWorkspace } from './messages-workspace';
-export { MessagesSidebar } from './messages-sidebar';
-export { ConversationList } from './conversation-list';
-export { ConversationCard } from './conversation-card';
-export { ConversationHeader } from './conversation-header';
-export { ConversationDetailsPanel } from './conversation-details-panel';
-export { MessageThread } from './message-thread';
-export { MessageBubble } from './message-bubble';
-export { ComposePanel } from './compose-panel';
-export { MessageSearch } from './message-search';
-export { MessageFilters } from './message-filters';
-export { MessagesHeader } from './messages-header';
-export { MessagesSkeleton } from './messages-skeleton';
-export { MessagesEmptyState } from './messages-empty-state';
-export { MessagesErrorState } from './messages-error-state';
+export type { MessagesPortalMode } from './conversation-details-panel';

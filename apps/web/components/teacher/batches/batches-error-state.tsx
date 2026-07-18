@@ -1,9 +1,9 @@
 import { teacherBatchesPageCopy } from '../../../lib/teacher';
-import { ErrorState } from '../../dashboard/error-state';
+import { TeacherModuleErrorState } from '../shared';
 
 export function BatchesErrorState(): React.JSX.Element {
   return (
-    <ErrorState
+    <TeacherModuleErrorState
       title={teacherBatchesPageCopy.errorTitle}
       description={teacherBatchesPageCopy.errorDescription}
     />

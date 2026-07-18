@@ -1,6 +1,5 @@
-import { LivePageView } from '../../../components/dashboard/live';
-import { liveClasses } from '../../../lib/dashboard';
+import { StudentLiveClassesView } from '../../../components/dashboard/student-academic';
 
 export default function LiveClassesPage(): React.JSX.Element {
-  return <LivePageView classes={liveClasses} />;
+  return <StudentLiveClassesView />;
 }

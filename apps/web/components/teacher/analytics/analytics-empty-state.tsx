@@ -1,8 +1,5 @@
-import { icons } from '../../../lib/constants';
 import { teacherAnalyticsPageCopy } from '../../../lib/teacher';
-import { DashboardEmptyState } from '../../dashboard/shared';
-
-const TrendingIcon = icons.trending;
+import { TeacherModuleEmptyState } from '../shared';
 
 export function AnalyticsEmptyState({
   variant = 'empty',
@@ -13,10 +10,10 @@ export function AnalyticsEmptyState({
   const isEmpty = variant === 'empty';
 
   return (
-    <DashboardEmptyState
+    <TeacherModuleEmptyState
       title={isEmpty ? copy.emptyTitle : copy.noMatchesTitle}
       description={isEmpty ? copy.emptyDescription : copy.noMatchesDescription}
-      illustration={<TrendingIcon className="h-7 w-7" aria-hidden />}
+      icon="trending"
     />
   );
 }

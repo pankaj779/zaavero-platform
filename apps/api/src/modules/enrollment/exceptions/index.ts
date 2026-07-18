@@ -1,0 +1,9 @@
+export { EnrollmentNotFoundException } from './enrollment-not-found.exception';
+export { EnrollmentConflictException } from './enrollment-conflict.exception';
+export { OrganizationAccessDeniedException } from './organization-access-denied.exception';
+export { BatchNotFoundException } from './batch-not-found.exception';
+export { CourseNotFoundException } from './course-not-found.exception';
+export { StudentProfileNotFoundException } from './student-profile-not-found.exception';
+export { TeacherEnrollmentMutationForbiddenException } from './teacher-enrollment-mutation-forbidden.exception';
+export { EnrollmentForbiddenException } from './enrollment-forbidden.exception';
+export { InvalidEnrollmentException } from './invalid-enrollment.exception';

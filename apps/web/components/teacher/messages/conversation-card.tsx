@@ -6,6 +6,7 @@ import {
   teacherMessagesPageCopy,
   type TeacherConversationDto,
 } from '../../../lib/teacher';
+import { teacherCardSurfaceClass } from '../shared';
 
 export function ConversationCard({
   conversation,
@@ -20,10 +21,7 @@ export function ConversationCard({
 
   return (
     <Card
-      className={cn(
-        'rounded-xl shadow-sm transition-shadow duration-200 motion-reduce:transition-none hover:shadow-md',
-        selected ? 'ring-2 ring-primary ring-offset-2' : '',
-      )}
+      className={cn(teacherCardSurfaceClass, selected ? 'ring-2 ring-primary ring-offset-2' : '')}
     >
       <CardContent className="p-4">
         <Button

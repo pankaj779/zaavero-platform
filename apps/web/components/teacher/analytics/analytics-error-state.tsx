@@ -1,11 +1,13 @@
 import { teacherAnalyticsPageCopy } from '../../../lib/teacher';
-import { ErrorState } from '../../dashboard/error-state';
+import { TeacherModuleErrorState } from '../shared';
 
-export function AnalyticsErrorState(): React.JSX.Element {
+export function AnalyticsErrorState({ onRetry }: { onRetry?: () => void }): React.JSX.Element {
   return (
-    <ErrorState
+    <TeacherModuleErrorState
       title={teacherAnalyticsPageCopy.errorTitle}
       description={teacherAnalyticsPageCopy.errorDescription}
+      retryLabel={teacherAnalyticsPageCopy.retryButton}
+      onRetry={onRetry}
     />
   );
 }

@@ -4,15 +4,41 @@ import { useState } from 'react';
 import { Button } from '@graphology/ui';
 import { teacherMessagesPageCopy } from '../../../lib/teacher';
 
-/** Compose shell — send, attach, and emoji stay disabled until messaging lands. */
-export function ComposePanel(): React.JSX.Element {
-  const copy = teacherMessagesPageCopy;
+export function ComposePanel({
+  onSend,
+  pageCopy,
+}: {
+  onSend: (body: string) => Promise<void>;
+  pageCopy?: Partial<typeof teacherMessagesPageCopy>;
+}): React.JSX.Element {
+  const copy = { ...teacherMessagesPageCopy, ...pageCopy };
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   return (
-    <section
+    <form
       className="space-y-3 border-t border-border pt-4"
       aria-label={copy.composeLabel}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const body = draft.trim();
+        if (body.length === 0 || sending) {
+          return;
+        }
+        setSending(true);
+        setError('');
+        void onSend(body)
+          .then(() => {
+            setDraft('');
+          })
+          .catch(() => {
+            setError('Unable to send this message. Please try again.');
+          })
+          .finally(() => {
+            setSending(false);
+          });
+      }}
     >
       <label htmlFor="teacher-message-compose" className="sr-only">
         {copy.composeLabel}
@@ -23,13 +49,14 @@ export function ComposePanel(): React.JSX.Element {
         rows={3}
         placeholder={copy.composePlaceholder}
         className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        disabled={sending}
         onChange={(event) => {
           setDraft(event.target.value);
         }}
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="button" size="sm" disabled aria-label={`${copy.sendButton} — coming soon`}>
-          {copy.sendButton}
+        <Button type="submit" size="sm" disabled={sending || draft.trim().length === 0}>
+          {sending ? 'Sending…' : copy.sendButton}
         </Button>
         <Button
           type="button"
@@ -50,7 +77,14 @@ export function ComposePanel(): React.JSX.Element {
           {copy.emojiButton}
         </Button>
       </div>
-      <p className="text-caption text-muted-foreground">{copy.comingSoonNote}</p>
-    </section>
+      {error.length > 0 ? (
+        <p className="text-caption text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <p className="text-caption text-muted-foreground">
+        Attachments and emoji require storage and rich-message backend support.
+      </p>
+    </form>
   );
 }

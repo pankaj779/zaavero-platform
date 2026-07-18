@@ -1,5 +1,5 @@
-﻿import { CertificatesView } from '../../../components/dashboard/certificates';
+﻿import { StudentCertificatesView } from '../../../components/dashboard/student-academic';
 
 export default function CertificatesPage(): React.JSX.Element {
-  return <CertificatesView />;
+  return <StudentCertificatesView />;
 }

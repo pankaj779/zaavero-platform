@@ -1,8 +1,5 @@
-import { icons } from '../../../lib/constants';
 import { teacherLiveClassesPageCopy } from '../../../lib/teacher';
-import { DashboardEmptyState } from '../../dashboard/shared';
-
-const VideoIcon = icons.video;
+import { TeacherModuleEmptyState } from '../shared';
 
 export function LiveClassesEmptyState({
   variant = 'empty',
@@ -13,10 +10,10 @@ export function LiveClassesEmptyState({
   const isEmpty = variant === 'empty';
 
   return (
-    <DashboardEmptyState
+    <TeacherModuleEmptyState
       title={isEmpty ? copy.emptyTitle : copy.noMatchesTitle}
       description={isEmpty ? copy.emptyDescription : copy.noMatchesDescription}
-      illustration={<VideoIcon className="h-7 w-7" aria-hidden />}
+      icon="video"
     />
   );
 }

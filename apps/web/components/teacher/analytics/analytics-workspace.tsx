@@ -24,16 +24,17 @@ export function AnalyticsWorkspace({
   sections,
   courses,
   metrics,
-  defaultTimeRange = '30d',
+  timeRange,
+  onTimeRangeChange,
 }: {
   kpis: TeacherAnalyticsMetricDto[];
   sections: TeacherAnalyticsSectionDto[];
   courses: TeacherAnalyticsCourseRefDto[];
   metrics: TeacherAnalyticsMetricDto[];
-  defaultTimeRange?: TeacherAnalyticsTimeRange;
+  timeRange: TeacherAnalyticsTimeRange;
+  onTimeRangeChange: (value: TeacherAnalyticsTimeRange) => void;
 }): React.JSX.Element {
   const [query, setQuery] = useState('');
-  const [timeRange, setTimeRange] = useState<TeacherAnalyticsTimeRange>(defaultTimeRange);
   const [selectedMetricId, setSelectedMetricId] = useState<string | null>(null);
   const copy = teacherAnalyticsPageCopy;
 
@@ -44,9 +45,7 @@ export function AnalyticsWorkspace({
 
   const selectedMetric = useMemo(
     () =>
-      selectedMetricId === null
-        ? null
-        : getTeacherAnalyticsMetricById(metrics, selectedMetricId),
+      selectedMetricId === null ? null : getTeacherAnalyticsMetricById(metrics, selectedMetricId),
     [metrics, selectedMetricId],
   );
 
@@ -59,7 +58,7 @@ export function AnalyticsWorkspace({
           <div className="w-full laptop:max-w-sm">
             <AnalyticsSearch value={query} onChange={setQuery} />
           </div>
-          <AnalyticsTimeRangeFilter value={timeRange} onChange={setTimeRange} />
+          <AnalyticsTimeRangeFilter value={timeRange} onChange={onTimeRangeChange} />
         </div>
         <p className="text-caption text-muted-foreground">
           {`${copy.timeRangeNote} Selected range: ${timeRange}.`}

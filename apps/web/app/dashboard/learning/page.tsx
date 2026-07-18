@@ -1,5 +1,5 @@
-﻿import { MyLearningView } from '../../../components/dashboard/learning';
+﻿import { MyCoursesView } from '../../../components/dashboard/student-learning';
 
 export default function LearningPage(): React.JSX.Element {
-  return <MyLearningView />;
+  return <MyCoursesView />;
 }

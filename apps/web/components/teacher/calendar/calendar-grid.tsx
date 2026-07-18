@@ -12,11 +12,13 @@ export function CalendarGrid({
   events,
   selectedDate,
   onSelectDay,
+  ariaLabel = teacherCalendarPageCopy.monthGridLabel,
 }: {
   days: TeacherCalendarDayDto[];
   events: TeacherCalendarEventDto[];
   selectedDate: string | null;
   onSelectDay: (date: string) => void;
+  ariaLabel?: string;
 }): React.JSX.Element {
   const counts = new Map<string, number>();
   for (const event of events) {
@@ -25,7 +27,7 @@ export function CalendarGrid({
   }
 
   return (
-    <section className="space-y-3" aria-label={teacherCalendarPageCopy.monthGridLabel}>
+    <section className="space-y-3" aria-label={ariaLabel}>
       <div className="grid grid-cols-7 gap-2" role="row">
         {WEEKDAYS.map((weekday) => (
           <div
@@ -37,7 +39,7 @@ export function CalendarGrid({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-2" role="grid" aria-label={teacherCalendarPageCopy.monthGridLabel}>
+      <div className="grid grid-cols-7 gap-2" role="grid" aria-label={ariaLabel}>
         {days.map((day) => (
           <CalendarDay
             key={day.date}

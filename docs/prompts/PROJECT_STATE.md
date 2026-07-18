@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Phase 05 — Teacher Portal (shell implemented; feature modules pending)
+Phase 05 — Teacher Portal (UI modules complete through 06.12; stabilization 06.13 complete)
 
 ## Status
 
-Student portal shell and learning domains are implemented with mock DTOs and stabilized for engineering consistency. Teacher Portal shell is implemented (independent `/teacher` tree), with Teacher Courses at `/teacher/courses`, Teacher Batches at `/teacher/batches`, and Teacher Students at `/teacher/students` (mock DTOs; grid/list views; actions disabled). Public marketing homepage and design system are in place. Backend auth/RBAC remain available; learning APIs and LMS schema are not implemented yet.
+Student portal shell and learning domains are implemented with mock DTOs and stabilized for engineering consistency. Teacher Portal shell and all feature UI modules (Courses through Profile & Settings) are implemented with mock DTOs, shared primitives, and consistent view states; actions remain disabled pending backend. Public marketing homepage and design system are in place. Backend auth/RBAC remain available; learning APIs and LMS schema are not implemented yet.
 
 ## Current Version
 
@@ -36,23 +36,28 @@ Student portal shell and learning domains are implemented with mock DTOs and sta
 - **Student Portal Stabilization** (05.10) — shared dashboard primitives, consistent states/animations, dead export cleanup
 - **Teacher Portal Architecture** (06.00) — course-agnostic teacher IA, routes, modules, RBAC/schema plan, sprint map
 - **Teacher Portal Shell** (06.01) — `/teacher` layout, navigation, topbar, placeholder dashboard, Coming Soon module routes (UI only)
-- **Teacher Courses** (06.02) — `/teacher/courses` workspace: course cards (grid/list), stats, search/filter/sort, view states (UI + DTO mocks; actions disabled)
-- **Teacher Batches** (06.03) — `/teacher/batches` workspace: batch cards (grid/list), stats, search/filter/sort, view states (UI + DTO mocks; actions disabled)
-- **Teacher Students** (06.04) — `/teacher/students` workspace: student cards (grid/list), stats, search/filter/sort, view states (UI + DTO mocks; actions disabled)
-- **Teacher Attendance** (06.05) — `/teacher/attendance` workspace: session cards (grid/list), stats, search/filter/sort, session details panel with roster, view states (UI + DTO mocks; actions disabled)
-- **Teacher Live Classes** (06.06) — `/teacher/live` workspace: batch-scoped live class cards (grid/list), stats, search/filter/sort, schedule/meeting/attendance details panel, view states (UI + DTO mocks; actions disabled)
-- **Teacher Assignments** (06.07) — `/teacher/assignments` workspace: course-scoped assignment cards (grid/list), stats, search/filter/sort, submission/grading/timeline details panel, view states (UI + DTO mocks; actions disabled)
-- **Teacher Analytics** (06.08) — `/teacher/analytics` workspace: placeholder KPIs, chart-placeholder sections, course search, time-range filter, metric details panel (UI + DTO mocks; read-only; actions disabled)
-- **Teacher Messages** (06.09) — `/teacher/messages` workspace: conversation list/thread/details, search/filter, disabled compose (UI + DTO mocks; no websocket/backend)
-- **Teacher Calendar** (06.10) — `/teacher/calendar` workspace: month grid, mini calendar, agenda, event details, search/filter (UI + DTO mocks; integrations disabled)
+- **Teacher Courses** (06.02) — `/teacher/courses` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Batches** (06.03) — `/teacher/batches` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Students** (06.04) — `/teacher/students` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Attendance** (06.05) — `/teacher/attendance` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Live Classes** (06.06) — `/teacher/live` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Assignments** (06.07) — `/teacher/assignments` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Analytics** (06.08) — `/teacher/analytics` workspace (UI + DTO mocks; actions disabled)
+- **Teacher Messages** (06.09) — `/teacher/messages` workspace (UI + DTO mocks; compose disabled)
+- **Teacher Calendar** (06.10) — `/teacher/calendar` workspace (UI + DTO mocks; integrations disabled)
+- **Teacher Certificate Management** (06.11) — `/teacher/certificates` workspace (UI + DTO mocks; engine actions disabled)
+- **Teacher Profile & Settings** (06.12) — `/teacher/profile` and `/teacher/settings` (UI + DTO mocks; backend actions disabled)
+- **Teacher Portal Stabilization** (06.13) — shared primitives, barrel trim, dead export cleanup, 200ms animation standard
+- **LMS Backend Foundation Report** (06.14) — Prisma gap analysis vs Student/Teacher LMS entities; migration/RBAC recommendations (no schema applied)
 
 ## Pending Modules
 
-- Teacher Portal feature modules (sprints 06.11+): RBAC/identity, LMS schema, lessons, grading, certificates, announcements
+- RBAC Teacher/Student permission seeding
+- LMS schema migration wave (courses, batches, enrollments, live, attendance, assignments, certificates, messaging)
+- Backend APIs for Teacher/Student portals
 - Remaining student portal pages (Calendar, Messages, Payments depth)
 - Admin dashboard
 - Courses / batches / enrollments (backend + LMS schema wave)
-- Teacher RBAC permission seeding (role exists; permissions Admin-only today)
 - Payments (Razorpay)
 - Real-time / email / push notifications (architecture prepared only)
 - Google OAuth
@@ -64,11 +69,11 @@ Student portal shell and learning domains are implemented with mock DTOs and sta
 
 ## Last Completed Step
 
-Task 06.10 — Teacher Calendar module (UI + DTO mocks; no Google/Outlook/Zoom/Meet/reminders/backend; actions disabled)
+Task 06.14 — LMS backend foundation report (schema gap analysis only; no migrations/DB/API/UI changes)
 
 ## Next Step
 
-Continue Teacher Portal feature modules (lessons, certificates, announcements, RBAC & identity foundation, LMS schema wave) per the Teacher Portal Architecture sprint map.
+RBAC Teacher permission seeding, then LMS schema migration wave (courses → batches → enrollments → live/assignments → certificates/messaging) per the foundation report.
 
 ## Key References
 

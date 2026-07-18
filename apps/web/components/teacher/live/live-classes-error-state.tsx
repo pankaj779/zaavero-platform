@@ -1,9 +1,9 @@
 import { teacherLiveClassesPageCopy } from '../../../lib/teacher';
-import { ErrorState } from '../../dashboard/error-state';
+import { TeacherModuleErrorState } from '../shared';
 
 export function LiveClassesErrorState(): React.JSX.Element {
   return (
-    <ErrorState
+    <TeacherModuleErrorState
       title={teacherLiveClassesPageCopy.errorTitle}
       description={teacherLiveClassesPageCopy.errorDescription}
     />

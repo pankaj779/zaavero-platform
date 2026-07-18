@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BatchApi } from '../../../lib/api';
+import { useOrganization } from '../../../lib/auth';
 import {
-  filterTeacherBatches,
-  sortTeacherBatches,
-  teacherBatches,
-  teacherBatchesViewState,
+  toBatchApiStatus,
+  toBatchListSort,
   type TeacherBatchSortOption,
   type TeacherBatchStatusFilter,
   type TeacherBatchSummaryDto,
@@ -22,22 +22,116 @@ import { BatchesErrorState } from './batches-error-state';
 import { BatchesHeader } from './batches-header';
 import { BatchesSkeleton } from './batches-skeleton';
 
+const LIST_LIMIT = 100;
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function BatchesView({
-  batches = teacherBatches,
-  viewState = teacherBatchesViewState,
+  initialBatches,
+  initialViewState,
 }: {
-  batches?: TeacherBatchSummaryDto[];
-  viewState?: TeacherBatchesViewState;
-}): React.JSX.Element {
+  /** Optional override for tests — skips network when provided with a view state. */
+  initialBatches?: TeacherBatchSummaryDto[];
+  initialViewState?: TeacherBatchesViewState;
+} = {}): React.JSX.Element {
+  const { primaryOrganizationId } = useOrganization();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [status, setStatus] = useState<TeacherBatchStatusFilter>('all');
   const [sort, setSort] = useState<TeacherBatchSortOption>('recently_updated');
   const [mode, setMode] = useState<TeacherBatchesViewMode>('grid');
 
-  const visibleBatches = useMemo(() => {
-    const filtered = filterTeacherBatches(batches, query, status);
-    return sortTeacherBatches(filtered, sort);
-  }, [batches, query, sort, status]);
+  const [viewState, setViewState] = useState<TeacherBatchesViewState>(
+    initialViewState ?? 'loading',
+  );
+  const [batches, setBatches] = useState<TeacherBatchSummaryDto[]>(initialBatches ?? []);
+  const [statsBatches, setStatsBatches] = useState<TeacherBatchSummaryDto[]>(initialBatches ?? []);
+  const hasLoadedRef = useRef(initialViewState !== undefined);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+
+  const loadStats = useCallback(
+    async (signal: AbortSignal) => {
+      const result = await BatchApi.getBatches({
+        organizationId: primaryOrganizationId ?? undefined,
+        page: 1,
+        limit: LIST_LIMIT,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+        enrichCourses: false,
+      });
+      if (signal.aborted) {
+        return;
+      }
+      setStatsBatches(result.items);
+    },
+    [primaryOrganizationId],
+  );
+
+  const loadList = useCallback(
+    async (signal: AbortSignal) => {
+      const { sortBy, sortOrder } = toBatchListSort(sort);
+      const result = await BatchApi.getBatches({
+        organizationId: primaryOrganizationId ?? undefined,
+        search: debouncedQuery || undefined,
+        status: toBatchApiStatus(status),
+        page: 1,
+        limit: LIST_LIMIT,
+        sortBy,
+        sortOrder,
+      });
+      if (signal.aborted) {
+        return;
+      }
+
+      setBatches(result.items);
+
+      const filtersActive = debouncedQuery.trim().length > 0 || status !== 'all';
+      if (result.items.length === 0 && !filtersActive) {
+        setViewState('empty');
+      } else {
+        setViewState('populated');
+      }
+    },
+    [debouncedQuery, primaryOrganizationId, sort, status],
+  );
+
+  useEffect(() => {
+    if (initialViewState !== undefined && initialBatches !== undefined) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const isFirstLoad = !hasLoadedRef.current;
+    if (isFirstLoad) {
+      setViewState('loading');
+    }
+
+    void (async () => {
+      try {
+        if (isFirstLoad) {
+          await Promise.all([loadStats(controller.signal), loadList(controller.signal)]);
+        } else {
+          await loadList(controller.signal);
+        }
+        hasLoadedRef.current = true;
+      } catch {
+        if (!controller.signal.aborted) {
+          setViewState('error');
+        }
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [initialBatches, initialViewState, loadList, loadStats]);
 
   if (viewState === 'loading') {
     return (
@@ -57,7 +151,7 @@ export function BatchesView({
     );
   }
 
-  if (viewState === 'empty' || batches.length === 0) {
+  if (viewState === 'empty') {
     return (
       <div className="space-y-8">
         <BatchesHeader />
@@ -70,7 +164,7 @@ export function BatchesView({
     <div className="space-y-8">
       <BatchesHeader />
 
-      <BatchStats batches={batches} />
+      <BatchStats batches={statsBatches} />
 
       <section className="space-y-4" aria-label="Batch filters">
         <div className="flex flex-col gap-3 laptop:flex-row laptop:items-center">
@@ -89,10 +183,10 @@ export function BatchesView({
         </div>
       </section>
 
-      {visibleBatches.length === 0 ? (
+      {batches.length === 0 ? (
         <BatchesEmptyState variant="no-matches" />
       ) : (
-        <BatchCollection batches={visibleBatches} mode={mode} />
+        <BatchCollection batches={batches} mode={mode} />
       )}
     </div>
   );

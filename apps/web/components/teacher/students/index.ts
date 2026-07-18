@@ -1,13 +1,1 @@
 export { StudentsView } from './students-view';
-export { StudentsHeader } from './students-header';
-export { StudentStats } from './student-stats';
-export { StudentCard } from './student-card';
-export { StudentCollection } from './student-collection';
-export { StudentSearch } from './student-search';
-export { StudentFilters } from './student-filters';
-export { StudentViewToggle } from './student-view-toggle';
-export { StudentStatusBadge } from './student-status-badge';
-export { StudentAvatar } from './student-avatar';
-export { StudentsSkeleton } from './students-skeleton';
-export { StudentsEmptyState } from './students-empty-state';
-export { StudentsErrorState } from './students-error-state';

@@ -1,5 +1,4 @@
-import { CourseDetailsView } from '../../../../components/dashboard/course-details';
-import { getCourseDetailsById } from '../../../../lib/dashboard';
+import { CourseDetailsWorkspace } from '../../../../components/dashboard/student-learning';
 
 export default async function CourseDetailsPage({
   params,
@@ -7,7 +6,5 @@ export default async function CourseDetailsPage({
   params: Promise<{ courseId: string }>;
 }): Promise<React.JSX.Element> {
   const { courseId } = await params;
-  const course = getCourseDetailsById(courseId);
-
-  return <CourseDetailsView course={course} />;
+  return <CourseDetailsWorkspace courseId={courseId} />;
 }

@@ -38,10 +38,8 @@ import {
 } from '../exceptions';
 import type { AuthRepository } from '../interfaces/auth-repository.interface';
 import type { UserRepository } from '../interfaces/user-repository.interface';
-import type {
-  LoginResponseData,
-  RefreshResponseData,
-} from '../types/login-response.type';
+import type { AuthenticatedUser } from '../types/authenticated-user.type';
+import type { LoginResponseData, RefreshResponseData } from '../types/login-response.type';
 import type { RegisterResponseData } from '../types/register-response.type';
 import {
   generateEmailVerificationToken,
@@ -76,9 +74,36 @@ export class AuthService {
     };
   }
 
-  async register(
-    dto: RegisterDto,
-  ): Promise<ControllerSuccessPayload<RegisterResponseData>> {
+  async getCurrentUser(authenticatedUser: AuthenticatedUser): Promise<
+    ControllerSuccessPayload<
+      AuthenticatedUser & {
+        firstName: string;
+        lastName: string;
+        phone: string | null;
+        emailVerified: boolean;
+        isActive: boolean;
+      }
+    >
+  > {
+    const user = await this.userRepository.findById(authenticatedUser.id);
+    if (user?.isActive !== true || user.deletedAt !== null) {
+      throw new AccountDisabledException();
+    }
+
+    return {
+      message: 'Current user retrieved successfully.',
+      data: {
+        ...authenticatedUser,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive,
+      },
+    };
+  }
+
+  async register(dto: RegisterDto): Promise<ControllerSuccessPayload<RegisterResponseData>> {
     const existingByEmail = await this.userRepository.findByEmail(dto.email);
     if (existingByEmail) {
       throw new EmailAlreadyExistsException();
@@ -158,9 +183,7 @@ export class AuthService {
     };
   }
 
-  async refresh(
-    dto: RefreshTokenDto,
-  ): Promise<ControllerSuccessPayload<RefreshResponseData>> {
+  async refresh(dto: RefreshTokenDto): Promise<ControllerSuccessPayload<RefreshResponseData>> {
     const tokenHash = this.tokenService.hashIncomingRefreshToken(dto.refreshToken);
     const existing = await this.authRepository.findRefreshTokenByHash(tokenHash);
 
@@ -220,9 +243,7 @@ export class AuthService {
     };
   }
 
-  async verifyEmail(
-    dto: VerifyEmailDto,
-  ): Promise<ControllerSuccessPayload<{ email: string }>> {
+  async verifyEmail(dto: VerifyEmailDto): Promise<ControllerSuccessPayload<{ email: string }>> {
     const tokenHash = hashEmailVerificationToken(dto.token);
     const record = await this.authRepository.findEmailVerificationTokenByHash(tokenHash);
 
@@ -254,9 +275,7 @@ export class AuthService {
     };
   }
 
-  async resendVerification(
-    dto: ResendVerificationDto,
-  ): Promise<ControllerSuccessPayload<null>> {
+  async resendVerification(dto: ResendVerificationDto): Promise<ControllerSuccessPayload<null>> {
     const genericMessage =
       'If an account exists for this email, a verification link has been sent.';
 
@@ -288,11 +307,8 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(
-    dto: ForgotPasswordDto,
-  ): Promise<ControllerSuccessPayload<null>> {
-    const message =
-      'If an account exists, password reset instructions have been sent.';
+  async forgotPassword(dto: ForgotPasswordDto): Promise<ControllerSuccessPayload<null>> {
+    const message = 'If an account exists, password reset instructions have been sent.';
 
     const user = await this.userRepository.findByEmail(dto.email);
 
@@ -310,9 +326,7 @@ export class AuthService {
     };
   }
 
-  async resetPassword(
-    dto: ResetPasswordDto,
-  ): Promise<ControllerSuccessPayload<null>> {
+  async resetPassword(dto: ResetPasswordDto): Promise<ControllerSuccessPayload<null>> {
     const tokenHash = hashPasswordResetToken(dto.token);
     const record = await this.authRepository.findPasswordResetTokenByHash(tokenHash);
 
@@ -350,9 +364,7 @@ export class AuthService {
   }): Promise<void> {
     const rawToken = generatePasswordResetToken();
     const tokenHash = hashPasswordResetToken(rawToken);
-    const expiresAt = new Date(
-      Date.now() + PASSWORD_RESET_EXPIRY_MINUTES * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MINUTES * 60 * 1000);
 
     await this.authRepository.deletePasswordResetTokensForUser(input.userId);
     await this.authRepository.createPasswordResetToken({
@@ -395,9 +407,7 @@ export class AuthService {
   }): Promise<void> {
     const rawToken = generateEmailVerificationToken();
     const tokenHash = hashEmailVerificationToken(rawToken);
-    const expiresAt = new Date(
-      Date.now() + EMAIL_VERIFICATION_EXPIRY_HOURS * 60 * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY_HOURS * 60 * 60 * 1000);
 
     await this.authRepository.deleteEmailVerificationTokensForUser(input.userId);
     await this.authRepository.createEmailVerificationToken({
@@ -427,16 +437,11 @@ export class AuthService {
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown email error';
-      this.logger.error(
-        `Failed to send verification email for userId=${input.userId}: ${message}`,
-      );
+      this.logger.error(`Failed to send verification email for userId=${input.userId}: ${message}`);
     }
   }
 
-  private async verifyPassword(
-    passwordHash: string | null,
-    password: string,
-  ): Promise<boolean> {
+  private async verifyPassword(passwordHash: string | null, password: string): Promise<boolean> {
     const hashToVerify = passwordHash ?? (await this.getDummyPasswordHash());
 
     try {

@@ -1,9 +1,5 @@
-import { TeacherComingSoonPage } from '../../../components/teacher/shared';
-import { TEACHER_ROUTES } from '../../../lib/constants';
-import { getTeacherPageMeta } from '../../../lib/teacher';
+import { TeacherProfileView } from '../../../components/teacher/profile';
 
-const meta = getTeacherPageMeta(TEACHER_ROUTES.profile);
-
-export default function Page(): React.JSX.Element {
-  return <TeacherComingSoonPage title={meta.title} description={meta.description} />;
+export default function TeacherProfilePage(): React.JSX.Element {
+  return <TeacherProfileView />;
 }

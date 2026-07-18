@@ -3,13 +3,13 @@
 import { Button } from '@graphology/ui';
 import { cn } from '@graphology/utils';
 import Link from 'next/link';
+import { LogoutButton } from '../../auth/logout-button';
 import { brandConfig } from '../../../lib/brand';
-import { icons, ROUTES, TEACHER_ROUTES } from '../../../lib/constants';
-import { TeacherNav } from '../navigation';
+import { icons, TEACHER_ROUTES } from '../../../lib/constants';
+import { TeacherNav } from '../navigation/teacher-nav';
 
 const PanelCloseIcon = icons.panelClose;
 const PanelOpenIcon = icons.panelOpen;
-const LogoutIcon = icons.logout;
 
 export function TeacherSidebar({
   collapsed,
@@ -21,7 +21,7 @@ export function TeacherSidebar({
   return (
     <aside
       className={cn(
-        'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-normal motion-reduce:transition-none laptop:flex',
+        'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 motion-reduce:transition-none laptop:flex',
         collapsed ? 'w-[4.5rem]' : 'w-64',
       )}
       aria-label="Sidebar"
@@ -65,16 +65,13 @@ export function TeacherSidebar({
       ) : null}
       <TeacherNav collapsed={collapsed} ariaLabel="Teacher" />
       <div className="border-t border-sidebar-border p-3">
-        <Link
-          href={ROUTES.home}
+        <LogoutButton
+          collapsed={collapsed}
           className={cn(
-            'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-normal motion-reduce:transition-none hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors duration-200 motion-reduce:transition-none hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             collapsed && 'justify-center px-2',
           )}
-        >
-          <LogoutIcon className="h-4 w-4 shrink-0" aria-hidden />
-          <span className={cn(collapsed && 'sr-only')}>Logout</span>
-        </Link>
+        />
       </div>
     </aside>
   );

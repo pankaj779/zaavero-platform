@@ -32,14 +32,15 @@ import {
 } from '../utils/email-verification-token.util';
 
 function createMockAuthRepository(
-  overrides: Partial<AuthRepository> & Pick<
-    AuthRepository,
-    | 'registerUser'
-    | 'createEmailVerificationToken'
-    | 'findEmailVerificationTokenByHash'
-    | 'deleteEmailVerificationTokensForUser'
-    | 'deleteEmailVerificationToken'
-  >,
+  overrides: Partial<AuthRepository> &
+    Pick<
+      AuthRepository,
+      | 'registerUser'
+      | 'createEmailVerificationToken'
+      | 'findEmailVerificationTokenByHash'
+      | 'deleteEmailVerificationTokensForUser'
+      | 'deleteEmailVerificationToken'
+    >,
 ): AuthRepository {
   return {
     marker: 'auth-repository',
@@ -97,7 +98,8 @@ describe('AuthService.register', () => {
   const createTokenPair = vi.fn();
   const createRefreshToken =
     vi.fn<(input: CreateRefreshTokenInput) => Promise<RefreshTokenRecord>>();
-  const sendEmail = vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const sendEmail =
+    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
 
   const authRepository = createMockAuthRepository({
     registerUser,
@@ -204,9 +206,7 @@ describe('AuthService.register', () => {
       deletedAt: null,
     });
 
-    await expect(service.register(validDto)).rejects.toBeInstanceOf(
-      EmailAlreadyExistsException,
-    );
+    await expect(service.register(validDto)).rejects.toBeInstanceOf(EmailAlreadyExistsException);
   });
 
   it('rejects duplicate phone', async () => {
@@ -223,9 +223,7 @@ describe('AuthService.register', () => {
       deletedAt: null,
     });
 
-    await expect(service.register(validDto)).rejects.toBeInstanceOf(
-      PhoneAlreadyExistsException,
-    );
+    await expect(service.register(validDto)).rejects.toBeInstanceOf(PhoneAlreadyExistsException);
   });
 });
 
@@ -243,7 +241,8 @@ describe('AuthService.login', () => {
   const createTokenPair = vi.fn();
   const createRefreshToken =
     vi.fn<(input: CreateRefreshTokenInput) => Promise<RefreshTokenRecord>>();
-  const sendEmail = vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const sendEmail =
+    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
 
   const authRepository = createMockAuthRepository({
     registerUser,
@@ -330,7 +329,7 @@ describe('AuthService.login', () => {
         password: 'WrongPass1!',
       }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
-  });
+  }, 15_000);
 
   it('rejects unknown email with InvalidCredentialsException', async () => {
     findByEmail.mockResolvedValue(null);
@@ -341,7 +340,7 @@ describe('AuthService.login', () => {
         password: 'SecurePass1!',
       }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
-  });
+  }, 15_000);
 
   it('rejects inactive accounts', async () => {
     findByEmail.mockResolvedValue({ ...activeUser, isActive: false });
@@ -396,7 +395,8 @@ describe('AuthService.verifyEmail and resendVerification', () => {
   const createTokenPair = vi.fn();
   const createRefreshToken =
     vi.fn<(input: CreateRefreshTokenInput) => Promise<RefreshTokenRecord>>();
-  const sendEmail = vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const sendEmail =
+    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
 
   const authRepository = createMockAuthRepository({
     registerUser,

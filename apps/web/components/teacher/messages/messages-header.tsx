@@ -1,11 +1,14 @@
-import { PageHeader } from '@graphology/ui';
 import { teacherMessagesPageCopy } from '../../../lib/teacher';
+import { TeacherPageHeader } from '../shared';
 
-export function MessagesHeader(): React.JSX.Element {
-  return (
-    <PageHeader
-      title={teacherMessagesPageCopy.title}
-      description={teacherMessagesPageCopy.description}
-    />
-  );
+export function MessagesHeader({
+  pageCopy,
+}: {
+  pageCopy?: {
+    title?: string;
+    description?: string;
+  };
+} = {}): React.JSX.Element {
+  const copy = { ...teacherMessagesPageCopy, ...pageCopy };
+  return <TeacherPageHeader title={copy.title} description={copy.description} />;
 }

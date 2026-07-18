@@ -1,5 +1,5 @@
-﻿import { SettingsView } from '../../../components/dashboard/settings';
+﻿import { StudentSettingsView } from '../../../components/dashboard/student-settings';
 
 export default function SettingsPage(): React.JSX.Element {
-  return <SettingsView />;
+  return <StudentSettingsView />;
 }

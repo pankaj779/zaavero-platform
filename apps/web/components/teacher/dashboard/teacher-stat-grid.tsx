@@ -1,11 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@graphology/ui';
 import { icons } from '../../../lib/constants';
-import { teacherStatsPlaceholder } from '../../../lib/teacher';
+import type { TeacherStatDto } from '../../../lib/teacher';
 
-export function TeacherStatGrid(): React.JSX.Element {
+export function TeacherStatGrid({ stats }: { stats: TeacherStatDto[] }): React.JSX.Element {
   return (
-    <section className="grid gap-4 tablet:grid-cols-2 laptop:grid-cols-4" aria-label="Teaching statistics">
-      {teacherStatsPlaceholder.map((stat) => {
+    <section
+      className="grid gap-4 tablet:grid-cols-2 laptop:grid-cols-4"
+      aria-label="Teaching statistics"
+    >
+      {stats.map((stat) => {
         const Icon = icons[stat.icon];
         return (
           <Card key={stat.id} className="rounded-xl shadow-sm">

@@ -1,9 +1,9 @@
 import { teacherCalendarPageCopy } from '../../../lib/teacher';
-import { ErrorState } from '../../dashboard/error-state';
+import { TeacherModuleErrorState } from '../shared';
 
 export function CalendarErrorState(): React.JSX.Element {
   return (
-    <ErrorState
+    <TeacherModuleErrorState
       title={teacherCalendarPageCopy.errorTitle}
       description={teacherCalendarPageCopy.errorDescription}
     />

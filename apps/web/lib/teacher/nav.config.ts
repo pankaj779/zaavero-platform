@@ -37,47 +37,53 @@ export interface TeacherPageMeta {
 export const teacherPageMeta: Record<string, TeacherPageMeta> = {
   [TEACHER_ROUTES.dashboard]: {
     title: 'Dashboard',
-    description: 'Your teaching command center — a calm overview of today and what needs attention.',
+    description:
+      'Your teaching command center — a calm overview of today and what needs attention.',
     breadcrumb: 'Dashboard',
   },
   [TEACHER_ROUTES.courses]: {
     title: 'Courses',
-    description: 'Create and manage the programs you teach. Course authoring is coming soon.',
+    description: 'Review and manage the programs you teach.',
     breadcrumb: 'Courses',
   },
   [TEACHER_ROUTES.batches]: {
     title: 'Batches',
-    description: 'Manage live learner groups across your courses. Batch tools are coming soon.',
+    description: 'Manage live learner groups across your courses.',
     breadcrumb: 'Batches',
   },
   [TEACHER_ROUTES.lessons]: {
     title: 'Lessons',
-    description: 'Author lesson content and learning material. The lesson editor is coming soon.',
+    description: 'Author and organize lesson content across your courses.',
     breadcrumb: 'Lessons',
   },
   [TEACHER_ROUTES.liveClasses]: {
     title: 'Live Classes',
-    description: 'Schedule and manage live sessions for your batches. Scheduling is coming soon.',
+    description: 'Review and manage live sessions for your batches.',
     breadcrumb: 'Live Classes',
   },
   [TEACHER_ROUTES.assignments]: {
     title: 'Assignments',
-    description: 'Create assignments and review submissions. Grading tools are coming soon.',
+    description: 'Review assignments and open related submissions for grading.',
     breadcrumb: 'Assignments',
+  },
+  [TEACHER_ROUTES.submissions]: {
+    title: 'Submissions',
+    description: 'Review and grade student submissions across your assignments.',
+    breadcrumb: 'Submissions',
   },
   [TEACHER_ROUTES.students]: {
     title: 'Students',
-    description: 'View the learners enrolled in your courses. Roster management is coming soon.',
+    description: 'View the learners enrolled in your courses and batches.',
     breadcrumb: 'Students',
   },
   [TEACHER_ROUTES.attendance]: {
     title: 'Attendance',
-    description: 'Track attendance across sessions and batches. Attendance marking is coming soon.',
+    description: 'Track attendance across sessions and batches.',
     breadcrumb: 'Attendance',
   },
   [TEACHER_ROUTES.certificates]: {
     title: 'Certificates',
-    description: 'Recommend and track certificates for your students. Issuance is coming soon.',
+    description: 'Track certificate eligibility and issuance for your students.',
     breadcrumb: 'Certificates',
   },
   [TEACHER_ROUTES.announcements]: {
@@ -87,12 +93,12 @@ export const teacherPageMeta: Record<string, TeacherPageMeta> = {
   },
   [TEACHER_ROUTES.messages]: {
     title: 'Messages',
-    description: 'Message students and cohorts. Messaging is coming soon.',
+    description: 'Message students and cohorts in organization-scoped conversations.',
     breadcrumb: 'Messages',
   },
   [TEACHER_ROUTES.analytics]: {
     title: 'Analytics',
-    description: 'Understand teaching effectiveness and cohort health. Analytics are coming soon.',
+    description: 'Understand teaching effectiveness and cohort health from live teaching data.',
     breadcrumb: 'Analytics',
   },
   [TEACHER_ROUTES.calendar]: {
@@ -100,14 +106,19 @@ export const teacherPageMeta: Record<string, TeacherPageMeta> = {
     description: 'Teaching schedule across live classes, due dates, and office hours.',
     breadcrumb: 'Calendar',
   },
+  [TEACHER_ROUTES.notifications]: {
+    title: 'Notifications',
+    description: 'Stay aware of teaching updates across your organization.',
+    breadcrumb: 'Notifications',
+  },
   [TEACHER_ROUTES.profile]: {
     title: 'Profile',
-    description: 'Your teaching profile and professional details. Profile editing is coming soon.',
+    description: 'Your teaching identity and professional details.',
     breadcrumb: 'Profile',
   },
   [TEACHER_ROUTES.settings]: {
     title: 'Settings',
-    description: 'Appearance, notifications, and account preferences. Settings are coming soon.',
+    description: 'Appearance, notifications, and account preferences for your teaching workspace.',
     breadcrumb: 'Settings',
   },
 };
