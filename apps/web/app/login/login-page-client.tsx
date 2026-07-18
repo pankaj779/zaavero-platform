@@ -112,6 +112,13 @@ function LoginForm(): React.JSX.Element {
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
+        Have an invite?{' '}
+        <Link href={ROUTES.acceptInvitation} className="underline-offset-4 hover:underline">
+          Accept invitation
+        </Link>
+      </p>
+
+      <p className="text-center text-sm text-muted-foreground">
         <Link href={ROUTES.home} className="underline-offset-4 hover:underline">
           Back to home
         </Link>

@@ -1,1 +1,4 @@
 export const EMAIL_SERVICE = Symbol('EMAIL_SERVICE');
+export const EMAIL_PROVIDER = Symbol('EMAIL_PROVIDER');
+export const EMAIL_REPOSITORY = Symbol('EMAIL_REPOSITORY');
+export const INVITATION_REPOSITORY = Symbol('INVITATION_REPOSITORY');

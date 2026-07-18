@@ -2,12 +2,9 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { hash } from 'argon2';
-import type { EmailService } from '../../email/interfaces/email-service.interface';
+import type { BusinessEmailService } from '../../email/services/business-email.service';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
-import {
-  TokenExpiredException,
-  TokenInvalidException,
-} from '../exceptions';
+import { TokenExpiredException, TokenInvalidException } from '../exceptions';
 import type {
   AuthRepository,
   AuthUserRecord,
@@ -27,7 +24,7 @@ function createService(deps: {
   authRepository: AuthRepository;
   userRepository: UserRepository;
   tokenService: TokenService;
-  emailService: EmailService;
+  emailService: BusinessEmailService;
 }): AuthService {
   const configService = {
     get: (key: string) => {
@@ -58,10 +55,8 @@ describe('AuthService.forgotPassword and resetPassword', () => {
   const findPasswordResetTokenByHash =
     vi.fn<(tokenHash: string) => Promise<PasswordResetTokenRecord | null>>();
   const deletePasswordResetTokensForUser = vi.fn();
-  const completePasswordReset =
-    vi.fn<(input: CompletePasswordResetInput) => Promise<void>>();
-  const sendEmail =
-    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const completePasswordReset = vi.fn<(input: CompletePasswordResetInput) => Promise<void>>();
+  const enqueueEmail = vi.fn().mockResolvedValue(undefined);
 
   const authRepository: AuthRepository = {
     marker: 'auth-repository',
@@ -95,7 +90,9 @@ describe('AuthService.forgotPassword and resetPassword', () => {
     hashIncomingRefreshToken: vi.fn(),
   } as unknown as TokenService;
 
-  const emailService = { sendEmail } as unknown as EmailService;
+  const emailService = {
+    enqueueForUserPrimaryOrganization: enqueueEmail,
+  } as unknown as BusinessEmailService;
   let service: AuthService;
   let activeUser: AuthUserRecord;
 
@@ -129,7 +126,7 @@ describe('AuthService.forgotPassword and resetPassword', () => {
     });
     deletePasswordResetTokensForUser.mockResolvedValue(undefined);
     completePasswordReset.mockResolvedValue(undefined);
-    sendEmail.mockResolvedValue(undefined);
+    enqueueEmail.mockResolvedValue(undefined);
   });
 
   it('returns a generic success message for known emails and sends reset mail', async () => {
@@ -142,9 +139,10 @@ describe('AuthService.forgotPassword and resetPassword', () => {
       data: null,
     });
     expect(createPasswordResetToken).toHaveBeenCalled();
-    expect(sendEmail).toHaveBeenCalledTimes(1);
-    expect(sendEmail.mock.calls[0]?.[0].to).toBe('ada@example.com');
-    expect(sendEmail.mock.calls[0]?.[0].subject).toContain('Reset your password');
+    expect(enqueueEmail).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ templateKey: 'forgot_password' }),
+    );
   });
 
   it('returns the same success message for unknown emails', async () => {
@@ -156,7 +154,7 @@ describe('AuthService.forgotPassword and resetPassword', () => {
       'If an account exists, password reset instructions have been sent.',
     );
     expect(createPasswordResetToken).not.toHaveBeenCalled();
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(enqueueEmail).not.toHaveBeenCalled();
   });
 
   it('resets password with a valid token and revokes sessions via repository', async () => {
@@ -183,6 +181,10 @@ describe('AuthService.forgotPassword and resetPassword', () => {
     expect(completeInput?.resetTokenId).toBe('prt-1');
     expect(completeInput?.passwordHash).toMatch(/^\$argon2/);
     expect(completeInput?.passwordHash).not.toBe('NewStrongPass1!');
+    expect(enqueueEmail).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ templateKey: 'password_changed', category: 'SECURITY' }),
+    );
   });
 
   it('rejects invalid, expired, and reused tokens', async () => {

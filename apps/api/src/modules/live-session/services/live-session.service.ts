@@ -3,6 +3,7 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import { LIVE_SESSION_REPOSITORY } from '../constants/injection-tokens';
 import type { CreateLiveSessionDto } from '../dto/create-live-session.dto';
 import type { ListLiveSessionsQueryDto } from '../dto/list-live-sessions-query.dto';
@@ -29,7 +30,10 @@ import { LiveSessionMapper } from '../mappers/live-session.mapper';
 
 @Injectable()
 export class LiveSessionService {
-  constructor(@Inject(LIVE_SESSION_REPOSITORY) private readonly repo: LiveSessionRepository) {}
+  constructor(
+    @Inject(LIVE_SESSION_REPOSITORY) private readonly repo: LiveSessionRepository,
+    private readonly businessEmail?: BusinessEmailService,
+  ) {}
 
   async list(
     user: AuthenticatedUser,
@@ -92,6 +96,9 @@ export class LiveSessionService {
       startsAt: new Date(dto.startsAt),
       endsAt: dto.endsAt ? new Date(dto.endsAt) : undefined,
     });
+    if (created.status === 'SCHEDULED') {
+      await this.businessEmail?.liveSessionCreated(created.id);
+    }
     return {
       message: 'Live session created successfully.',
       data: LiveSessionMapper.toResponse(created),
@@ -125,6 +132,9 @@ export class LiveSessionService {
       endsAt:
         dto.endsAt === undefined ? undefined : dto.endsAt === null ? null : new Date(dto.endsAt),
     });
+    if (row.status !== 'CANCELLED' && updated.status === 'CANCELLED') {
+      await this.businessEmail?.liveSessionCancelled(updated.id);
+    }
     return {
       message: 'Live session updated successfully.',
       data: LiveSessionMapper.toResponse(updated),

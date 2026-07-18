@@ -43,6 +43,10 @@ export const AUTH_PERMISSIONS = {
   studentView: 'student.view',
   teacherUpdate: 'teacher.update',
   paymentManage: 'payment.manage',
+  emailView: 'email.view',
+  emailManage: 'email.manage',
+  emailTemplateManage: 'email.template.manage',
+  emailRetry: 'email.retry',
 } as const;
 
 export type AuthPermissionName = (typeof AUTH_PERMISSIONS)[keyof typeof AUTH_PERMISSIONS];

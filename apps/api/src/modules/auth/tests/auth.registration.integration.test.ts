@@ -2,11 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { hash, verify } from 'argon2';
 import { prisma } from '@graphology/database';
 import { JwtService } from '@nestjs/jwt';
-import type { EmailService } from '../../email/interfaces/email-service.interface';
-import {
-  DEFAULT_ORGANIZATION,
-  DEFAULT_REGISTRATION_ROLE,
-} from '../constants/auth.constants';
+import type { BusinessEmailService } from '../../email/services/business-email.service';
+import { DEFAULT_ORGANIZATION, DEFAULT_REGISTRATION_ROLE } from '../constants/auth.constants';
 import {
   AccountDisabledException,
   EmailAlreadyExistsException,
@@ -57,8 +54,10 @@ describe.runIf(shouldRunDatabaseTests)('Auth registration, login, and email veri
       return undefined;
     },
   };
-  const sendEmail = vi.fn().mockResolvedValue(undefined);
-  const emailService = { sendEmail } as unknown as EmailService;
+  const enqueueEmail = vi.fn().mockResolvedValue(undefined);
+  const emailService = {
+    enqueueForUserPrimaryOrganization: enqueueEmail,
+  } as unknown as BusinessEmailService;
   const tokenService = new TokenService(jwtService, configService as never);
   const service = new AuthService(
     authRepository,
@@ -80,16 +79,18 @@ describe.runIf(shouldRunDatabaseTests)('Auth registration, login, and email veri
   beforeAll(async () => {
     await prisma.$connect();
 
-    sendEmail.mockImplementation((input: { html: string; subject?: string }) => {
-      const match = /token=([^"&\s]+)/.exec(input.html);
-      const token = match?.[1] ? decodeURIComponent(match[1]) : undefined;
-      if (input.subject?.includes('Reset your password')) {
-        latestPasswordResetToken = token;
-      } else {
-        latestRawToken = token;
-      }
-      return Promise.resolve();
-    });
+    enqueueEmail.mockImplementation(
+      (_userId: string, input: { actionPath: string; templateKey: string }) => {
+        const match = /token=([^&\s]+)/.exec(input.actionPath);
+        const token = match?.[1] ? decodeURIComponent(match[1]) : undefined;
+        if (input.templateKey === 'forgot_password') {
+          latestPasswordResetToken = token;
+        } else if (input.templateKey === 'verify_email') {
+          latestRawToken = token;
+        }
+        return Promise.resolve();
+      },
+    );
   });
 
   afterAll(async () => {
@@ -115,7 +116,7 @@ describe.runIf(shouldRunDatabaseTests)('Auth registration, login, and email veri
     });
 
     createdUserId = result.data.userId;
-    expect(sendEmail).toHaveBeenCalled();
+    expect(enqueueEmail).toHaveBeenCalled();
     expect(latestRawToken).toBeTruthy();
     if (!latestRawToken || !createdUserId) {
       throw new Error('Expected registration to create a verification token');
@@ -196,9 +197,7 @@ describe.runIf(shouldRunDatabaseTests)('Auth registration, login, and email veri
     });
     expect(stored).toHaveLength(1);
     expect(stored[0]?.tokenHash).not.toBe(currentRefreshToken);
-    expect(stored[0]?.tokenHash).toBe(
-      tokenService.hashIncomingRefreshToken(currentRefreshToken),
-    );
+    expect(stored[0]?.tokenHash).toBe(tokenService.hashIncomingRefreshToken(currentRefreshToken));
 
     const payload = await jwtService.verifyAsync<{ sub: string; email: string; type: string }>(
       loginResult.data.accessToken,
@@ -232,9 +231,9 @@ describe.runIf(shouldRunDatabaseTests)('Auth registration, login, and email veri
     const logoutResult = await service.logout({ refreshToken: currentRefreshToken });
     expect(logoutResult.message).toBe('Logged out successfully.');
 
-    await expect(
-      service.refresh({ refreshToken: currentRefreshToken }),
-    ).rejects.toBeInstanceOf(TokenInvalidException);
+    await expect(service.refresh({ refreshToken: currentRefreshToken })).rejects.toBeInstanceOf(
+      TokenInvalidException,
+    );
 
     const unknownLogout = await service.logout({ refreshToken: 'already-invalid' });
     expect(unknownLogout.message).toBe('Logged out successfully.');
@@ -307,9 +306,9 @@ describe.runIf(shouldRunDatabaseTests)('Auth registration, login, and email veri
   });
 
   it('rejects wrong password and unknown email with the same exception', async () => {
-    await expect(
-      service.login({ email, password: 'WrongPass1!' }),
-    ).rejects.toBeInstanceOf(InvalidCredentialsException);
+    await expect(service.login({ email, password: 'WrongPass1!' })).rejects.toBeInstanceOf(
+      InvalidCredentialsException,
+    );
 
     await expect(
       service.login({ email: `missing-${suffix}@example.com`, password }),

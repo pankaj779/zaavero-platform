@@ -55,6 +55,15 @@ model User {
   invoicesVoided           Invoice[]                 @relation("InvoiceVoidedBy")
   paymentMethods           PaymentMethod[]
   billingAddresses         BillingAddress[]
+  emailLogs                EmailLog[]                @relation("EmailLogUser")
+  initiatedEmailLogs       EmailLog[]                @relation("EmailLogInitiatedBy")
+  emailTemplatesCreated    EmailTemplate[]           @relation("EmailTemplateCreatedBy")
+  emailQueues              EmailQueue[]              @relation("EmailQueueUser")
+  emailQueuesCreated       EmailQueue[]              @relation("EmailQueueCreatedBy")
+  emailPreferences         EmailPreference[]
+  emailEvents              EmailEvent[]
+  emailInvitationsSent     EmailInvitation[]         @relation("EmailInvitationInvitedBy")
+  emailInvitationsAccepted EmailInvitation[]         @relation("EmailInvitationAcceptedBy")
 
   @@index([email])
   @@index([deletedAt])
@@ -119,6 +128,13 @@ model Organization {
   paymentEvents            PaymentEvent[]
   paymentMethods           PaymentMethod[]
   billingAddresses         BillingAddress[]
+  emailLogs                EmailLog[]
+  emailTemplates           EmailTemplate[]
+  emailQueues              EmailQueue[]
+  emailPreferences         EmailPreference[]
+  emailAttachments         EmailAttachment[]
+  emailEvents              EmailEvent[]
+  emailInvitations         EmailInvitation[]
 
   @@index([slug])
   @@index([isActive])
@@ -1508,4 +1524,389 @@ model BillingAddress {
   @@index([organizationId, isDefault])
   @@index([deletedAt])
   @@map("billing_addresses")
+}
+
+// ---------------------------------------------------------------------------
+// Email — provider-neutral, tenant-scoped delivery, queue, template, preference,
+// attachment, webhook event, and invitation foundation.
+// ---------------------------------------------------------------------------
+
+enum EmailProvider {
+  RESEND
+
+  @@map("email_provider")
+}
+
+enum EmailDeliveryStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+  FAILED
+  CANCELLED
+
+  @@map("email_delivery_status")
+}
+
+enum EmailQueueStatus {
+  QUEUED
+  PROCESSING
+  SENT
+  FAILED
+  DEAD_LETTER
+  CANCELLED
+
+  @@map("email_queue_status")
+}
+
+enum EmailEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+
+  @@map("email_event_status")
+}
+
+enum EmailEventType {
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+  FAILED
+  OTHER
+
+  @@map("email_event_type")
+}
+
+enum EmailTemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+
+  @@map("email_template_status")
+}
+
+enum EmailInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+
+  @@map("email_invitation_status")
+}
+
+enum EmailInvitationType {
+  ORGANIZATION
+  TEACHER
+  STUDENT
+
+  @@map("email_invitation_type")
+}
+
+enum EmailCategory {
+  SECURITY
+  SYSTEM
+  MARKETING
+  ANNOUNCEMENT
+  ASSIGNMENT
+  COURSE
+  PAYMENT
+  CERTIFICATE
+  LIVE_CLASS
+
+  @@map("email_category")
+}
+
+enum EmailDigestMode {
+  IMMEDIATE
+  DAILY
+  WEEKLY
+  OFF
+
+  @@map("email_digest_mode")
+}
+
+enum EmailAttachmentDisposition {
+  ATTACHMENT
+  INLINE
+
+  @@map("email_attachment_disposition")
+}
+
+/// Append-only delivery record. Provider message IDs are unique per provider.
+model EmailLog {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  organizationId    String              @map("organization_id") @db.Uuid
+  userId            String?             @map("user_id") @db.Uuid
+  queueId           String?             @map("queue_id") @db.Uuid
+  initiatedById     String?             @map("initiated_by_id") @db.Uuid
+  provider          EmailProvider       @default(RESEND)
+  providerMessageId String?             @map("provider_message_id")
+  fromAddress       String              @map("from_address")
+  replyTo           String?             @map("reply_to")
+  to                String[]
+  cc                String[]            @default([])
+  bcc               String[]            @default([])
+  subject           String
+  templateKey       String?             @map("template_key")
+  templateVersion   Int?                @map("template_version")
+  category          EmailCategory       @default(SYSTEM)
+  status            EmailDeliveryStatus @default(QUEUED)
+  attempts          Int                 @default(0)
+  queuedAt          DateTime?           @map("queued_at")
+  lastAttemptAt     DateTime?           @map("last_attempt_at")
+  sentAt            DateTime?           @map("sent_at")
+  deliveredAt       DateTime?           @map("delivered_at")
+  openedAt          DateTime?           @map("opened_at")
+  clickedAt         DateTime?           @map("clicked_at")
+  bouncedAt         DateTime?           @map("bounced_at")
+  complainedAt      DateTime?           @map("complained_at")
+  failedAt          DateTime?           @map("failed_at")
+  errorCode         String?             @map("error_code")
+  errorMessage      String?             @map("error_message")
+  metadata          Json?
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?        @relation("EmailLogUser", fields: [userId], references: [id], onDelete: SetNull)
+  queue        EmailQueue?  @relation(fields: [queueId], references: [id], onDelete: SetNull)
+  initiatedBy  User?        @relation("EmailLogInitiatedBy", fields: [initiatedById], references: [id], onDelete: SetNull)
+
+  attachments EmailAttachment[]
+  events      EmailEvent[]
+
+  @@unique([provider, providerMessageId])
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, category, createdAt])
+  @@index([userId, createdAt])
+  @@index([queueId])
+  @@index([templateKey, templateVersion])
+  @@index([createdAt])
+  @@map("email_logs")
+}
+
+/// One immutable version per scope/key/locale. `scopeKey` is `SYSTEM` for
+/// platform templates and the organization UUID for tenant overrides.
+model EmailTemplate {
+  id             String              @id @default(uuid(7)) @db.Uuid
+  organizationId String?             @map("organization_id") @db.Uuid
+  createdById    String?             @map("created_by_id") @db.Uuid
+  scopeKey       String              @map("scope_key")
+  key            String
+  locale         String              @default("en")
+  version        Int
+  subject        String
+  html           String
+  text           String
+  preview        String?
+  variableSchema Json                @map("variable_schema")
+  category       EmailCategory
+  status         EmailTemplateStatus @default(DRAFT)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    User?         @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  queues EmailQueue[]
+
+  @@unique([scopeKey, key, locale, version])
+  @@index([organizationId, key, locale, status])
+  @@index([key, locale, status])
+  @@index([createdAt])
+  @@map("email_templates")
+}
+
+/// Durable outbox row. It may reference a versioned template or carry an
+/// already-rendered payload for retry-safe delivery.
+model EmailQueue {
+  id                    String           @id @default(uuid(7)) @db.Uuid
+  organizationId        String           @map("organization_id") @db.Uuid
+  userId                String?          @map("user_id") @db.Uuid
+  templateId            String?          @map("template_id") @db.Uuid
+  createdById           String?          @map("created_by_id") @db.Uuid
+  templateKey           String?          @map("template_key")
+  templateVersion       Int?             @map("template_version")
+  variables             Json?
+  fromAddress           String?          @map("from_address")
+  replyTo               String?          @map("reply_to")
+  to                    String[]
+  cc                    String[]         @default([])
+  bcc                   String[]         @default([])
+  renderedSubject       String?          @map("rendered_subject")
+  renderedHtml          String?          @map("rendered_html")
+  renderedText          String?          @map("rendered_text")
+  headers               Json?
+  tags                  Json?
+  attachmentDescriptors Json?            @map("attachment_descriptors")
+  category              EmailCategory    @default(SYSTEM)
+  status                EmailQueueStatus @default(QUEUED)
+  priority              Int              @default(0)
+  scheduledAt           DateTime?        @map("scheduled_at")
+  availableAt           DateTime         @default(now()) @map("available_at")
+  lockedAt              DateTime?        @map("locked_at")
+  lockedBy              String?          @map("locked_by")
+  processedAt           DateTime?        @map("processed_at")
+  attempts              Int              @default(0)
+  maxAttempts           Int              @default(5) @map("max_attempts")
+  backoffSeconds        Int              @default(60) @map("backoff_seconds")
+  lastErrorCode         String?          @map("last_error_code")
+  lastErrorMessage      String?          @map("last_error_message")
+  deadLetteredAt        DateTime?        @map("dead_lettered_at")
+  cancelledAt           DateTime?        @map("cancelled_at")
+  cancelReason          String?          @map("cancel_reason")
+  idempotencyKey        String           @map("idempotency_key")
+  correlationId         String?          @map("correlation_id")
+  entityType            String?          @map("entity_type")
+  entityId              String?          @map("entity_id")
+  metadata              Json?
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?          @relation("EmailQueueUser", fields: [userId], references: [id], onDelete: SetNull)
+  template     EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  createdBy    User?          @relation("EmailQueueCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  logs        EmailLog[]
+  attachments EmailAttachment[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([status, availableAt, priority])
+  @@index([organizationId, status, availableAt])
+  @@index([userId, createdAt])
+  @@index([templateId])
+  @@index([correlationId])
+  @@index([entityType, entityId])
+  @@index([lockedAt])
+  @@map("email_queue")
+}
+
+/// User-controlled categories. Security mail is intentionally absent and
+/// therefore cannot be disabled.
+model EmailPreference {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  organizationId String          @map("organization_id") @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  marketing      Boolean         @default(false)
+  announcements  Boolean         @default(true)
+  assignments    Boolean         @default(true)
+  courses        Boolean         @default(true)
+  payments       Boolean         @default(true)
+  certificates   Boolean         @default(true)
+  liveClasses    Boolean         @default(true) @map("live_classes")
+  system         Boolean         @default(true)
+  digestMode     EmailDigestMode @default(IMMEDIATE) @map("digest_mode")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId, digestMode])
+  @@map("email_preferences")
+}
+
+/// Safe attachment metadata only. Binary data and provider credentials are
+/// never persisted in this table.
+model EmailAttachment {
+  id             String                     @id @default(uuid(7)) @db.Uuid
+  organizationId String                     @map("organization_id") @db.Uuid
+  queueId        String?                    @map("queue_id") @db.Uuid
+  logId          String?                    @map("log_id") @db.Uuid
+  filename       String
+  contentType    String                     @map("content_type")
+  sizeBytes      Int                        @map("size_bytes")
+  url            String?
+  contentId      String?                    @map("content_id")
+  disposition    EmailAttachmentDisposition @default(ATTACHMENT)
+  checksum       String?
+  metadata       Json?
+  createdAt      DateTime                   @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  queue        EmailQueue?  @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  log          EmailLog?    @relation(fields: [logId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([queueId])
+  @@index([logId])
+  @@index([contentId])
+  @@map("email_attachments")
+}
+
+/// Replay-safe provider webhook inbox containing only a sanitized payload and
+/// one-way signature hash.
+model EmailEvent {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  organizationId    String           @map("organization_id") @db.Uuid
+  userId            String?          @map("user_id") @db.Uuid
+  logId             String?          @map("log_id") @db.Uuid
+  provider          EmailProvider
+  eventId           String           @map("event_id")
+  providerMessageId String?          @map("provider_message_id")
+  type              EmailEventType
+  status            EmailEventStatus @default(PENDING)
+  occurredAt        DateTime         @map("occurred_at")
+  receivedAt        DateTime         @default(now()) @map("received_at")
+  payload           Json
+  signatureHash     String           @map("signature_hash")
+  attempts          Int              @default(0)
+  processedAt       DateTime?        @map("processed_at")
+  lastError         String?          @map("last_error")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  log          EmailLog?    @relation(fields: [logId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, eventId])
+  @@index([status, receivedAt])
+  @@index([organizationId, receivedAt])
+  @@index([provider, providerMessageId])
+  @@index([logId, occurredAt])
+  @@index([userId, occurredAt])
+  @@map("email_events")
+}
+
+/// Invitation tokens are stored only as hashes. A partial unique index in the
+/// migration permits at most one pending invitation per org/email/type.
+model EmailInvitation {
+  id             String                @id @default(uuid(7)) @db.Uuid
+  organizationId String                @map("organization_id") @db.Uuid
+  invitedById    String?               @map("invited_by_id") @db.Uuid
+  acceptedById   String?               @map("accepted_by_id") @db.Uuid
+  email          String
+  role           String
+  type           EmailInvitationType
+  status         EmailInvitationStatus @default(PENDING)
+  tokenHash      String                @unique @map("token_hash")
+  expiresAt      DateTime              @map("expires_at")
+  acceptedAt     DateTime?             @map("accepted_at")
+  revokedAt      DateTime?             @map("revoked_at")
+  metadata       Json?
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invitedBy    User?        @relation("EmailInvitationInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  acceptedBy   User?        @relation("EmailInvitationAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, email, type, status])
+  @@index([email, status])
+  @@index([expiresAt, status])
+  @@index([invitedById])
+  @@index([acceptedById])
+  @@map("email_invitations")
 }

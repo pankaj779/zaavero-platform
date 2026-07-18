@@ -3,6 +3,7 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import { NOTIFICATION_REPOSITORY } from '../constants/injection-tokens';
 import type { CreateNotificationDto } from '../dto/create-notification.dto';
 import type { ListNotificationsQueryDto } from '../dto/list-notifications-query.dto';
@@ -29,6 +30,7 @@ export class NotificationService {
   constructor(
     @Inject(NOTIFICATION_REPOSITORY)
     private readonly notificationRepository: NotificationRepository,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   async list(
@@ -102,6 +104,9 @@ export class NotificationService {
       body: dto.body ?? null,
       data: dto.data,
     });
+    if (notification.channel === 'EMAIL') {
+      await this.businessEmail?.notificationCreated(notification.id);
+    }
 
     return {
       message: 'Notification created successfully.',

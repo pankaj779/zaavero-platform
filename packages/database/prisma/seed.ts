@@ -2,6 +2,7 @@ import './load-env.js';
 import { hash } from 'argon2';
 import {
   seedAdminEnvSchema,
+  seedEmailTemplateSchema,
   seedOrganizationSchema,
   seedPlanSchema,
   seedPermissionSchema,
@@ -21,6 +22,8 @@ const {
   LessonContentType,
   PlanTier,
   BillingInterval,
+  EmailCategory,
+  EmailTemplateStatus,
 } = await import('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -37,6 +40,10 @@ const PERMISSIONS = [
   { name: 'student.view', module: 'student', description: 'View student records' },
   { name: 'teacher.update', module: 'teacher', description: 'Update teacher records' },
   { name: 'payment.manage', module: 'payment', description: 'Manage payments' },
+  { name: 'email.view', module: 'email', description: 'View email delivery records' },
+  { name: 'email.manage', module: 'email', description: 'Manage queued email' },
+  { name: 'email.template.manage', module: 'email', description: 'Manage email templates' },
+  { name: 'email.retry', module: 'email', description: 'Retry failed email deliveries' },
 ] as const;
 
 const SYSTEM_SETTINGS = [
@@ -123,6 +130,188 @@ const DEFAULT_PLANS = [
     isActive: true,
   },
 ] as const;
+
+const EMAIL_TEMPLATE_SPECS = [
+  ['welcome', 'Welcome', 'Welcome to the platform. Your account is ready.', EmailCategory.SYSTEM],
+  [
+    'verify_email',
+    'Verify your email',
+    'Confirm your email address to finish setting up your account.',
+    EmailCategory.SECURITY,
+  ],
+  [
+    'forgot_password',
+    'Reset your password',
+    'Use the secure link to choose a new password.',
+    EmailCategory.SECURITY,
+  ],
+  [
+    'password_changed',
+    'Your password was changed',
+    'Your account password was changed. Review your account if this was unexpected.',
+    EmailCategory.SECURITY,
+  ],
+  [
+    'teacher_invitation',
+    'Teacher invitation',
+    'You have been invited to join as a teacher.',
+    EmailCategory.SYSTEM,
+  ],
+  [
+    'student_invitation',
+    'Student invitation',
+    'You have been invited to join as a student.',
+    EmailCategory.SYSTEM,
+  ],
+  [
+    'organization_invitation',
+    'Organization invitation',
+    'You have been invited to join an organization.',
+    EmailCategory.SYSTEM,
+  ],
+  [
+    'course_enrollment',
+    'Course enrollment confirmed',
+    'Your course enrollment is confirmed.',
+    EmailCategory.COURSE,
+  ],
+  [
+    'batch_enrollment',
+    'Batch enrollment confirmed',
+    'Your batch enrollment is confirmed.',
+    EmailCategory.COURSE,
+  ],
+  [
+    'lesson_published',
+    'New lesson published',
+    'A new lesson is available in your course.',
+    EmailCategory.COURSE,
+  ],
+  [
+    'assignment_published',
+    'New assignment published',
+    'A new assignment is available.',
+    EmailCategory.ASSIGNMENT,
+  ],
+  [
+    'assignment_due',
+    'Assignment due reminder',
+    'An assignment due date is approaching.',
+    EmailCategory.ASSIGNMENT,
+  ],
+  [
+    'assignment_submitted',
+    'Assignment submitted',
+    'An assignment submission was received.',
+    EmailCategory.ASSIGNMENT,
+  ],
+  [
+    'assignment_graded',
+    'Assignment graded',
+    'Your assignment has been graded.',
+    EmailCategory.ASSIGNMENT,
+  ],
+  [
+    'certificate_issued',
+    'Certificate issued',
+    'Your certificate is ready.',
+    EmailCategory.CERTIFICATE,
+  ],
+  [
+    'payment_successful',
+    'Payment successful',
+    'Your payment was completed successfully.',
+    EmailCategory.PAYMENT,
+  ],
+  [
+    'invoice_available',
+    'Invoice available',
+    'Your invoice is available to view.',
+    EmailCategory.PAYMENT,
+  ],
+  [
+    'refund_processed',
+    'Refund processed',
+    'Your refund has been processed.',
+    EmailCategory.PAYMENT,
+  ],
+  [
+    'subscription_started',
+    'Subscription started',
+    'Your subscription is now active.',
+    EmailCategory.PAYMENT,
+  ],
+  [
+    'subscription_renewed',
+    'Subscription renewed',
+    'Your subscription has been renewed.',
+    EmailCategory.PAYMENT,
+  ],
+  [
+    'subscription_cancelled',
+    'Subscription cancelled',
+    'Your subscription has been cancelled.',
+    EmailCategory.PAYMENT,
+  ],
+  [
+    'live_reminder',
+    'Live class reminder',
+    'Your live class will begin soon.',
+    EmailCategory.LIVE_CLASS,
+  ],
+  [
+    'live_cancelled',
+    'Live class cancelled',
+    'A scheduled live class has been cancelled.',
+    EmailCategory.LIVE_CLASS,
+  ],
+  [
+    'announcement',
+    'New announcement',
+    'A new announcement has been published.',
+    EmailCategory.ANNOUNCEMENT,
+  ],
+  ['general_notification', 'Notification', 'You have a new notification.', EmailCategory.SYSTEM],
+] as const;
+
+const SYSTEM_EMAIL_TEMPLATES = EMAIL_TEMPLATE_SPECS.map(([key, title, message, category]) => ({
+  scopeKey: 'SYSTEM' as const,
+  key,
+  locale: 'en',
+  version: 1,
+  subject: title,
+  html: [
+    '<!doctype html>',
+    '<html lang="en"><body>',
+    '<main>',
+    '<p>Hello {{recipientName}},</p>',
+    `<p>${message}</p>`,
+    '<p><a href="{{actionUrl}}">View details</a></p>',
+    '<p>If you did not expect this message, you can safely ignore it.</p>',
+    '</main>',
+    '</body></html>',
+  ].join(''),
+  text: `Hello {{recipientName}},\n\n${message}\n\nView details: {{actionUrl}}\n\nIf you did not expect this message, you can safely ignore it.`,
+  preview: message,
+  variableSchema: {
+    type: 'object' as const,
+    properties: {
+      recipientName: {
+        type: 'string' as const,
+        description: 'Display name of the recipient.',
+      },
+      actionUrl: {
+        type: 'string' as const,
+        format: 'uri' as const,
+        description: 'Absolute HTTPS URL for the primary action.',
+      },
+    },
+    required: ['recipientName', 'actionUrl'],
+    additionalProperties: false as const,
+  },
+  category,
+  status: EmailTemplateStatus.ACTIVE as const,
+}));
 
 const SAMPLE_COURSE_SLUG = 'sample-course';
 
@@ -277,6 +466,25 @@ async function seedPlans(organizationId: string): Promise<void> {
         organizationId,
         ...validated,
       },
+    });
+  }
+}
+
+async function seedEmailTemplates(): Promise<void> {
+  for (const template of SYSTEM_EMAIL_TEMPLATES) {
+    const validated = seedEmailTemplateSchema.parse(template);
+
+    await prisma.emailTemplate.upsert({
+      where: {
+        scopeKey_key_locale_version: {
+          scopeKey: validated.scopeKey,
+          key: validated.key,
+          locale: validated.locale,
+          version: validated.version,
+        },
+      },
+      update: {},
+      create: validated,
     });
   }
 }
@@ -606,6 +814,7 @@ async function main(): Promise<void> {
   const permissionIds = await seedPermissions();
   await seedRolePermissions(roleIds, permissionIds);
   await seedSystemSettings();
+  await seedEmailTemplates();
 
   const organizationId = await seedDefaultOrganization();
   await seedPlans(organizationId);

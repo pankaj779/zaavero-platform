@@ -12,9 +12,11 @@ import {
   Switch,
 } from '@graphology/ui';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import Link from 'next/link';
 import type { AdminOrganizationDto } from '../../../lib/admin';
 import { AdminApi } from '../../../lib/api';
 import { useOrganization } from '../../../lib/auth';
+import { ADMIN_ROUTES } from '../../../lib/constants';
 import { TeacherModuleErrorState } from '../../teacher/shared';
 import { AdminCapabilityNotice, AdminPageHeader } from '../shared';
 
@@ -256,10 +258,20 @@ export function AdminSettingsView(): React.JSX.Element {
       ) : null}
 
       {tab === 'email' ? (
-        <UnavailableSettings
-          title="Email settings"
-          description="Transactional email provider configuration is not exposed by the NestJS API yet. Organization contact email remains editable under General."
-        />
+        <Card className="rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-base">Email operations</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-small text-muted-foreground">
+              Review provider health, delivery statistics, queue failures, template previews, and
+              invitations in the email workspace.
+            </p>
+            <Button asChild size="sm">
+              <Link href={ADMIN_ROUTES.email}>Open email workspace</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : null}
 
       {tab === 'security' ? (
@@ -282,8 +294,8 @@ export function AdminSettingsView(): React.JSX.Element {
             />
             <SettingRow
               label="Email provider"
-              value="No provider settings API"
-              status="Unavailable"
+              value="Email operations workspace available"
+              status="Available"
             />
             <SettingRow
               label="Live meeting providers"

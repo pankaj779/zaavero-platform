@@ -2,7 +2,14 @@ import { z } from 'zod';
 
 const nonEmptyString = z.string().trim().min(1);
 
-export const envSchema = z.object({
+/** Accepts real booleans (tests/config objects) and common env string forms. */
+const booleanFromEnv = z
+  .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+  .transform((value) => value === true || value === 'true' || value === '1');
+
+export const DEFAULT_LOCAL_EMAIL_FROM = 'no-reply@graphology.local';
+
+const baseEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
   HOST: z.string().default('0.0.0.0'),
@@ -20,9 +27,17 @@ export const envSchema = z.object({
   JWT_ACCESS_EXPIRATION: z.string().optional(),
   JWT_REFRESH_EXPIRATION: z.string().optional(),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
-  RESEND_API_KEY: nonEmptyString,
-  EMAIL_FROM: z.string().email(),
+  RESEND_API_KEY: nonEmptyString.optional(),
+  RESEND_WEBHOOK_SECRET: nonEmptyString.optional(),
+  EMAIL_FROM: z.string().email().optional(),
   RESEND_FROM_EMAIL: z.string().email().optional(),
+  EMAIL_REPLY_TO: z.string().email().optional(),
+  EMAIL_PROVIDER: z.enum(['RESEND', 'SANDBOX']).default('RESEND'),
+  EMAIL_SANDBOX_MODE: booleanFromEnv.optional(),
+  EMAIL_QUEUE_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(15_000),
+  EMAIL_QUEUE_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
+  EMAIL_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
+  EMAIL_WEBHOOK_TOLERANCE_SECONDS: z.coerce.number().int().positive().default(300),
   RAZORPAY_KEY_ID: nonEmptyString.optional(),
   RAZORPAY_SECRET: nonEmptyString.optional(),
   RAZORPAY_WEBHOOK_SECRET: nonEmptyString.optional(),
@@ -33,6 +48,55 @@ export const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
 });
+
+export const envSchema = baseEnvSchema
+  .superRefine((config, ctx) => {
+    if (config.NODE_ENV !== 'production') {
+      return;
+    }
+
+    if (config.EMAIL_SANDBOX_MODE === true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['EMAIL_SANDBOX_MODE'],
+        message: 'EMAIL_SANDBOX_MODE must not be enabled in production.',
+      });
+    }
+    if (config.EMAIL_PROVIDER === 'SANDBOX') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['EMAIL_PROVIDER'],
+        message: 'EMAIL_PROVIDER must not be SANDBOX in production.',
+      });
+    }
+    if (!config.RESEND_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['RESEND_API_KEY'],
+        message: 'RESEND_API_KEY is required in production.',
+      });
+    }
+    if (!config.RESEND_WEBHOOK_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['RESEND_WEBHOOK_SECRET'],
+        message: 'RESEND_WEBHOOK_SECRET is required in production.',
+      });
+    }
+    if (!config.EMAIL_FROM) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['EMAIL_FROM'],
+        message: 'EMAIL_FROM (or RESEND_FROM_EMAIL) is required in production.',
+      });
+    }
+  })
+  .transform((config) => ({
+    ...config,
+    EMAIL_FROM: config.EMAIL_FROM ?? DEFAULT_LOCAL_EMAIL_FROM,
+    // Sandbox is the safe default everywhere except production.
+    EMAIL_SANDBOX_MODE: config.EMAIL_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
+  }));
 
 export type EnvConfig = z.infer<typeof envSchema>;
 

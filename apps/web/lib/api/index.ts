@@ -255,3 +255,38 @@ export {
   type PaymentOrderApiRecord,
   type PaymentConfigApiRecord,
 } from './payment-mapper';
+export { EmailApi } from './email';
+export type {
+  AcceptInvitationInput,
+  CreateInvitationInput,
+  EmailListParams,
+  PreviewEmailTemplateInput,
+  UpdateEmailPreferencesInput,
+} from './email';
+export {
+  mapAcceptInvitationResult,
+  mapEmailLog,
+  mapEmailPageMeta,
+  mapEmailPreferences,
+  mapEmailProviderStatus,
+  mapEmailQueue,
+  mapEmailStats,
+  mapEmailTemplate,
+  mapInvitation,
+} from './email-mapper';
+export type {
+  AcceptInvitationResultDto,
+  EmailDigestMode,
+  EmailListResult,
+  EmailLogDto,
+  EmailPageMeta,
+  EmailPreferencesDto,
+  EmailProviderStatusDto,
+  EmailQueueDto,
+  EmailStatsDto,
+  EmailTemplateDto,
+  EmailTemplatePreviewDto,
+  InvitationDto,
+  InvitationStatus,
+  InvitationType,
+} from './email-mapper';

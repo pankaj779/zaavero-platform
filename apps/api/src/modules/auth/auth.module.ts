@@ -1,4 +1,4 @@
-import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
+import { type MiddlewareConsumer, forwardRef, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import type { EnvConfig } from '../../config/env.schema';
@@ -25,7 +25,7 @@ import { TokenService } from './services/token.service';
 @Module({
   imports: [
     DatabaseModule,
-    EmailModule,
+    forwardRef(() => EmailModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

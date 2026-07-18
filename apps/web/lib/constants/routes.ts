@@ -8,6 +8,7 @@ export const ROUTES = {
   privacy: '/#privacy',
   terms: '/#terms',
   login: '/login',
+  acceptInvitation: '/accept-invitation',
   register: '#',
   /** Post-login destination for authenticated users (role-aware override in auth-session). */
   dashboard: '/dashboard',
@@ -83,6 +84,7 @@ export const ADMIN_ROUTES = {
   roles: '/admin/roles',
   analytics: '/admin/analytics',
   payments: '/admin/payments',
+  email: '/admin/email',
   notifications: '/admin/notifications',
   auditLogs: '/admin/audit-logs',
   settings: '/admin/settings',

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { useAuth } from '../../../lib/auth';
+import { useAuth, useOrganization } from '../../../lib/auth';
+import { EmailPreferencesCard, EmailVerificationCard } from '../../shared/email-preferences-card';
 import { TeacherModuleErrorState } from '../../teacher/shared';
 import { studentSettingsCopy } from './copy';
 import {
@@ -26,6 +27,7 @@ import { StudentSettingsSkeleton } from './student-settings-skeleton';
 
 export function StudentSettingsView(): React.JSX.Element {
   const { user, loading, isAuthenticated } = useAuth();
+  const { primaryOrganizationId } = useOrganization();
   const { setTheme } = useTheme();
   const [preferences, setPreferences] = useState<StudentClientPreferences>(
     DEFAULT_STUDENT_CLIENT_PREFERENCES,
@@ -81,6 +83,10 @@ export function StudentSettingsView(): React.JSX.Element {
     <div className="space-y-8">
       <StudentSettingsHeader />
       <div className="mx-auto grid max-w-3xl gap-4">
+        {primaryOrganizationId ? (
+          <EmailPreferencesCard organizationId={primaryOrganizationId} />
+        ) : null}
+        <EmailVerificationCard email={user.email} verified={user.emailVerified === true} />
         <StudentAppearanceSection
           theme={preferences.theme}
           onThemeChange={(theme) => {

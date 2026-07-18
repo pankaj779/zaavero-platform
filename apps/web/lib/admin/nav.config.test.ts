@@ -14,14 +14,16 @@ describe('admin nav config', () => {
     expect(hrefs.has(ADMIN_ROUTES.roles)).toBe(true);
     expect(hrefs.has(ADMIN_ROUTES.analytics)).toBe(true);
     expect(hrefs.has(ADMIN_ROUTES.payments)).toBe(true);
+    expect(hrefs.has(ADMIN_ROUTES.email)).toBe(true);
     expect(hrefs.has(ADMIN_ROUTES.notifications)).toBe(true);
     expect(hrefs.has(ADMIN_ROUTES.auditLogs)).toBe(true);
     expect(hrefs.has(ADMIN_ROUTES.settings)).toBe(true);
   });
 
-  it('resolves page meta for academic child routes and payments', () => {
+  it('resolves page meta for academic child routes, payments, and email', () => {
     expect(getAdminPageMeta(ADMIN_ROUTES.courses).title).toBe('Courses');
     expect(getAdminPageMeta(ADMIN_ROUTES.payments).title).toBe('Payments');
+    expect(getAdminPageMeta(ADMIN_ROUTES.email).title).toBe('Email');
     expect(getAdminPageMeta('/admin/unknown').title).toBe('Admin Dashboard');
   });
 });

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import {
   PAYMENT_DEFAULT_CURRENCY,
   PAYMENT_PROVIDER,
@@ -76,6 +77,7 @@ export class PaymentsAdminService {
     @Inject(PAYMENT_PROVIDER)
     private readonly provider: PaymentProvider,
     private readonly paymentsService: PaymentsService,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   // ── Overview ───────────────────────────────────────────────────────────
@@ -366,6 +368,9 @@ export class PaymentsAdminService {
       });
       throw error;
     }
+    if (finalized.status === 'PROCESSED') {
+      await this.businessEmail?.refundProcessed(finalized.id);
+    }
 
     return {
       message: 'Refund initiated successfully.',
@@ -415,6 +420,10 @@ export class PaymentsAdminService {
     const trialEndsAt =
       plan.trialDays > 0 ? new Date(periodStart.getTime() + plan.trialDays * 86_400_000) : null;
 
+    // Assigning supersedes any current active subscription; capture it first
+    // so the cancellation email can reference the correct record.
+    const previous = await this.repository.findCurrentSubscription(dto.organizationId);
+
     const subscription = await this.repository.assignSubscription({
       organizationId: dto.organizationId,
       planId: plan.id,
@@ -423,6 +432,16 @@ export class PaymentsAdminService {
       periodEnd,
       trialEndsAt,
       note: dto.note,
+    });
+    if (previous && previous.planId !== plan.id) {
+      await this.businessEmail?.subscriptionCancelled(previous.id);
+    }
+    await this.businessEmail?.enqueueForOrganizationAdmins(dto.organizationId, {
+      templateKey: previous?.planId === plan.id ? 'subscription_renewed' : 'subscription_started',
+      actionPath: '/admin/payments/subscriptions',
+      entityType: 'subscription',
+      entityId: subscription.id,
+      createdById: user.id,
     });
 
     return {

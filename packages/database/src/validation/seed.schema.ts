@@ -69,6 +69,41 @@ export const seedPlanSchema = z.object({
   isActive: z.boolean(),
 });
 
+const emailVariableDefinitionSchema = z.object({
+  type: z.literal('string'),
+  format: z.enum(['email', 'uri', 'date-time']).optional(),
+  description: z.string().min(1),
+});
+
+export const seedEmailTemplateSchema = z.object({
+  scopeKey: z.literal('SYSTEM'),
+  key: z.string().regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/, 'Template key must be snake_case'),
+  locale: z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/, 'Locale must be a language tag'),
+  version: z.number().int().positive(),
+  subject: z.string().min(1),
+  html: z.string().min(1),
+  text: z.string().min(1),
+  preview: z.string().min(1),
+  variableSchema: z.object({
+    type: z.literal('object'),
+    properties: z.record(emailVariableDefinitionSchema),
+    required: z.array(z.string().min(1)),
+    additionalProperties: z.literal(false),
+  }),
+  category: z.enum([
+    'SECURITY',
+    'SYSTEM',
+    'MARKETING',
+    'ANNOUNCEMENT',
+    'ASSIGNMENT',
+    'COURSE',
+    'PAYMENT',
+    'CERTIFICATE',
+    'LIVE_CLASS',
+  ]),
+  status: z.literal('ACTIVE'),
+});
+
 export type SeedAdminEnv = z.infer<typeof seedAdminEnvSchema>;
 export type SeedTeacherEnv = z.infer<typeof seedTeacherEnvSchema>;
 export type SeedStudentEnv = z.infer<typeof seedStudentEnvSchema>;
@@ -77,3 +112,4 @@ export type SeedPermission = z.infer<typeof seedPermissionSchema>;
 export type SeedSystemSetting = z.infer<typeof seedSystemSettingSchema>;
 export type SeedOrganization = z.infer<typeof seedOrganizationSchema>;
 export type SeedPlan = z.infer<typeof seedPlanSchema>;
+export type SeedEmailTemplate = z.infer<typeof seedEmailTemplateSchema>;

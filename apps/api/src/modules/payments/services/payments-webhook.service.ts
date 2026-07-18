@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import {
   PAYMENT_PROVIDER,
   PAYMENT_REPOSITORY,
@@ -103,6 +104,7 @@ export class PaymentsWebhookService {
     private readonly repository: PaymentsRepository,
     @Inject(PAYMENT_PROVIDER)
     private readonly provider: PaymentProvider,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   /**
@@ -254,6 +256,9 @@ export class PaymentsWebhookService {
       actorUserId: null,
       paymentEventId,
     });
+    if (captured && !result.alreadyProcessed) {
+      await this.businessEmail?.paymentCaptured(result.order.id, result.payment.id);
+    }
 
     return {
       ignored: false,
@@ -337,6 +342,9 @@ export class PaymentsWebhookService {
       failureReason: processed ? undefined : 'Provider reported refund failure',
       actorUserId: null,
     });
+    if (processed) {
+      await this.businessEmail?.refundProcessed(finalized.id);
+    }
 
     return {
       ignored: false,

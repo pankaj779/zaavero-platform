@@ -1,4 +1,12 @@
 import type { EnvConfig } from './env.schema';
+import { DEFAULT_LOCAL_EMAIL_FROM } from './env.schema';
+
+function booleanFromEnv(value: string | undefined): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return value === 'true' || value === '1';
+}
 
 export default (): EnvConfig => {
   const nodeEnv = process.env.NODE_ENV;
@@ -6,6 +14,9 @@ export default (): EnvConfig => {
     nodeEnv === 'production' || nodeEnv === 'test' || nodeEnv === 'development'
       ? nodeEnv
       : 'development';
+
+  const emailProvider: EnvConfig['EMAIL_PROVIDER'] =
+    process.env.EMAIL_PROVIDER === 'SANDBOX' ? 'SANDBOX' : 'RESEND';
 
   return {
     NODE_ENV: resolvedNodeEnv,
@@ -26,9 +37,18 @@ export default (): EnvConfig => {
     JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION,
     REFRESH_TOKEN_EXPIRES_IN:
       process.env.REFRESH_TOKEN_EXPIRES_IN ?? process.env.JWT_REFRESH_EXPIRATION ?? '7d',
-    RESEND_API_KEY: process.env.RESEND_API_KEY ?? '',
-    EMAIL_FROM: process.env.EMAIL_FROM ?? process.env.RESEND_FROM_EMAIL ?? 'noreply@example.com',
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
+    EMAIL_FROM: process.env.EMAIL_FROM ?? process.env.RESEND_FROM_EMAIL ?? DEFAULT_LOCAL_EMAIL_FROM,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO,
+    EMAIL_PROVIDER: emailProvider,
+    EMAIL_SANDBOX_MODE:
+      booleanFromEnv(process.env.EMAIL_SANDBOX_MODE) ?? resolvedNodeEnv !== 'production',
+    EMAIL_QUEUE_POLL_INTERVAL_MS: Number(process.env.EMAIL_QUEUE_POLL_INTERVAL_MS ?? 15_000),
+    EMAIL_QUEUE_BATCH_SIZE: Number(process.env.EMAIL_QUEUE_BATCH_SIZE ?? 20),
+    EMAIL_MAX_ATTEMPTS: Number(process.env.EMAIL_MAX_ATTEMPTS ?? 5),
+    EMAIL_WEBHOOK_TOLERANCE_SECONDS: Number(process.env.EMAIL_WEBHOOK_TOLERANCE_SECONDS ?? 300),
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_SECRET: process.env.RAZORPAY_SECRET ?? process.env.RAZORPAY_KEY_SECRET,
     RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,

@@ -4,6 +4,7 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import { CERTIFICATE_CODE_MAX_RETRIES } from '../constants/certificate.constants';
 import { CERTIFICATE_REPOSITORY } from '../constants/injection-tokens';
 import type {
@@ -44,6 +45,7 @@ export class CertificateService {
   constructor(
     @Inject(CERTIFICATE_REPOSITORY)
     private readonly certificateRepository: CertificateRepository,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   async list(
@@ -137,6 +139,7 @@ export class CertificateService {
       pdfUrl: dto.pdfUrl ?? null,
       issuedAt: new Date(),
     });
+    await this.businessEmail?.certificateIssued(certificate.id);
 
     return {
       message: 'Certificate issued successfully.',

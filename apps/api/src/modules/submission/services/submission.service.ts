@@ -3,6 +3,7 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import {
   SUBMISSION_STATUS_TRANSITIONS,
   type SubmissionStatusValue,
@@ -45,6 +46,7 @@ export class SubmissionService {
   constructor(
     @Inject(SUBMISSION_REPOSITORY)
     private readonly submissionRepository: SubmissionRepository,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   async list(
@@ -134,6 +136,9 @@ export class SubmissionService {
         attachments: dto.attachments,
         submittedAt,
       });
+      if (this.isSubmitStatus(submission.status)) {
+        await this.businessEmail?.submissionSubmitted(submission.id);
+      }
 
       return {
         message: 'Submission created successfully.',
@@ -207,6 +212,9 @@ export class SubmissionService {
       status: dto.status !== undefined ? resolvedStatus : undefined,
       submittedAt: dto.status !== undefined ? submittedAt : undefined,
     });
+    if (!this.isSubmitStatus(submission.status) && this.isSubmitStatus(updated.status)) {
+      await this.businessEmail?.submissionSubmitted(updated.id);
+    }
 
     return {
       message: 'Submission updated successfully.',
@@ -280,6 +288,7 @@ export class SubmissionService {
       gradedAt: new Date(),
       gradedById: teacherProfileId,
     });
+    await this.businessEmail?.submissionGraded(updated.id);
 
     return {
       message: 'Submission graded successfully.',

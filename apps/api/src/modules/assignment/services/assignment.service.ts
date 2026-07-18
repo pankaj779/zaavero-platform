@@ -3,6 +3,7 @@ import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import { ASSIGNMENT_REPOSITORY } from '../constants/injection-tokens';
 import type {
   AssignmentResponseDto,
@@ -34,6 +35,7 @@ export class AssignmentService {
   constructor(
     @Inject(ASSIGNMENT_REPOSITORY)
     private readonly assignmentRepository: AssignmentRepository,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   async list(
@@ -112,6 +114,9 @@ export class AssignmentService {
       maxScore: dto.maxScore,
       dueAt,
     });
+    if (assignment.status === 'PUBLISHED') {
+      await this.businessEmail?.assignmentPublished(assignment.id);
+    }
 
     return {
       message: 'Assignment created successfully.',
@@ -153,6 +158,9 @@ export class AssignmentService {
       dueAt,
       batchId: dto.batchId,
     });
+    if (assignment.status !== 'PUBLISHED' && updated.status === 'PUBLISHED') {
+      await this.businessEmail?.assignmentPublished(updated.id);
+    }
 
     return {
       message: 'Assignment updated successfully.',

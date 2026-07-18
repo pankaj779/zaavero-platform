@@ -2,7 +2,7 @@ import { hash } from 'argon2';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EmailService } from '../../email/interfaces/email-service.interface';
+import type { BusinessEmailService } from '../../email/services/business-email.service';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import {
@@ -61,7 +61,7 @@ function createAuthService(deps: {
   authRepository: AuthRepository;
   userRepository: UserRepository;
   tokenService: TokenService;
-  emailService: EmailService;
+  emailService: BusinessEmailService;
 }): AuthService {
   const configService = {
     get: (key: string) => {
@@ -98,8 +98,7 @@ describe('AuthService.register', () => {
   const createTokenPair = vi.fn();
   const createRefreshToken =
     vi.fn<(input: CreateRefreshTokenInput) => Promise<RefreshTokenRecord>>();
-  const sendEmail =
-    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const enqueueEmail = vi.fn().mockResolvedValue(undefined);
 
   const authRepository = createMockAuthRepository({
     registerUser,
@@ -119,7 +118,9 @@ describe('AuthService.register', () => {
   };
 
   const tokenService = { createAccessToken, createTokenPair } as unknown as TokenService;
-  const emailService = { sendEmail } as unknown as EmailService;
+  const emailService = {
+    enqueueForUserPrimaryOrganization: enqueueEmail,
+  } as unknown as BusinessEmailService;
   let service: AuthService;
 
   const validDto: RegisterDto = {
@@ -146,7 +147,7 @@ describe('AuthService.register', () => {
       createdAt: new Date(),
     });
     deleteEmailVerificationTokensForUser.mockResolvedValue(undefined);
-    sendEmail.mockResolvedValue(undefined);
+    enqueueEmail.mockResolvedValue(undefined);
   });
 
   it('registers a user with hashed password and sends verification email', async () => {
@@ -169,15 +170,13 @@ describe('AuthService.register', () => {
       },
     });
     expect(createEmailVerificationToken).toHaveBeenCalled();
-    expect(sendEmail).toHaveBeenCalledTimes(1);
-    const [emailPayload] = sendEmail.mock.calls[0] ?? [];
-    expect(emailPayload).toMatchObject({
-      to: 'ada@example.com',
-    });
-    expect(emailPayload?.subject).toContain('Verify your email');
+    expect(enqueueEmail).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ templateKey: 'verify_email' }),
+    );
   });
 
-  it('keeps registration successful when email sending fails', async () => {
+  it('keeps registration response independent of asynchronous delivery', async () => {
     findByEmail.mockResolvedValue(null);
     findByPhone.mockResolvedValue(null);
     registerUser.mockResolvedValue({
@@ -185,8 +184,6 @@ describe('AuthService.register', () => {
       email: 'ada@example.com',
       organizationName: 'Graphology Academy',
     });
-    sendEmail.mockRejectedValue(new Error('provider unavailable'));
-
     await expect(service.register(validDto)).resolves.toMatchObject({
       data: { userId: 'user-1' },
     });
@@ -241,8 +238,7 @@ describe('AuthService.login', () => {
   const createTokenPair = vi.fn();
   const createRefreshToken =
     vi.fn<(input: CreateRefreshTokenInput) => Promise<RefreshTokenRecord>>();
-  const sendEmail =
-    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const enqueueEmail = vi.fn().mockResolvedValue(undefined);
 
   const authRepository = createMockAuthRepository({
     registerUser,
@@ -262,7 +258,9 @@ describe('AuthService.login', () => {
   };
 
   const tokenService = { createAccessToken, createTokenPair } as unknown as TokenService;
-  const emailService = { sendEmail } as unknown as EmailService;
+  const emailService = {
+    enqueueForUserPrimaryOrganization: enqueueEmail,
+  } as unknown as BusinessEmailService;
   let service: AuthService;
   let activeUser: AuthUserRecord;
 
@@ -395,8 +393,7 @@ describe('AuthService.verifyEmail and resendVerification', () => {
   const createTokenPair = vi.fn();
   const createRefreshToken =
     vi.fn<(input: CreateRefreshTokenInput) => Promise<RefreshTokenRecord>>();
-  const sendEmail =
-    vi.fn<(input: { to: string; subject: string; html: string; text?: string }) => Promise<void>>();
+  const enqueueEmail = vi.fn().mockResolvedValue(undefined);
 
   const authRepository = createMockAuthRepository({
     registerUser,
@@ -416,7 +413,9 @@ describe('AuthService.verifyEmail and resendVerification', () => {
   };
 
   const tokenService = { createAccessToken, createTokenPair } as unknown as TokenService;
-  const emailService = { sendEmail } as unknown as EmailService;
+  const emailService = {
+    enqueueForUserPrimaryOrganization: enqueueEmail,
+  } as unknown as BusinessEmailService;
   let service: AuthService;
 
   beforeEach(() => {
@@ -437,7 +436,7 @@ describe('AuthService.verifyEmail and resendVerification', () => {
     deleteEmailVerificationTokensForUser.mockResolvedValue(undefined);
     deleteEmailVerificationToken.mockResolvedValue(undefined);
     markEmailVerified.mockResolvedValue(undefined);
-    sendEmail.mockResolvedValue(undefined);
+    enqueueEmail.mockResolvedValue(undefined);
   });
 
   it('verifies a valid token and marks the user verified', async () => {
@@ -512,7 +511,7 @@ describe('AuthService.verifyEmail and resendVerification', () => {
     const result = await service.resendVerification({ email: 'ada@example.com' });
 
     expect(result.message).toBe('Email is already verified.');
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(enqueueEmail).not.toHaveBeenCalled();
   });
 
   it('does not reveal whether an email exists on resend', async () => {
@@ -523,7 +522,7 @@ describe('AuthService.verifyEmail and resendVerification', () => {
     expect(result.message).toBe(
       'If an account exists for this email, a verification link has been sent.',
     );
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(enqueueEmail).not.toHaveBeenCalled();
   });
 
   it('resends verification for an unverified account', async () => {
@@ -545,7 +544,10 @@ describe('AuthService.verifyEmail and resendVerification', () => {
       'If an account exists for this email, a verification link has been sent.',
     );
     expect(createEmailVerificationToken).toHaveBeenCalled();
-    expect(sendEmail).toHaveBeenCalled();
+    expect(enqueueEmail).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ templateKey: 'verify_email' }),
+    );
   });
 });
 

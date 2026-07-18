@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import {
   PAYMENT_DEFAULT_CURRENCY,
   PAYMENT_ORDER_TTL_MINUTES,
@@ -92,6 +93,7 @@ export class PaymentsService {
     private readonly repository: PaymentsRepository,
     @Inject(PAYMENT_PROVIDER)
     private readonly provider: PaymentProvider,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   // ── Config & catalog ───────────────────────────────────────────────────
@@ -368,6 +370,9 @@ export class PaymentsService {
       paymentMethod: toSafePaymentMethod(providerPayment),
       actorUserId: user.id,
     });
+    if (captured && !result.alreadyProcessed) {
+      await this.businessEmail?.paymentCaptured(result.order.id, result.payment.id);
+    }
 
     return {
       message: result.alreadyProcessed

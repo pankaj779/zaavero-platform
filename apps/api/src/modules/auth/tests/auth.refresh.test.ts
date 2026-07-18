@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { hash } from 'argon2';
-import type { EmailService } from '../../email/interfaces/email-service.interface';
-import {
-  TokenExpiredException,
-  TokenInvalidException,
-} from '../exceptions';
+import type { BusinessEmailService } from '../../email/services/business-email.service';
+import { TokenExpiredException, TokenInvalidException } from '../exceptions';
 import type {
   AuthRepository,
   AuthUserRecord,
@@ -20,7 +17,7 @@ function createService(deps: {
   authRepository: AuthRepository;
   userRepository: UserRepository;
   tokenService: TokenService;
-  emailService: EmailService;
+  emailService: BusinessEmailService;
 }): AuthService {
   const configService = {
     get: (key: string) => {
@@ -87,7 +84,9 @@ describe('AuthService.refresh and logout', () => {
     hashIncomingRefreshToken,
   } as unknown as TokenService;
 
-  const emailService = { sendEmail: vi.fn() } as unknown as EmailService;
+  const emailService = {
+    enqueueForUserPrimaryOrganization: vi.fn(),
+  } as unknown as BusinessEmailService;
   let service: AuthService;
   let activeUser: AuthUserRecord;
 

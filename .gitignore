@@ -9,6 +9,10 @@ build/
 out/
 .turbo/
 *.tsbuildinfo
+packages/database/src/*.js
+packages/database/src/*.d.ts
+packages/database/src/validation/*.js
+packages/database/src/validation/*.d.ts
 
 # Environment
 .env

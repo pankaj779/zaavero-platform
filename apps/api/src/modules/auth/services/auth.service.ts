@@ -1,18 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { hash, verify } from 'argon2';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import type { EnvConfig } from '../../../config/env.schema';
-import { EMAIL_SERVICE } from '../../email/constants/injection-tokens';
-import type { EmailService } from '../../email/interfaces/email-service.interface';
-import {
-  buildEmailVerificationHtml,
-  buildEmailVerificationText,
-} from '../../email/templates/email-verification.template';
-import {
-  buildPasswordResetHtml,
-  buildPasswordResetText,
-} from '../../email/templates/password-reset.template';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import {
   DEFAULT_ORGANIZATION,
   DEFAULT_REGISTRATION_ROLE,
@@ -53,7 +44,6 @@ import { TokenService } from './token.service';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
   private dummyPasswordHashPromise?: Promise<string>;
 
   constructor(
@@ -62,8 +52,7 @@ export class AuthService {
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
     private readonly tokenService: TokenService,
-    @Inject(EMAIL_SERVICE)
-    private readonly emailService: EmailService,
+    private readonly emailService: BusinessEmailService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
@@ -128,7 +117,7 @@ export class AuthService {
       roleName: DEFAULT_REGISTRATION_ROLE,
     });
 
-    await this.issueAndSendVerificationEmail({
+    await this.issueAndQueueVerificationEmail({
       userId: registered.userId,
       email: registered.email,
       firstName: dto.firstName,
@@ -266,6 +255,12 @@ export class AuthService {
     }
 
     await this.authRepository.deleteEmailVerificationTokensForUser(user.id);
+    await this.emailService.enqueueForUserPrimaryOrganization(user.id, {
+      templateKey: 'welcome',
+      actionPath: '/',
+      entityType: 'user',
+      entityId: user.id,
+    });
 
     return {
       message: 'Email verified successfully.',
@@ -295,7 +290,7 @@ export class AuthService {
       };
     }
 
-    await this.issueAndSendVerificationEmail({
+    await this.issueAndQueueVerificationEmail({
       userId: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -313,7 +308,7 @@ export class AuthService {
     const user = await this.userRepository.findByEmail(dto.email);
 
     if (user && user.isActive && user.deletedAt === null) {
-      await this.issueAndSendPasswordResetEmail({
+      await this.issueAndQueuePasswordResetEmail({
         userId: user.id,
         email: user.email,
         firstName: user.firstName,
@@ -350,6 +345,13 @@ export class AuthService {
       passwordHash,
       resetTokenId: record.id,
     });
+    await this.emailService.enqueueForUserPrimaryOrganization(user.id, {
+      templateKey: 'password_changed',
+      actionPath: '/login',
+      entityType: 'password-reset',
+      entityId: record.id,
+      category: 'SECURITY',
+    });
 
     return {
       message: 'Password has been reset successfully.',
@@ -357,7 +359,7 @@ export class AuthService {
     };
   }
 
-  private async issueAndSendPasswordResetEmail(input: {
+  private async issueAndQueuePasswordResetEmail(input: {
     userId: string;
     email: string;
     firstName: string;
@@ -367,40 +369,26 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MINUTES * 60 * 1000);
 
     await this.authRepository.deletePasswordResetTokensForUser(input.userId);
-    await this.authRepository.createPasswordResetToken({
+    const resetToken = await this.authRepository.createPasswordResetToken({
       userId: input.userId,
       tokenHash,
       expiresAt,
     });
 
     const frontendUrl = this.configService.get('FRONTEND_URL', { infer: true });
-    const appName = this.configService.get('APP_NAME', { infer: true });
     const resetUrl = new URL('/reset-password', frontendUrl);
     resetUrl.searchParams.set('token', rawToken);
 
-    const templateInput = {
-      appName,
-      recipientName: input.firstName,
-      resetUrl: resetUrl.toString(),
-      expiresInMinutes: PASSWORD_RESET_EXPIRY_MINUTES,
-    };
-
-    try {
-      await this.emailService.sendEmail({
-        to: input.email,
-        subject: `Reset your password for ${appName}`,
-        html: buildPasswordResetHtml(templateInput),
-        text: buildPasswordResetText(templateInput),
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown email error';
-      this.logger.error(
-        `Failed to send password reset email for userId=${input.userId}: ${message}`,
-      );
-    }
+    await this.emailService.enqueueForUserPrimaryOrganization(input.userId, {
+      templateKey: 'forgot_password',
+      actionPath: resetUrl.toString(),
+      entityType: 'password-reset-token',
+      entityId: resetToken.id,
+      category: 'SECURITY',
+    });
   }
 
-  private async issueAndSendVerificationEmail(input: {
+  private async issueAndQueueVerificationEmail(input: {
     userId: string;
     email: string;
     firstName: string;
@@ -410,35 +398,23 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY_HOURS * 60 * 60 * 1000);
 
     await this.authRepository.deleteEmailVerificationTokensForUser(input.userId);
-    await this.authRepository.createEmailVerificationToken({
+    const verificationToken = await this.authRepository.createEmailVerificationToken({
       userId: input.userId,
       tokenHash,
       expiresAt,
     });
 
     const frontendUrl = this.configService.get('FRONTEND_URL', { infer: true });
-    const appName = this.configService.get('APP_NAME', { infer: true });
     const verificationUrl = new URL('/verify-email', frontendUrl);
     verificationUrl.searchParams.set('token', rawToken);
 
-    const templateInput = {
-      appName,
-      recipientName: input.firstName,
-      verificationUrl: verificationUrl.toString(),
-      expiresInHours: EMAIL_VERIFICATION_EXPIRY_HOURS,
-    };
-
-    try {
-      await this.emailService.sendEmail({
-        to: input.email,
-        subject: `Verify your email for ${appName}`,
-        html: buildEmailVerificationHtml(templateInput),
-        text: buildEmailVerificationText(templateInput),
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown email error';
-      this.logger.error(`Failed to send verification email for userId=${input.userId}: ${message}`);
-    }
+    await this.emailService.enqueueForUserPrimaryOrganization(input.userId, {
+      templateKey: 'verify_email',
+      actionPath: verificationUrl.toString(),
+      entityType: 'email-verification-token',
+      entityId: verificationToken.id,
+      category: 'SECURITY',
+    });
   }
 
   private async verifyPassword(passwordHash: string | null, password: string): Promise<boolean> {

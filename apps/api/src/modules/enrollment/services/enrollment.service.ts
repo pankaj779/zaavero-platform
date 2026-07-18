@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
+import { BusinessEmailService } from '../../email/services/business-email.service';
 import { ENROLLMENT_REPOSITORY } from '../constants/injection-tokens';
 import type {
   EnrollmentResponseDto,
@@ -42,6 +43,7 @@ export class EnrollmentService {
   constructor(
     @Inject(ENROLLMENT_REPOSITORY)
     private readonly enrollmentRepository: EnrollmentRepository,
+    private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   async list(
@@ -147,6 +149,7 @@ export class EnrollmentService {
           status: dto.status ?? 'ACTIVE',
           completedAt: null,
         });
+        await this.businessEmail?.enrollmentCreated(reactivated.id);
 
         return {
           message: 'Enrollment created successfully.',
@@ -161,6 +164,7 @@ export class EnrollmentService {
         studentId: dto.studentId,
         status: dto.status,
       });
+      await this.businessEmail?.enrollmentCreated(enrollment.id);
 
       return {
         message: 'Enrollment created successfully.',
