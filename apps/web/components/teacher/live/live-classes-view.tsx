@@ -270,6 +270,11 @@ export function LiveClassesView({
         onBatchChange={setBatchId}
         onProviderChange={setProvider}
         serverFiltered
+        onSessionChanged={() => {
+          const controller = new AbortController();
+          void loadList(controller.signal);
+          void loadStats(controller.signal);
+        }}
       />
     </div>
   );

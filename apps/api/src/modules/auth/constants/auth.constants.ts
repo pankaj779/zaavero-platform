@@ -49,6 +49,10 @@ export const AUTH_PERMISSIONS = {
   emailRetry: 'email.retry',
   storageUpload: 'storage.upload',
   storageManage: 'storage.manage',
+  aiUse: 'ai.use',
+  aiGenerate: 'ai.generate',
+  aiManage: 'ai.manage',
+  aiAdmin: 'ai.admin',
 } as const;
 
 export type AuthPermissionName = (typeof AUTH_PERMISSIONS)[keyof typeof AUTH_PERMISSIONS];

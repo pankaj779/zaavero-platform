@@ -16,7 +16,7 @@ export interface ListLiveSessionsParams {
   organizationId?: string;
   batchId?: string;
   status?: 'SCHEDULED' | 'LIVE' | 'COMPLETED' | 'CANCELLED';
-  meetingProvider?: 'NONE' | 'ZOOM' | 'GOOGLE_MEET' | 'CUSTOM';
+  meetingProvider?: 'NONE' | 'ZOOM' | 'GOOGLE_MEET' | 'CUSTOM' | 'SANDBOX';
   search?: string;
   page?: number;
   limit?: number;
@@ -181,6 +181,27 @@ export const LiveSessionApi = {
   async deleteLiveSession(id: string): Promise<TeacherLiveClassDto> {
     const record = await apiFetch<LiveSessionApiRecord>(`/live-sessions/${id}`, {
       method: 'DELETE',
+    });
+    return mapLiveSessionApiToTeacherDto(record);
+  },
+
+  async startLiveSession(id: string): Promise<TeacherLiveClassDto> {
+    const record = await apiFetch<LiveSessionApiRecord>(`/live-sessions/${id}/start`, {
+      method: 'POST',
+    });
+    return mapLiveSessionApiToTeacherDto(record);
+  },
+
+  async endLiveSession(id: string): Promise<TeacherLiveClassDto> {
+    const record = await apiFetch<LiveSessionApiRecord>(`/live-sessions/${id}/end`, {
+      method: 'POST',
+    });
+    return mapLiveSessionApiToTeacherDto(record);
+  },
+
+  async cancelLiveSession(id: string): Promise<TeacherLiveClassDto> {
+    const record = await apiFetch<LiveSessionApiRecord>(`/live-sessions/${id}/cancel`, {
+      method: 'POST',
     });
     return mapLiveSessionApiToTeacherDto(record);
   },

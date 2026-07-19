@@ -70,6 +70,33 @@ export class LiveSessionController {
     return this.liveSessionService.update(user, id, dto);
   }
 
+  @Post(':id/start')
+  @Roles(AUTH_ROLES.admin, AUTH_ROLES.teacher)
+  @Permissions(AUTH_PERMISSIONS.courseUpdate)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'Start a live session' })
+  start(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.liveSessionService.start(user, id);
+  }
+
+  @Post(':id/end')
+  @Roles(AUTH_ROLES.admin, AUTH_ROLES.teacher)
+  @Permissions(AUTH_PERMISSIONS.courseUpdate)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'End a live session' })
+  end(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.liveSessionService.end(user, id);
+  }
+
+  @Post(':id/cancel')
+  @Roles(AUTH_ROLES.admin, AUTH_ROLES.teacher)
+  @Permissions(AUTH_PERMISSIONS.courseUpdate)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOperation({ summary: 'Cancel a live session and delete the provider meeting' })
+  cancel(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.liveSessionService.cancel(user, id);
+  }
+
   @Delete(':id')
   @Roles(AUTH_ROLES.admin, AUTH_ROLES.teacher)
   @Permissions(AUTH_PERMISSIONS.courseUpdate)

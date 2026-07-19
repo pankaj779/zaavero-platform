@@ -83,7 +83,7 @@ describe('mapTeacherDashboard', () => {
           meeting: {
             provider: 'Zoom',
             status: 'ready',
-            meetingUrl: null,
+            meetingUrl: null, hostUrl: null,
           },
           attendance: {
             totalStudents: 1,

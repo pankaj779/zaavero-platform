@@ -15,9 +15,16 @@ export interface LiveSessionApiRecord {
   status: string;
   meetingProvider: string;
   meetingUrl: string | null;
+  hostUrl?: string | null;
   recordingUrl: string | null;
+  timezone?: string;
+  syncStatus?: string;
+  syncError?: string | null;
   startsAt: string;
   endsAt: string | null;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +74,8 @@ function mapProvider(provider: string): TeacherMeetingProvider {
       return 'Google Meet';
     case 'CUSTOM':
       return 'Microsoft Teams';
+    case 'SANDBOX':
+      return 'Sandbox';
     case 'ZOOM':
     case 'NONE':
     default:
@@ -77,6 +86,7 @@ function mapProvider(provider: string): TeacherMeetingProvider {
 function mapMeetingStatus(
   status: TeacherLiveClassStatus,
   providerRaw: string,
+  meetingUrl: string | null,
 ): TeacherMeetingStatus {
   if (status === 'cancelled') {
     return 'cancelled';
@@ -87,10 +97,10 @@ function mapMeetingStatus(
   if (status === 'completed') {
     return 'ended';
   }
-  if (providerRaw.toUpperCase() === 'NONE') {
+  if (providerRaw.toUpperCase() === 'NONE' && !meetingUrl) {
     return 'setup_pending';
   }
-  return 'ready';
+  return meetingUrl ? 'ready' : 'setup_pending';
 }
 
 function durationMinutes(startsAt: string, endsAt: string | null): number {
@@ -150,9 +160,9 @@ export function mapLiveSessionApiToTeacherDto(
     status,
     meeting: {
       provider: mapProvider(record.meetingProvider),
-      status: mapMeetingStatus(status, record.meetingProvider),
-      // UI contract keeps meetingUrl null until provisioning is wired into components.
-      meetingUrl: null,
+      status: mapMeetingStatus(status, record.meetingProvider, record.meetingUrl),
+      meetingUrl: record.meetingUrl,
+      hostUrl: record.hostUrl ?? null,
     },
     // TEMPORARY: attendance rollups are not on LiveSessionResponseDto.
     attendance: {
@@ -162,10 +172,10 @@ export function mapLiveSessionApiToTeacherDto(
       attendancePercent: null,
     },
     integrations: {
-      calendar: 'coming_soon',
-      notifications: 'coming_soon',
-      meetingProvisioning: 'coming_soon',
-      recording: 'coming_soon',
+      calendar: record.meetingUrl ? 'available' : 'coming_soon',
+      notifications: 'available',
+      meetingProvisioning: record.meetingUrl ? 'available' : 'coming_soon',
+      recording: record.recordingUrl ? 'available' : 'coming_soon',
     },
     updatedAt: record.updatedAt,
   };

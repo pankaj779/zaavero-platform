@@ -110,7 +110,7 @@ describe('LiveSessionApi', () => {
       description: 'Desc',
       status: 'LIVE',
       meetingProvider: 'GOOGLE_MEET',
-      meetingUrl: null,
+      meetingUrl: null, hostUrl: null,
       recordingUrl: null,
       startsAt: '2026-08-01T10:00:00.000Z',
       endsAt: null,

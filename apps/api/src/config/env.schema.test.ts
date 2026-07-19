@@ -112,6 +112,10 @@ describe('validateEnv', () => {
       CLOUDINARY_CLOUD_NAME: 'demo-cloud',
       CLOUDINARY_API_KEY: 'key_123',
       CLOUDINARY_API_SECRET: 'secret_456',
+      TOKEN_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      MEETING_SANDBOX_MODE: 'false',
+      AI_PROVIDER: 'OPENAI',
+      OPENAI_API_KEY: 'sk-test-production',
     };
 
     it('allows Resend credentials to remain unset outside production', () => {
@@ -200,6 +204,10 @@ describe('validateEnv', () => {
       CLOUDINARY_API_KEY: 'key_123',
       CLOUDINARY_API_SECRET: 'secret_456',
       STORAGE_SANDBOX_MODE: 'false',
+      TOKEN_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      MEETING_SANDBOX_MODE: 'false',
+      AI_PROVIDER: 'OPENAI',
+      OPENAI_API_KEY: 'sk-test-production',
     };
 
     it('applies storage defaults outside production', () => {
@@ -244,6 +252,40 @@ describe('validateEnv', () => {
       );
       expect(() => validateEnv({ ...validEnv, STORAGE_MAX_FILE_SIZE_BYTES: '0' })).toThrow(
         /STORAGE_MAX_FILE_SIZE_BYTES/,
+      );
+    });
+  });
+
+  describe('ai configuration', () => {
+    const productionEnv = {
+      ...validEnv,
+      NODE_ENV: 'production',
+      RESEND_API_KEY: 're_live_key',
+      RESEND_WEBHOOK_SECRET: 'whsec_live',
+      EMAIL_FROM: 'no-reply@graphology.app',
+      CLOUDINARY_CLOUD_NAME: 'demo-cloud',
+      CLOUDINARY_API_KEY: 'key_123',
+      CLOUDINARY_API_SECRET: 'secret_456',
+      STORAGE_SANDBOX_MODE: 'false',
+      TOKEN_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      MEETING_SANDBOX_MODE: 'false',
+      AI_PROVIDER: 'OPENAI',
+      OPENAI_API_KEY: 'sk-test-production',
+    };
+
+    it('applies AI defaults outside production', () => {
+      const config = validateEnv(validEnv);
+      expect(config.AI_PROVIDER).toBe('OPENAI');
+      expect(config.EMBEDDING_DIMENSIONS).toBe(1536);
+      expect(config.AI_RETRIEVAL_TOP_K).toBe(6);
+    });
+
+    it('forbids sandbox AI providers in production', () => {
+      expect(() => validateEnv({ ...productionEnv, AI_PROVIDER: 'SANDBOX' })).toThrow(
+        /AI_PROVIDER must not be SANDBOX in production/,
+      );
+      expect(() => validateEnv({ ...productionEnv, AI_EMBEDDING_PROVIDER: 'SANDBOX' })).toThrow(
+        /AI_EMBEDDING_PROVIDER must not be SANDBOX in production/,
       );
     });
   });

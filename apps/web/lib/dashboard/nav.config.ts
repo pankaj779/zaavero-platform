@@ -30,6 +30,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
     icon: 'bell',
   },
   { id: 'messages', label: 'Messages', href: DASHBOARD_ROUTES.messages, icon: 'message' },
+  { id: 'ai', label: 'AI Tutor', href: DASHBOARD_ROUTES.ai, icon: 'lightbulb' },
   { id: 'profile', label: 'Profile', href: DASHBOARD_ROUTES.profile, icon: 'user' },
   { id: 'settings', label: 'Settings', href: DASHBOARD_ROUTES.settings, icon: 'settings' },
 ];
@@ -93,6 +94,11 @@ export const dashboardPageMeta: Record<
     title: 'Messages',
     description: 'Mentor and course conversations — read, reply, and stay in sync.',
     breadcrumb: 'Messages',
+  },
+  [DASHBOARD_ROUTES.ai]: {
+    title: 'AI Tutor',
+    description: 'Ask questions about your courses with streaming answers and citations.',
+    breadcrumb: 'AI Tutor',
   },
   [DASHBOARD_ROUTES.profile]: {
     title: 'Profile',

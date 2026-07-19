@@ -150,6 +150,7 @@ describe('sprint 06.01 teacher portal shell', () => {
       'Attendance',
       'Certificates',
       'Announcements',
+      'AI Studio',
       'Messages',
       'Analytics',
       'Profile',
@@ -515,7 +516,7 @@ describe('task 06.05 / task 08.06 teacher attendance', () => {
       sessionDate: '2026-07-13T11:00:00.000Z',
       durationMinutes: 60,
       meetingProvider: null,
-      meetingUrl: null,
+      meetingUrl: null, hostUrl: null,
       counts: { totalStudents: 2, present: 1, absent: 1, attendancePercent: 50 },
       records: [
         {
@@ -543,7 +544,7 @@ describe('task 06.05 / task 08.06 teacher attendance', () => {
       sessionDate: '2026-07-24T15:30:00.000Z',
       durationMinutes: 90,
       meetingProvider: null,
-      meetingUrl: null,
+      meetingUrl: null, hostUrl: null,
       counts: { totalStudents: 2, present: 0, absent: 0, attendancePercent: null },
       records: [],
       updatedAt: '2026-07-15T09:00:00.000Z',
@@ -617,7 +618,7 @@ describe('task 06.06 / task 08.05 teacher live classes', () => {
         endsAt: '2026-08-01T11:00:00.000Z',
         durationMinutes: 60,
         status: 'scheduled' as const,
-        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null },
+        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null, hostUrl: null },
         attendance: {
           totalStudents: 10,
           present: 0,
@@ -645,7 +646,7 @@ describe('task 06.06 / task 08.05 teacher live classes', () => {
         meeting: {
           provider: 'Google Meet' as const,
           status: 'in_progress' as const,
-          meetingUrl: null,
+          meetingUrl: null, hostUrl: null,
         },
         attendance: {
           totalStudents: 8,
@@ -696,7 +697,7 @@ describe('task 06.06 / task 08.05 teacher live classes', () => {
         endsAt: '2026-08-02T11:00:00.000Z',
         durationMinutes: 60,
         status: 'scheduled' as const,
-        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null },
+        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null, hostUrl: null },
         attendance: {
           totalStudents: 1,
           present: 0,
@@ -721,7 +722,7 @@ describe('task 06.06 / task 08.05 teacher live classes', () => {
         endsAt: '2026-08-01T11:00:00.000Z',
         durationMinutes: 60,
         status: 'scheduled' as const,
-        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null },
+        meeting: { provider: 'Zoom' as const, status: 'ready' as const, meetingUrl: null, hostUrl: null },
         attendance: {
           totalStudents: 1,
           present: 0,
@@ -1160,7 +1161,7 @@ describe('task 06.10 / task 08.12 teacher calendar', () => {
       endTime: '2026-07-18T12:00:00.000Z',
       timezone: 'UTC',
       meetingProvider: null,
-      meetingUrl: null,
+      meetingUrl: null, hostUrl: null,
       location: null,
       status: 'scheduled' as const,
       description: 'Live class block',
@@ -1181,7 +1182,7 @@ describe('task 06.10 / task 08.12 teacher calendar', () => {
       endTime: '2026-07-20T18:30:00.000Z',
       timezone: 'UTC',
       meetingProvider: null,
-      meetingUrl: null,
+      meetingUrl: null, hostUrl: null,
       location: null,
       status: 'scheduled' as const,
       description: 'Assignment due marker',
@@ -1202,7 +1203,7 @@ describe('task 06.10 / task 08.12 teacher calendar', () => {
       endTime: '2026-07-17T15:00:00.000Z',
       timezone: 'UTC',
       meetingProvider: null,
-      meetingUrl: null,
+      meetingUrl: null, hostUrl: null,
       location: null,
       status: 'scheduled' as const,
       description: 'Office hours block',

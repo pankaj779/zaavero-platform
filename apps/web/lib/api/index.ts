@@ -294,6 +294,24 @@ export type {
   InvitationStatus,
   InvitationType,
 } from './email-mapper';
+export { AiApi } from './ai';
+export {
+  mapAIConversation,
+  mapAIConversationDetail,
+  mapAIConversationPage,
+  mapAIGenerateResult,
+  mapAIMessage,
+  mapAIProviderHealth,
+  mapAISearchHit,
+  mapAIUsageSummary,
+} from './ai-mapper';
+export type {
+  AIConversationDetailDto,
+  AIConversationResponseDto,
+  AIMessageResponseDto,
+  AIPageMetaDto,
+  AISearchHitResponseDto,
+} from './ai-mapper';
 export { StorageApi } from './storage';
 export type {
   ListStorageAssetsParams,

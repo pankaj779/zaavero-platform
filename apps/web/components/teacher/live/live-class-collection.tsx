@@ -10,11 +10,13 @@ export function LiveClassCollection({
   mode,
   selectedSessionId,
   onSelect,
+  onChanged,
 }: {
   sessions: TeacherLiveClassDto[];
   mode: TeacherLiveClassesViewMode;
   selectedSessionId?: string | null;
   onSelect?: (sessionId: string) => void;
+  onChanged?: () => void;
 }): React.JSX.Element {
   if (mode === 'list') {
     return (
@@ -26,6 +28,7 @@ export function LiveClassCollection({
               layout="list"
               selected={session.id === selectedSessionId}
               onSelect={onSelect}
+              onChanged={onChanged}
             />
           </li>
         ))}
@@ -44,6 +47,7 @@ export function LiveClassCollection({
             session={session}
             selected={session.id === selectedSessionId}
             onSelect={onSelect}
+            onChanged={onChanged}
           />
         </li>
       ))}

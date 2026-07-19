@@ -17,12 +17,14 @@ import { EmailModule } from './modules/email/email.module';
 import { LessonModule } from './modules/lesson/lesson.module';
 import { LessonProgressModule } from './modules/lesson-progress/lesson-progress.module';
 import { LiveSessionModule } from './modules/live-session/live-session.module';
+import { MeetingModule } from './modules/meeting/meeting.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PdfModule } from './modules/pdf/pdf.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { SubmissionModule } from './modules/submission/submission.module';
+import { AIModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { SubmissionModule } from './modules/submission/submission.module';
     EnrollmentModule,
     LessonModule,
     LessonProgressModule,
+    MeetingModule,
     LiveSessionModule,
     AttendanceModule,
     AssignmentModule,
@@ -48,6 +51,7 @@ import { SubmissionModule } from './modules/submission/submission.module';
     PaymentsModule,
     PdfModule,
     StorageModule,
+    AIModule,
   ],
 })
 export class AppModule implements NestModule {

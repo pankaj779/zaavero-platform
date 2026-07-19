@@ -6,7 +6,7 @@ import { formatDashboardDateTime } from '../dashboard/format-date';
  */
 
 export type TeacherLiveClassStatus = 'scheduled' | 'live' | 'completed' | 'cancelled';
-export type TeacherMeetingProvider = 'Zoom' | 'Google Meet' | 'Microsoft Teams';
+export type TeacherMeetingProvider = 'Zoom' | 'Google Meet' | 'Microsoft Teams' | 'Sandbox';
 export type TeacherMeetingStatus =
   'setup_pending' | 'ready' | 'in_progress' | 'ended' | 'cancelled';
 export type TeacherLiveClassesViewState = 'loading' | 'empty' | 'error' | 'populated';
@@ -14,7 +14,7 @@ export type TeacherLiveClassStatusFilter = 'all' | TeacherLiveClassStatus;
 export type TeacherLiveClassSortOption = 'upcoming' | 'recently_updated' | 'alphabetical';
 export type TeacherLiveClassesViewMode = 'grid' | 'list';
 export type TeacherLiveClassProviderFilter = 'all' | TeacherMeetingProvider;
-export type TeacherIntegrationAvailability = 'coming_soon';
+export type TeacherIntegrationAvailability = 'coming_soon' | 'available' | 'disabled';
 
 export interface TeacherLiveClassCourseRefDto {
   id: string;
@@ -36,8 +36,8 @@ export interface TeacherLiveClassMentorDto {
 export interface TeacherLiveClassMeetingDto {
   provider: TeacherMeetingProvider;
   status: TeacherMeetingStatus;
-  /** Always null until meeting-provider provisioning is integrated into the UI contract. */
-  meetingUrl: null;
+  meetingUrl: string | null;
+  hostUrl: string | null;
 }
 
 export interface TeacherLiveClassAttendanceSummaryDto {
@@ -118,7 +118,8 @@ export const teacherLiveClassesPageCopy = {
   cancelSessionButton: 'Cancel Session',
   attendanceButton: 'Attendance',
   recordingButton: 'Recording',
-  comingSoonNote: 'Live class actions are Coming Soon.',
+  comingSoonNote: 'Attendance editing and recording tools arrive in a later sprint.',
+  joinHostHint: 'Opens the host meeting link in a new tab.',
   detailsPanelLabel: 'Live class details',
   detailsCloseLabel: 'Close live class details',
   sessionInfoLabel: 'Session information',
@@ -322,7 +323,7 @@ export function toLiveSessionApiStatus(
 
 export function toLiveSessionApiProvider(
   provider: TeacherLiveClassProviderFilter,
-): 'NONE' | 'ZOOM' | 'GOOGLE_MEET' | 'CUSTOM' | undefined {
+): 'NONE' | 'ZOOM' | 'GOOGLE_MEET' | 'CUSTOM' | 'SANDBOX' | undefined {
   switch (provider) {
     case 'Zoom':
       return 'ZOOM';
@@ -330,6 +331,8 @@ export function toLiveSessionApiProvider(
       return 'GOOGLE_MEET';
     case 'Microsoft Teams':
       return 'CUSTOM';
+    case 'Sandbox':
+      return 'SANDBOX';
     case 'all':
     default:
       return undefined;

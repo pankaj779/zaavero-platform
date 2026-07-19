@@ -63,6 +63,65 @@ const baseEnvSchema = z.object({
     .default(10 * 1024 * 1024),
   /** Comma-separated MIME allow list; falls back to the built-in defaults. */
   STORAGE_ALLOWED_MIME_TYPES: z.string().trim().min(1).optional(),
+  /** AES-256 key material for meeting OAuth tokens / host secrets (hex-64, base64-32, or passphrase). */
+  TOKEN_ENCRYPTION_KEY: z.string().trim().min(16).optional(),
+  ZOOM_CLIENT_ID: z.string().trim().min(1).optional(),
+  ZOOM_CLIENT_SECRET: z.string().trim().min(1).optional(),
+  ZOOM_WEBHOOK_SECRET: z.string().trim().min(1).optional(),
+  GOOGLE_MEET_CLIENT_ID: z.string().trim().min(1).optional(),
+  GOOGLE_MEET_CLIENT_SECRET: z.string().trim().min(1).optional(),
+  MEETING_SANDBOX_MODE: booleanFromEnv.optional(),
+  AI_PROVIDER: z
+    .enum([
+      'OPENAI',
+      'AZURE_OPENAI',
+      'ANTHROPIC',
+      'GOOGLE_GEMINI',
+      'OLLAMA',
+      'OPENROUTER',
+      'GROQ',
+      'SANDBOX',
+    ])
+    .default('OPENAI'),
+  AI_EMBEDDING_PROVIDER: z
+    .enum([
+      'OPENAI',
+      'AZURE_OPENAI',
+      'ANTHROPIC',
+      'GOOGLE_GEMINI',
+      'OLLAMA',
+      'OPENROUTER',
+      'GROQ',
+      'SANDBOX',
+    ])
+    .optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
+  OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
+  EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
+  AZURE_OPENAI_API_KEY: z.string().optional(),
+  AZURE_OPENAI_ENDPOINT: z.string().optional(),
+  AZURE_OPENAI_API_VERSION: z.string().default('2024-10-21'),
+  AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().default('claude-3-5-haiku-latest'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
+  OPENROUTER_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  OLLAMA_BASE_URL: z.string().default('http://127.0.0.1:11434'),
+  AI_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  AI_MAX_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
+  AI_DAILY_TOKEN_LIMIT_USER: z.coerce.number().int().positive().default(200_000),
+  AI_MONTHLY_TOKEN_LIMIT_USER: z.coerce.number().int().positive().default(2_000_000),
+  AI_DAILY_TOKEN_LIMIT_ORG: z.coerce.number().int().positive().default(2_000_000),
+  AI_MONTHLY_TOKEN_LIMIT_ORG: z.coerce.number().int().positive().default(20_000_000),
+  AI_CHUNK_SIZE: z.coerce.number().int().positive().default(800),
+  AI_CHUNK_OVERLAP: z.coerce.number().int().min(0).default(120),
+  AI_RETRIEVAL_TOP_K: z.coerce.number().int().positive().default(6),
+  AI_QUEUE_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(15_000),
 });
 
 export const envSchema = baseEnvSchema
@@ -136,6 +195,34 @@ export const envSchema = baseEnvSchema
         }
       }
     }
+    if (config.MEETING_SANDBOX_MODE === true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MEETING_SANDBOX_MODE'],
+        message: 'MEETING_SANDBOX_MODE must not be enabled in production.',
+      });
+    }
+    if (!config.TOKEN_ENCRYPTION_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['TOKEN_ENCRYPTION_KEY'],
+        message: 'TOKEN_ENCRYPTION_KEY is required in production for meeting OAuth token storage.',
+      });
+    }
+    if (config.AI_PROVIDER === 'SANDBOX') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['AI_PROVIDER'],
+        message: 'AI_PROVIDER must not be SANDBOX in production.',
+      });
+    }
+    if (config.AI_EMBEDDING_PROVIDER === 'SANDBOX') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['AI_EMBEDDING_PROVIDER'],
+        message: 'AI_EMBEDDING_PROVIDER must not be SANDBOX in production.',
+      });
+    }
   })
   .transform((config) => ({
     ...config,
@@ -143,6 +230,8 @@ export const envSchema = baseEnvSchema
     // Sandbox is the safe default everywhere except production.
     EMAIL_SANDBOX_MODE: config.EMAIL_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
     STORAGE_SANDBOX_MODE: config.STORAGE_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
+    MEETING_SANDBOX_MODE: config.MEETING_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
+    AI_EMBEDDING_PROVIDER: config.AI_EMBEDDING_PROVIDER ?? config.AI_PROVIDER,
   }));
 
 export type EnvConfig = z.infer<typeof envSchema>;

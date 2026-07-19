@@ -25,6 +25,7 @@ export const adminNavItems: AdminNavItem[] = [
   { id: 'analytics', label: 'Analytics', href: ADMIN_ROUTES.analytics, icon: 'trending' },
   { id: 'payments', label: 'Payments', href: ADMIN_ROUTES.payments, icon: 'creditCard' },
   { id: 'email', label: 'Email', href: ADMIN_ROUTES.email, icon: 'mail' },
+  { id: 'ai', label: 'AI Platform', href: ADMIN_ROUTES.ai, icon: 'lightbulb' },
   { id: 'notifications', label: 'Notifications', href: ADMIN_ROUTES.notifications, icon: 'bell' },
   { id: 'audit-logs', label: 'Audit Logs', href: ADMIN_ROUTES.auditLogs, icon: 'clipboard' },
   { id: 'settings', label: 'Settings', href: ADMIN_ROUTES.settings, icon: 'settings' },
@@ -115,6 +116,11 @@ export const adminPageMeta: Record<string, AdminPageMeta> = {
     title: 'Email',
     description: 'Provider health, delivery statistics, queue operations, and templates.',
     breadcrumb: 'Email',
+  },
+  [ADMIN_ROUTES.ai]: {
+    title: 'AI Platform',
+    description: 'Provider health, token usage, and organization AI activity.',
+    breadcrumb: 'AI Platform',
   },
   [ADMIN_ROUTES.notifications]: {
     title: 'Notifications',

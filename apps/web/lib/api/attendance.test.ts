@@ -44,7 +44,7 @@ describe('AttendanceApi', () => {
           endsAt: '2026-07-01T11:00:00.000Z',
           durationMinutes: 60,
           status: 'completed',
-          meeting: { provider: 'Zoom', status: 'ended', meetingUrl: null },
+          meeting: { provider: 'Zoom', status: 'ended', meetingUrl: null, hostUrl: null },
           attendance: {
             totalStudents: 12,
             present: 0,
@@ -148,7 +148,7 @@ describe('AttendanceApi', () => {
       endsAt: '2026-07-01T11:00:00.000Z',
       durationMinutes: 60,
       status: 'completed',
-      meeting: { provider: 'Zoom', status: 'ended', meetingUrl: null },
+      meeting: { provider: 'Zoom', status: 'ended', meetingUrl: null, hostUrl: null },
       attendance: {
         totalStudents: 12,
         present: 0,

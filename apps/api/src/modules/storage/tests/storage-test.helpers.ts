@@ -114,6 +114,7 @@ export function createProviderMock(): ProviderMock {
     createSignedUpload: vi.fn(),
     uploadBuffer: vi.fn(),
     verifyUploadedAsset: vi.fn(),
+    downloadBuffer: vi.fn(),
     delete: vi.fn().mockResolvedValue(undefined),
   };
 }

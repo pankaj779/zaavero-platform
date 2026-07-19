@@ -1,0 +1,4 @@
+export const AI_REPOSITORY = Symbol('AI_REPOSITORY');
+export const AI_PROVIDER_REGISTRY = Symbol('AI_PROVIDER_REGISTRY');
+export const AI_CHAT_PROVIDER = Symbol('AI_CHAT_PROVIDER');
+export const AI_EMBEDDING_PROVIDER = Symbol('AI_EMBEDDING_PROVIDER');

@@ -1,9 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { buildPageMeta } from '../../../common/pagination';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { AUTH_ROLES } from '../../auth/constants/auth.constants';
 import type { AuthenticatedUser } from '../../auth/types/authenticated-user.type';
 import { BusinessEmailService } from '../../email/services/business-email.service';
+import { MeetingService } from '../../meeting/services/meeting.service';
+import { MeetingTokenService } from '../../meeting/services/meeting-token.service';
 import { LIVE_SESSION_REPOSITORY } from '../constants/injection-tokens';
 import type { CreateLiveSessionDto } from '../dto/create-live-session.dto';
 import type { ListLiveSessionsQueryDto } from '../dto/list-live-sessions-query.dto';
@@ -32,7 +34,9 @@ import { LiveSessionMapper } from '../mappers/live-session.mapper';
 export class LiveSessionService {
   constructor(
     @Inject(LIVE_SESSION_REPOSITORY) private readonly repo: LiveSessionRepository,
-    private readonly businessEmail?: BusinessEmailService,
+    @Optional() private readonly meetings?: MeetingService,
+    @Optional() private readonly meetingTokens?: MeetingTokenService,
+    @Optional() private readonly businessEmail?: BusinessEmailService,
   ) {}
 
   async list(
@@ -56,10 +60,13 @@ export class LiveSessionService {
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
     });
+    const hostUrls = this.canSeeHostUrl(user)
+      ? this.buildHostUrlMap(result.items)
+      : undefined;
     return {
       message: 'Live sessions retrieved successfully.',
       data: {
-        items: LiveSessionMapper.toResponseList(result.items),
+        items: LiveSessionMapper.toResponseList(result.items, hostUrls),
         meta: buildPageMeta({ total: result.total, page: query.page, limit: query.limit }),
       },
     };
@@ -72,7 +79,7 @@ export class LiveSessionService {
     const row = await this.requireAccessible(user, id);
     return {
       message: 'Live session retrieved successfully.',
-      data: LiveSessionMapper.toResponse(row),
+      data: this.toDto(user, row),
     };
   }
 
@@ -95,13 +102,33 @@ export class LiveSessionService {
       recordingUrl: dto.recordingUrl,
       startsAt: new Date(dto.startsAt),
       endsAt: dto.endsAt ? new Date(dto.endsAt) : undefined,
+      createdById: user.id,
     });
-    if (created.status === 'SCHEDULED') {
-      await this.businessEmail?.liveSessionCreated(created.id);
+
+    const provisioned = this.meetings
+      ? await this.meetings.provisionForLiveSession({
+          liveSessionId: created.id,
+          organizationId: created.organizationId,
+          batchId: created.batchId,
+          title: created.title,
+          description: created.description,
+          startsAt: created.startsAt,
+          endsAt: created.endsAt,
+          meetingProvider: dto.meetingProvider ?? created.meetingProvider,
+          actorUserId: user.id,
+          manualMeetingUrl: dto.meetingUrl,
+        })
+      : created;
+
+    // Reload from live-session repo shape when meeting service returns meeting-shaped row.
+    const row = (await this.repo.findById(provisioned.id)) ?? created;
+
+    if (row.status === 'SCHEDULED') {
+      await this.businessEmail?.liveSessionCreated(row.id);
     }
     return {
       message: 'Live session created successfully.',
-      data: LiveSessionMapper.toResponse(created),
+      data: this.toDto(user, row),
     };
   }
 
@@ -121,6 +148,16 @@ export class LiveSessionService {
           : undefined
         : (dto.endsAt ?? undefined);
     this.assertSchedule(startsAt, endsAt ?? undefined);
+
+    if (dto.status === 'CANCELLED' && row.status !== 'CANCELLED' && this.meetings) {
+      const cancelled = await this.meetings.cancelSession(id, user.id);
+      const refreshed = (await this.repo.findById(cancelled.id)) ?? row;
+      return {
+        message: 'Live session cancelled successfully.',
+        data: this.toDto(user, refreshed),
+      };
+    }
+
     const updated = await this.repo.update(id, {
       title: dto.title,
       description: dto.description,
@@ -131,13 +168,92 @@ export class LiveSessionService {
       startsAt: dto.startsAt ? new Date(dto.startsAt) : undefined,
       endsAt:
         dto.endsAt === undefined ? undefined : dto.endsAt === null ? null : new Date(dto.endsAt),
+      updatedById: user.id,
     });
-    if (row.status !== 'CANCELLED' && updated.status === 'CANCELLED') {
-      await this.businessEmail?.liveSessionCancelled(updated.id);
+
+    if (this.meetings) {
+      await this.meetings.syncForLiveSession({
+        liveSessionId: updated.id,
+        actorUserId: user.id,
+        title: dto.title,
+        description: dto.description,
+        startsAt: dto.startsAt ? new Date(dto.startsAt) : undefined,
+        endsAt:
+          dto.endsAt === undefined
+            ? undefined
+            : dto.endsAt === null
+              ? null
+              : new Date(dto.endsAt),
+        meetingProvider: dto.meetingProvider,
+        meetingUrl: dto.meetingUrl,
+      });
+    }
+
+    const refreshed = (await this.repo.findById(updated.id)) ?? updated;
+    if (row.status !== 'CANCELLED' && refreshed.status === 'CANCELLED') {
+      await this.businessEmail?.liveSessionCancelled(refreshed.id);
     }
     return {
       message: 'Live session updated successfully.',
-      data: LiveSessionMapper.toResponse(updated),
+      data: this.toDto(user, refreshed),
+    };
+  }
+
+  async start(
+    user: AuthenticatedUser,
+    id: string,
+  ): Promise<ControllerSuccessPayload<LiveSessionResponseDto>> {
+    const row = await this.requireAccessible(user, id);
+    const batch = await this.requireBatch(row.organizationId, row.batchId);
+    await this.assertCanMutate(user, batch);
+    if (this.meetings) {
+      await this.meetings.startSession(id, user.id);
+    } else {
+      await this.repo.update(id, { status: 'LIVE', updatedById: user.id });
+    }
+    const refreshed = await this.requireAccessible(user, id);
+    return {
+      message: 'Live session started successfully.',
+      data: this.toDto(user, refreshed),
+    };
+  }
+
+  async end(
+    user: AuthenticatedUser,
+    id: string,
+  ): Promise<ControllerSuccessPayload<LiveSessionResponseDto>> {
+    const row = await this.requireAccessible(user, id);
+    const batch = await this.requireBatch(row.organizationId, row.batchId);
+    await this.assertCanMutate(user, batch);
+    if (this.meetings) {
+      await this.meetings.endSession(id, user.id);
+    } else {
+      await this.repo.update(id, { status: 'COMPLETED', updatedById: user.id });
+    }
+    const refreshed = await this.requireAccessible(user, id);
+    return {
+      message: 'Live session ended successfully.',
+      data: this.toDto(user, refreshed),
+    };
+  }
+
+  async cancel(
+    user: AuthenticatedUser,
+    id: string,
+  ): Promise<ControllerSuccessPayload<LiveSessionResponseDto>> {
+    const row = await this.requireAccessible(user, id);
+    const batch = await this.requireBatch(row.organizationId, row.batchId);
+    await this.assertCanMutate(user, batch);
+    if (this.meetings) {
+      await this.meetings.cancelSession(id, user.id);
+    } else {
+      await this.repo.update(id, { status: 'CANCELLED', updatedById: user.id });
+      await this.businessEmail?.liveSessionCancelled(id);
+    }
+    const refreshed = await this.requireAccessible(user, id);
+    return {
+      message: 'Live session cancelled successfully.',
+      data: this.toDto(user, refreshed),
     };
   }
 
@@ -148,11 +264,39 @@ export class LiveSessionService {
     const row = await this.requireAccessible(user, id);
     const batch = await this.requireBatch(row.organizationId, row.batchId);
     await this.assertCanMutate(user, batch);
+    await this.meetings?.deleteForLiveSession(id, user.id);
     const deleted = await this.repo.softDelete(id);
     return {
       message: 'Live session deleted successfully.',
-      data: LiveSessionMapper.toResponse(deleted),
+      data: this.toDto(user, deleted),
     };
+  }
+
+  private toDto(user: AuthenticatedUser, row: LiveSessionRecord): LiveSessionResponseDto {
+    return LiveSessionMapper.toResponse(row, {
+      hostUrl: this.canSeeHostUrl(user) ? this.decryptHostUrl(row) : null,
+    });
+  }
+
+  private canSeeHostUrl(user: AuthenticatedUser): boolean {
+    return user.roles.includes(AUTH_ROLES.admin) || user.roles.includes(AUTH_ROLES.teacher);
+  }
+
+  private decryptHostUrl(row: LiveSessionRecord): string | null {
+    if (!row.hostUrlEncrypted || !this.meetingTokens) return null;
+    try {
+      return this.meetingTokens.decryptHostSecret(row.hostUrlEncrypted);
+    } catch {
+      return null;
+    }
+  }
+
+  private buildHostUrlMap(rows: LiveSessionRecord[]): Map<string, string | null> {
+    const map = new Map<string, string | null>();
+    for (const row of rows) {
+      map.set(row.id, this.decryptHostUrl(row));
+    }
+    return map;
   }
 
   private assertSchedule(startsAt: string, endsAt?: string) {

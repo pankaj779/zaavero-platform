@@ -62,6 +62,18 @@ export interface VerifyUploadRequest {
   expectedBytes: number;
 }
 
+export interface DownloadBufferRequest {
+  secureUrl?: string;
+  publicId?: string;
+  resourceType?: StorageResourceType;
+}
+
+export interface DownloadBufferResult {
+  buffer: Buffer;
+  mimeType: string;
+  bytes: number;
+}
+
 export interface StorageProvider {
   readonly name: StorageProviderName;
   isConfigured(): boolean;
@@ -72,5 +84,6 @@ export interface StorageProvider {
   uploadBuffer(request: UploadBufferRequest): Promise<ProviderUploadResult>;
   /** Fetches and verifies an asset after a direct upload before persisting it. */
   verifyUploadedAsset(request: VerifyUploadRequest): Promise<ProviderUploadResult>;
+  downloadBuffer(request: DownloadBufferRequest): Promise<DownloadBufferResult>;
   delete(publicId: string, resourceType: StorageResourceType): Promise<void>;
 }

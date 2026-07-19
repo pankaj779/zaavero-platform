@@ -36,6 +36,7 @@ export function LiveClassesWorkspace({
   onBatchChange,
   onProviderChange,
   serverFiltered = false,
+  onSessionChanged,
 }: {
   sessions: TeacherLiveClassDto[];
   query?: string;
@@ -54,6 +55,7 @@ export function LiveClassesWorkspace({
   onProviderChange?: (value: TeacherLiveClassProviderFilter) => void;
   /** When true, parent already applied server-side filters — skip local filter/sort. */
   serverFiltered?: boolean;
+  onSessionChanged?: () => void;
 }): React.JSX.Element {
   const [localQuery, setLocalQuery] = useState('');
   const [localStatus, setLocalStatus] = useState<TeacherLiveClassStatusFilter>('all');
@@ -166,6 +168,7 @@ export function LiveClassesWorkspace({
           mode={mode}
           selectedSessionId={selectedSessionId}
           onSelect={setSelectedSessionId}
+          onChanged={onSessionChanged}
         />
       )}
     </div>

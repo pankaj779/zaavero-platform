@@ -3,6 +3,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InvalidStorageUploadException } from '../exceptions';
 import type {
   CreateSignedUploadRequest,
+  DownloadBufferRequest,
+  DownloadBufferResult,
   ProviderUploadResult,
   SignedUploadParameters,
   StorageProvider,
@@ -81,6 +83,36 @@ export class SandboxStorageProvider implements StorageProvider {
       );
     }
     return Promise.resolve(asset);
+  }
+
+  async downloadBuffer(request: DownloadBufferRequest): Promise<DownloadBufferResult> {
+    if (request.publicId) {
+      const asset = this.assets.get(request.publicId);
+      if (!asset) {
+        throw new InvalidStorageUploadException('Sandbox asset was not found.');
+      }
+      const buffer = Buffer.from(`sandbox:${asset.publicId}`);
+      return {
+        buffer,
+        mimeType: 'application/octet-stream',
+        bytes: buffer.length,
+      };
+    }
+    const secureUrl = request.secureUrl?.trim();
+    if (!secureUrl?.startsWith('https://sandbox.storage.local/')) {
+      throw new InvalidStorageUploadException('Sandbox downloads require a sandbox secure URL.');
+    }
+    const publicId = decodeURIComponent(secureUrl.replace('https://sandbox.storage.local/', ''));
+    const asset = this.assets.get(publicId);
+    if (!asset) {
+      throw new InvalidStorageUploadException('Sandbox asset was not found.');
+    }
+    const buffer = Buffer.from(`sandbox:${asset.publicId}`);
+    return {
+      buffer,
+      mimeType: 'application/octet-stream',
+      bytes: buffer.length,
+    };
   }
 
   delete(publicId: string, _resourceType: StorageResourceType): Promise<void> {

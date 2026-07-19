@@ -43,6 +43,7 @@ export const DASHBOARD_ROUTES = {
   calendar: '/dashboard/calendar',
   notifications: '/dashboard/notifications',
   messages: '/dashboard/messages',
+  ai: '/dashboard/ai',
   profile: '/dashboard/profile',
   settings: '/dashboard/settings',
 } as const;
@@ -69,6 +70,7 @@ export const TEACHER_ROUTES = {
   attendance: '/teacher/attendance',
   certificates: '/teacher/certificates',
   announcements: '/teacher/announcements',
+  ai: '/teacher/ai',
   messages: '/teacher/messages',
   analytics: '/teacher/analytics',
   calendar: '/teacher/calendar',
@@ -96,6 +98,7 @@ export const ADMIN_ROUTES = {
   analytics: '/admin/analytics',
   payments: '/admin/payments',
   email: '/admin/email',
+  ai: '/admin/ai',
   notifications: '/admin/notifications',
   auditLogs: '/admin/audit-logs',
   settings: '/admin/settings',

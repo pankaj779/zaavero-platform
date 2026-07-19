@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from '@graphology/ui';
 import { cn } from '@graphology/utils';
+import { LiveSessionApi } from '../../../lib/api/live-session';
 import {
   formatTeacherLiveClassDateTime,
   teacherLiveClassesPageCopy,
@@ -77,18 +81,46 @@ function LiveClassMetrics({
 function LiveClassActions({
   session,
   onSelect,
+  onChanged,
 }: {
   session: TeacherLiveClassDto;
   onSelect?: (sessionId: string) => void;
+  onChanged?: () => void;
 }): React.JSX.Element {
   const copy = teacherLiveClassesPageCopy;
-  const actions = [
-    { id: 'start', label: copy.startButton },
-    { id: 'edit', label: copy.editScheduleButton },
-    { id: 'cancel', label: copy.cancelSessionButton },
-    { id: 'attendance', label: copy.attendanceButton },
-    { id: 'recording', label: copy.recordingButton },
-  ];
+  const [busy, setBusy] = useState<'start' | 'cancel' | null>(null);
+  const canStart =
+    Boolean(session.meeting.hostUrl ?? session.meeting.meetingUrl) &&
+    session.status !== 'cancelled' &&
+    session.status !== 'completed';
+  const canCancel = session.status === 'scheduled' || session.status === 'live';
+  const canOpenRecording = Boolean(session.meeting.meetingUrl) && false; // recording URL surface later
+
+  async function handleStart(): Promise<void> {
+    if (!canStart || busy) return;
+    setBusy('start');
+    try {
+      const updated = await LiveSessionApi.startLiveSession(session.id);
+      const url = updated.meeting.hostUrl ?? updated.meeting.meetingUrl;
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+      onChanged?.();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleCancel(): Promise<void> {
+    if (!canCancel || busy) return;
+    setBusy('cancel');
+    try {
+      await LiveSessionApi.cancelLiveSession(session.id);
+      onChanged?.();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -104,20 +136,61 @@ function LiveClassActions({
         {copy.detailsButton}
       </Button>
       <div className="grid gap-2 tablet:grid-cols-2 laptop:grid-cols-5">
-        {actions.map((action) => (
-          <Button
-            key={action.id}
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled
-            aria-label={`${action.label} — ${session.title} — coming soon`}
-          >
-            {action.label}
-          </Button>
-        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canStart || busy !== null}
+          aria-label={`${copy.startButton} — ${session.title}`}
+          onClick={() => {
+            void handleStart();
+          }}
+        >
+          {busy === 'start' ? 'Starting…' : copy.startButton}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled
+          aria-label={`${copy.editScheduleButton} — ${session.title} — coming soon`}
+        >
+          {copy.editScheduleButton}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canCancel || busy !== null}
+          aria-label={`${copy.cancelSessionButton} — ${session.title}`}
+          onClick={() => {
+            void handleCancel();
+          }}
+        >
+          {busy === 'cancel' ? 'Cancelling…' : copy.cancelSessionButton}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled
+          aria-label={`${copy.attendanceButton} — ${session.title} — coming soon`}
+        >
+          {copy.attendanceButton}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canOpenRecording}
+          aria-label={`${copy.recordingButton} — ${session.title}`}
+        >
+          {copy.recordingButton}
+        </Button>
       </div>
-      <p className="text-caption text-muted-foreground">{copy.comingSoonNote}</p>
+      <p className="text-caption text-muted-foreground">
+        {canStart ? copy.joinHostHint : copy.comingSoonNote}
+      </p>
     </div>
   );
 }
@@ -128,11 +201,13 @@ export function LiveClassCard({
   layout = 'grid',
   selected = false,
   onSelect,
+  onChanged,
 }: {
   session: TeacherLiveClassDto;
   layout?: TeacherLiveClassesViewMode;
   selected?: boolean;
   onSelect?: (sessionId: string) => void;
+  onChanged?: () => void;
 }): React.JSX.Element {
   const selectedRing = selected ? 'ring-2 ring-primary ring-offset-2' : '';
 
@@ -149,7 +224,7 @@ export function LiveClassCard({
             <LiveClassMetrics session={session} className="w-full laptop:max-w-2xl" />
           </div>
           <LiveClassSchedule session={session} />
-          <LiveClassActions session={session} onSelect={onSelect} />
+          <LiveClassActions session={session} onSelect={onSelect} onChanged={onChanged} />
         </CardContent>
       </Card>
     );
@@ -166,7 +241,7 @@ export function LiveClassCard({
         <LiveClassMetrics session={session} />
       </CardContent>
       <CardFooter className="p-5 pt-0">
-        <LiveClassActions session={session} onSelect={onSelect} />
+        <LiveClassActions session={session} onSelect={onSelect} onChanged={onChanged} />
       </CardFooter>
     </Card>
   );

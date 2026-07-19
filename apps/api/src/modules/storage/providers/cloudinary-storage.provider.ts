@@ -10,6 +10,8 @@ import {
 } from '../exceptions';
 import type {
   CreateSignedUploadRequest,
+  DownloadBufferRequest,
+  DownloadBufferResult,
   ProviderUploadResult,
   SignedUploadParameters,
   StorageProvider,
@@ -144,6 +146,22 @@ export class CloudinaryStorageProvider implements StorageProvider {
       this.logger.error(`Cloudinary delete failed (${this.safeErrorCode(error)}).`);
       throw new StorageProviderException('The storage provider could not delete the asset.');
     }
+  }
+
+  async downloadBuffer(request: DownloadBufferRequest): Promise<DownloadBufferResult> {
+    this.ensureConfigured();
+    const url = request.secureUrl?.trim();
+    if (!url) {
+      throw new StorageProviderException('A secure URL is required to download this asset.');
+    }
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new StorageProviderException('The storage provider could not download the asset.');
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const mimeType = response.headers.get('content-type') ?? 'application/octet-stream';
+    return { buffer, mimeType, bytes: buffer.length };
   }
 
   private credentials(): { cloudName: string; apiKey: string; apiSecret: string } | null {

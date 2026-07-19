@@ -65,6 +65,18 @@ model User {
   emailInvitationsSent     EmailInvitation[]         @relation("EmailInvitationInvitedBy")
   emailInvitationsAccepted EmailInvitation[]         @relation("EmailInvitationAcceptedBy")
   ownedMediaAssets         MediaAsset[]              @relation("MediaAssetOwner")
+  meetingIntegrations      MeetingIntegration[]      @relation("MeetingIntegrationConnectedBy")
+  meetingOAuthStates       MeetingOAuthState[]
+  liveSessionsCreated      LiveSession[]             @relation("LiveSessionCreatedBy")
+  liveSessionsUpdated      LiveSession[]             @relation("LiveSessionUpdatedBy")
+  meetingParticipants      MeetingParticipant[]      @relation("MeetingParticipantUser")
+  aiConversations          AIConversation[]          @relation("AIConversationOwner")
+  aiMessages               AIMessage[]               @relation("AIMessageAuthor")
+  aiUsages                 AIUsage[]                 @relation("AIUsageUser")
+  aiPromptTemplates        AIPromptTemplate[]        @relation("AIPromptTemplateCreatedBy")
+  aiDocuments              AIDocument[]              @relation("AIDocumentCreatedBy")
+  aiJobs                   AIJob[]                   @relation("AIJobRequestedBy")
+  aiFeedback               AIFeedback[]              @relation("AIFeedbackUser")
 
   @@index([email])
   @@index([deletedAt])
@@ -137,6 +149,20 @@ model Organization {
   emailEvents              EmailEvent[]
   emailInvitations         EmailInvitation[]
   mediaAssets              MediaAsset[]
+  meetingIntegrations      MeetingIntegration[]
+  meetingOAuthStates       MeetingOAuthState[]
+  meetingWebhookEvents     MeetingWebhookEvent[]
+  meetingParticipants      MeetingParticipant[]
+  meetingRecordings        MeetingRecording[]
+  auditLogs                AuditLog[]
+  aiConversations          AIConversation[]
+  aiMessages               AIMessage[]
+  aiUsages                 AIUsage[]
+  aiPromptTemplates        AIPromptTemplate[]
+  aiDocuments              AIDocument[]
+  aiEmbeddings             AIEmbedding[]
+  aiJobs                   AIJob[]
+  aiFeedback               AIFeedback[]
 
   @@index([slug])
   @@index([isActive])
@@ -270,18 +296,21 @@ model PasswordResetToken {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  userId    String?  @map("user_id") @db.Uuid
-  action    String
-  entity    String
-  entityId  String?  @map("entity_id") @db.Uuid
-  ipAddress String?  @map("ip_address")
-  userAgent String?  @map("user_agent")
-  metadata  Json?
-  createdAt DateTime @default(now()) @map("created_at")
+  id             String   @id @default(uuid(7)) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  action         String
+  entity         String
+  entityId       String?  @map("entity_id") @db.Uuid
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([organizationId, createdAt])
   @@index([userId])
   @@index([entity, entityId])
   @@index([createdAt])
@@ -299,7 +328,7 @@ model SystemSetting {
 }
 
 // ---------------------------------------------------------------------------
-// LMS Phase 1 — profiles, catalog, batches, enrollments (Sprint 06.15)
+// LMS Phase 1 â€” profiles, catalog, batches, enrollments (Sprint 06.15)
 // Course-agnostic by design: no program-specific columns or values.
 // Every LMS row carries organization_id for tenant-scoped queries at scale.
 // ---------------------------------------------------------------------------
@@ -338,7 +367,7 @@ enum EnrollmentStatus {
   @@map("enrollment_status")
 }
 
-/// Professional teaching identity — one per user per organization.
+/// Professional teaching identity â€” one per user per organization.
 model TeacherProfile {
   id              String    @id @default(uuid(7)) @db.Uuid
   organizationId  String    @map("organization_id") @db.Uuid
@@ -365,7 +394,7 @@ model TeacherProfile {
   @@map("teacher_profiles")
 }
 
-/// Learner identity — one per user per organization.
+/// Learner identity â€” one per user per organization.
 model StudentProfile {
   id             String    @id @default(uuid(7)) @db.Uuid
   organizationId String    @map("organization_id") @db.Uuid
@@ -377,11 +406,12 @@ model StudentProfile {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
 
-  enrollments    Enrollment[]
-  lessonProgress LessonProgress[]
-  attendances    Attendance[]
-  submissions    AssignmentSubmission[]
-  certificates   Certificate[]
+  enrollments         Enrollment[]
+  lessonProgress      LessonProgress[]
+  attendances         Attendance[]
+  submissions         AssignmentSubmission[]
+  certificates        Certificate[]
+  meetingParticipants MeetingParticipant[]
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -390,7 +420,7 @@ model StudentProfile {
   @@map("student_profiles")
 }
 
-/// Generic program container — never tied to a specific subject.
+/// Generic program container â€” never tied to a specific subject.
 model Course {
   id             String           @id @default(uuid(7)) @db.Uuid
   organizationId String           @map("organization_id") @db.Uuid
@@ -422,6 +452,9 @@ model Course {
   announcements        Announcement[]
   calendarEvents       CalendarEvent[]
   paymentOrders        Order[]
+  aiConversations      AIConversation[]
+  aiDocuments          AIDocument[]
+  aiJobs               AIJob[]
 
   @@unique([organizationId, slug])
   @@index([organizationId, status])
@@ -518,7 +551,7 @@ model Enrollment {
 }
 
 // ---------------------------------------------------------------------------
-// LMS Phase 2 — learning delivery: lessons, progress, live, attendance (06.16)
+// LMS Phase 2 â€” learning delivery: lessons, progress, live, attendance (06.16)
 // Attendance is session-scoped (not batch+date). Progress is student-scoped.
 // ---------------------------------------------------------------------------
 
@@ -557,8 +590,57 @@ enum MeetingProvider {
   ZOOM
   GOOGLE_MEET
   CUSTOM
+  SANDBOX
 
   @@map("meeting_provider")
+}
+
+enum MeetingIntegrationStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  ERROR
+  REVOKED
+
+  @@map("meeting_integration_status")
+}
+
+enum MeetingSyncStatus {
+  IDLE
+  PENDING
+  SYNCING
+  SYNCED
+  FAILED
+
+  @@map("meeting_sync_status")
+}
+
+enum MeetingWebhookEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+
+  @@map("meeting_webhook_event_status")
+}
+
+enum MeetingRecordingStatus {
+  PENDING
+  AVAILABLE
+  PROCESSING
+  FAILED
+  DELETED
+
+  @@map("meeting_recording_status")
+}
+
+enum AttendanceSource {
+  MANUAL
+  PROVIDER
+  SYSTEM
+
+  @@map("attendance_source")
 }
 
 enum AttendanceStatus {
@@ -589,6 +671,9 @@ model Lesson {
   module       CourseModule @relation(fields: [moduleId], references: [id], onDelete: Restrict)
 
   progress LessonProgress[]
+  aiConversations AIConversation[]
+  aiDocuments     AIDocument[]
+  aiJobs          AIJob[]
 
   @@index([moduleId, displayOrder])
   @@index([organizationId])
@@ -597,7 +682,7 @@ model Lesson {
   @@map("lessons")
 }
 
-/// Per-student completion state for a lesson. Mutable ledger — no soft delete.
+/// Per-student completion state for a lesson. Mutable ledger â€” no soft delete.
 model LessonProgress {
   id                  String               @id @default(uuid(7)) @db.Uuid
   organizationId      String               @map("organization_id") @db.Uuid
@@ -622,31 +707,54 @@ model LessonProgress {
   @@map("lesson_progress")
 }
 
-/// One scheduled (or live) class occurrence for a batch. Supports Zoom / Meet / custom.
+/// One scheduled (or live) class occurrence for a batch. Supports Zoom / Meet / sandbox.
 model LiveSession {
-  id              String            @id @default(uuid(7)) @db.Uuid
-  organizationId  String            @map("organization_id") @db.Uuid
-  batchId         String            @map("batch_id") @db.Uuid
-  title           String
-  description     String?
-  status          LiveSessionStatus @default(SCHEDULED)
-  meetingProvider MeetingProvider   @default(NONE) @map("meeting_provider")
-  meetingUrl      String?           @map("meeting_url")
-  recordingUrl    String?           @map("recording_url")
-  startsAt        DateTime          @map("starts_at")
-  endsAt          DateTime?         @map("ends_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  deletedAt       DateTime?         @map("deleted_at")
+  id                   String            @id @default(uuid(7)) @db.Uuid
+  organizationId       String            @map("organization_id") @db.Uuid
+  batchId              String            @map("batch_id") @db.Uuid
+  meetingIntegrationId String?           @map("meeting_integration_id") @db.Uuid
+  title                String
+  description          String?
+  status               LiveSessionStatus @default(SCHEDULED)
+  meetingProvider      MeetingProvider   @default(NONE) @map("meeting_provider")
+  providerMeetingId    String?           @map("provider_meeting_id")
+  meetingUrl           String?           @map("meeting_url")
+  hostUrlEncrypted     String?           @map("host_url_encrypted")
+  passcodeEncrypted    String?           @map("passcode_encrypted")
+  recordingUrl         String?           @map("recording_url")
+  timezone             String            @default("Asia/Kolkata")
+  recurrenceRule       String?           @map("recurrence_rule")
+  providerMetadata     Json?             @map("provider_metadata")
+  syncStatus           MeetingSyncStatus @default(IDLE) @map("sync_status")
+  syncError            String?           @map("sync_error")
+  version              Int               @default(1)
+  startsAt             DateTime          @map("starts_at")
+  endsAt               DateTime?         @map("ends_at")
+  startedAt            DateTime?         @map("started_at")
+  endedAt              DateTime?         @map("ended_at")
+  cancelledAt          DateTime?         @map("cancelled_at")
+  createdById          String?           @map("created_by_id") @db.Uuid
+  updatedById          String?           @map("updated_by_id") @db.Uuid
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+  deletedAt            DateTime?         @map("deleted_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  batch        Batch        @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  batch              Batch               @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  meetingIntegration MeetingIntegration? @relation(fields: [meetingIntegrationId], references: [id], onDelete: SetNull)
+  createdBy          User?               @relation("LiveSessionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy          User?               @relation("LiveSessionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   attendances    Attendance[]
   calendarEvents CalendarEvent[]
+  participants   MeetingParticipant[]
+  recordings     MeetingRecording[]
 
+  @@unique([meetingIntegrationId, providerMeetingId])
   @@index([batchId, startsAt])
   @@index([organizationId, status])
+  @@index([organizationId, meetingProvider, status])
+  @@index([syncStatus, updatedAt])
   @@index([startsAt])
   @@index([deletedAt])
   @@map("live_sessions")
@@ -654,15 +762,20 @@ model LiveSession {
 
 /// Roll-call row for one student in one live session. Source of truth for attendance.
 model Attendance {
-  id             String           @id @default(uuid(7)) @db.Uuid
-  organizationId String           @map("organization_id") @db.Uuid
-  liveSessionId  String           @map("live_session_id") @db.Uuid
-  studentId      String           @map("student_id") @db.Uuid
-  status         AttendanceStatus @default(ABSENT)
-  markedAt       DateTime?        @map("marked_at")
-  notes          String?
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
+  id              String           @id @default(uuid(7)) @db.Uuid
+  organizationId  String           @map("organization_id") @db.Uuid
+  liveSessionId   String           @map("live_session_id") @db.Uuid
+  studentId       String           @map("student_id") @db.Uuid
+  status          AttendanceStatus @default(ABSENT)
+  markedAt        DateTime?        @map("marked_at")
+  notes           String?
+  firstJoinedAt   DateTime?        @map("first_joined_at")
+  lastLeftAt      DateTime?        @map("last_left_at")
+  durationSeconds Int              @default(0) @map("duration_seconds")
+  joinCount       Int              @default(0) @map("join_count")
+  source          AttendanceSource @default(MANUAL)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   liveSession  LiveSession    @relation(fields: [liveSessionId], references: [id], onDelete: Restrict)
@@ -677,7 +790,7 @@ model Attendance {
 }
 
 // ---------------------------------------------------------------------------
-// LMS Phase 3 — assessment, certificates, communication, announcements,
+// LMS Phase 3 â€” assessment, certificates, communication, announcements,
 // calendar (Sprint 06.17). Final schema layer; APIs come in later sprints.
 // ---------------------------------------------------------------------------
 
@@ -764,6 +877,9 @@ model Assignment {
 
   submissions    AssignmentSubmission[]
   calendarEvents CalendarEvent[]
+  aiConversations AIConversation[]
+  aiDocuments     AIDocument[]
+  aiJobs          AIJob[]
 
   @@index([organizationId, status])
   @@index([courseId])
@@ -931,6 +1047,7 @@ model Notification {
   title          String
   body           String?
   data           Json?
+  dedupeKey      String?             @map("dedupe_key")
   readAt         DateTime?           @map("read_at")
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")
@@ -938,6 +1055,7 @@ model Notification {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
 
+  @@unique([organizationId, userId, channel, dedupeKey])
   @@index([userId, readAt, createdAt])
   @@index([organizationId])
   @@index([type])
@@ -975,22 +1093,26 @@ model Announcement {
 /// First-class calendar entry; optional refs tie it to LMS sources, external
 /// provider fields support Google/Outlook sync.
 model CalendarEvent {
-  id               String           @id @default(uuid(7)) @db.Uuid
-  organizationId   String           @map("organization_id") @db.Uuid
-  courseId         String?          @map("course_id") @db.Uuid
-  batchId          String?          @map("batch_id") @db.Uuid
-  liveSessionId    String?          @map("live_session_id") @db.Uuid
-  assignmentId     String?          @map("assignment_id") @db.Uuid
+  id               String            @id @default(uuid(7)) @db.Uuid
+  organizationId   String            @map("organization_id") @db.Uuid
+  courseId         String?           @map("course_id") @db.Uuid
+  batchId          String?           @map("batch_id") @db.Uuid
+  liveSessionId    String?           @map("live_session_id") @db.Uuid
+  assignmentId     String?           @map("assignment_id") @db.Uuid
   title            String
   description      String?
-  startsAt         DateTime         @map("starts_at")
-  endsAt           DateTime?        @map("ends_at")
-  allDay           Boolean          @default(false) @map("all_day")
-  externalProvider CalendarProvider @default(NONE) @map("external_provider")
-  externalEventId  String?          @map("external_event_id")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  deletedAt        DateTime?        @map("deleted_at")
+  startsAt         DateTime          @map("starts_at")
+  endsAt           DateTime?         @map("ends_at")
+  allDay           Boolean           @default(false) @map("all_day")
+  timezone         String            @default("Asia/Kolkata")
+  recurrenceRule   String?           @map("recurrence_rule")
+  externalProvider CalendarProvider  @default(NONE) @map("external_provider")
+  externalEventId  String?           @map("external_event_id")
+  syncStatus       MeetingSyncStatus @default(IDLE) @map("sync_status")
+  syncError        String?           @map("sync_error")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deletedAt        DateTime?         @map("deleted_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
@@ -1003,12 +1125,13 @@ model CalendarEvent {
   @@index([batchId])
   @@index([liveSessionId])
   @@index([assignmentId])
+  @@index([syncStatus])
   @@index([deletedAt])
   @@map("calendar_events")
 }
 
 // ---------------------------------------------------------------------------
-// Payments — provider-neutral, tenant-scoped ledger for course purchases and
+// Payments â€” provider-neutral, tenant-scoped ledger for course purchases and
 // organization subscriptions. Monetary values are integer minor units.
 // ---------------------------------------------------------------------------
 
@@ -1537,7 +1660,7 @@ model BillingAddress {
 }
 
 // ---------------------------------------------------------------------------
-// Email — provider-neutral, tenant-scoped delivery, queue, template, preference,
+// Email â€” provider-neutral, tenant-scoped delivery, queue, template, preference,
 // attachment, webhook event, and invitation foundation.
 // ---------------------------------------------------------------------------
 
@@ -1922,7 +2045,7 @@ model EmailInvitation {
 }
 
 // ---------------------------------------------------------------------------
-// Storage — provider-neutral metadata for tenant-scoped media. Provider
+// Storage â€” provider-neutral metadata for tenant-scoped media. Provider
 // identities remain unique even after soft deletion to prevent accidental reuse.
 // ---------------------------------------------------------------------------
 
@@ -1946,6 +2069,8 @@ enum MediaEntityType {
   MESSAGE_ATTACHMENT
   ANNOUNCEMENT_IMAGE
   CALENDAR_ATTACHMENT
+  MEETING_RECORDING
+  MEETING_RECORDING_THUMBNAIL
   OTHER
 
   @@map("media_entity_type")
@@ -2009,10 +2134,602 @@ model MediaAsset {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   owner        User         @relation("MediaAssetOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
 
+  meetingRecordings          MeetingRecording[] @relation("MeetingRecordingAsset")
+  meetingRecordingThumbnails MeetingRecording[] @relation("MeetingRecordingThumbnail")
+  aiDocuments                AIDocument[]
+
   @@unique([organizationId, provider, providerPublicId])
   @@index([organizationId, entityType, entityId])
   @@index([organizationId, checksumSha256])
   @@index([ownerUserId])
   @@index([deletedAt])
   @@map("media_assets")
+}
+
+// ---------------------------------------------------------------------------
+// Meetings â€” provider-neutral Zoom / Google Meet / Sandbox integrations.
+// LiveSession remains the aggregate; these models store OAuth, webhooks,
+// participants, and recordings without forking a second meeting entity.
+// ---------------------------------------------------------------------------
+
+/// Organization-owned connection to a meeting provider. Tokens are AEAD ciphertext.
+model MeetingIntegration {
+  id                   String                   @id @default(uuid(7)) @db.Uuid
+  organizationId       String                   @map("organization_id") @db.Uuid
+  provider             MeetingProvider
+  status               MeetingIntegrationStatus @default(DISCONNECTED)
+  externalAccountId    String?                  @map("external_account_id")
+  externalAccountEmail String?                  @map("external_account_email")
+  accessTokenCipher    String?                  @map("access_token_cipher")
+  refreshTokenCipher   String?                  @map("refresh_token_cipher")
+  tokenIv              String?                  @map("token_iv")
+  tokenAuthTag         String?                  @map("token_auth_tag")
+  tokenExpiresAt       DateTime?                @map("token_expires_at")
+  scopes               String[]                 @default([])
+  config               Json?
+  lastError            String?                  @map("last_error")
+  version              Int                      @default(1)
+  connectedAt          DateTime?                @map("connected_at")
+  revokedAt            DateTime?                @map("revoked_at")
+  connectedById        String?                  @map("connected_by_id") @db.Uuid
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  connectedBy  User?        @relation("MeetingIntegrationConnectedBy", fields: [connectedById], references: [id], onDelete: SetNull)
+
+  liveSessions  LiveSession[]
+  webhookEvents MeetingWebhookEvent[]
+  oauthStates   MeetingOAuthState[]
+
+  @@unique([organizationId, provider])
+  @@index([organizationId, status])
+  @@index([provider, status])
+  @@index([tokenExpiresAt])
+  @@map("meeting_integrations")
+}
+
+/// One-time OAuth state + PKCE verifier for meeting provider connect flows.
+model MeetingOAuthState {
+  id                 String          @id @default(uuid(7)) @db.Uuid
+  organizationId     String          @map("organization_id") @db.Uuid
+  integrationId      String?         @map("integration_id") @db.Uuid
+  userId             String          @map("user_id") @db.Uuid
+  provider           MeetingProvider
+  stateHash          String          @unique @map("state_hash")
+  codeVerifierCipher String          @map("code_verifier_cipher")
+  redirectPath       String?         @map("redirect_path")
+  expiresAt          DateTime        @map("expires_at")
+  consumedAt         DateTime?       @map("consumed_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  integration  MeetingIntegration? @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, provider])
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("meeting_oauth_states")
+}
+
+/// Durable provider webhook inbox with atomic claim semantics.
+model MeetingWebhookEvent {
+  id             String                    @id @default(uuid(7)) @db.Uuid
+  organizationId String?                   @map("organization_id") @db.Uuid
+  integrationId  String?                   @map("integration_id") @db.Uuid
+  provider       MeetingProvider
+  eventId        String                    @map("event_id")
+  eventType      String                    @map("event_type")
+  status         MeetingWebhookEventStatus @default(PENDING)
+  payload        Json
+  signatureHash  String                    @map("signature_hash")
+  attempts       Int                       @default(0)
+  lockedAt       DateTime?                 @map("locked_at")
+  lockedBy       String?                   @map("locked_by")
+  lastError      String?                   @map("last_error")
+  occurredAt     DateTime?                 @map("occurred_at")
+  processedAt    DateTime?                 @map("processed_at")
+  receivedAt     DateTime                  @default(now()) @map("received_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+
+  organization Organization?       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  integration  MeetingIntegration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, eventId])
+  @@index([status, receivedAt])
+  @@index([organizationId, receivedAt])
+  @@index([integrationId, receivedAt])
+  @@index([eventType])
+  @@map("meeting_webhook_events")
+}
+
+/// One join interval for a provider participant in a live session.
+model MeetingParticipant {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  organizationId        String    @map("organization_id") @db.Uuid
+  liveSessionId         String    @map("live_session_id") @db.Uuid
+  userId                String?   @map("user_id") @db.Uuid
+  studentId             String?   @map("student_id") @db.Uuid
+  providerParticipantId String    @map("provider_participant_id")
+  providerJoinId        String    @map("provider_join_id")
+  displayName           String?   @map("display_name")
+  emailHash             String?   @map("email_hash")
+  joinedAt              DateTime  @map("joined_at")
+  leftAt                DateTime? @map("left_at")
+  durationSeconds       Int       @default(0) @map("duration_seconds")
+  source                String    @default("PROVIDER")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  liveSession  LiveSession     @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+  user         User?           @relation("MeetingParticipantUser", fields: [userId], references: [id], onDelete: SetNull)
+  student      StudentProfile? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@unique([liveSessionId, providerJoinId])
+  @@index([organizationId, liveSessionId])
+  @@index([studentId])
+  @@index([userId])
+  @@index([joinedAt])
+  @@map("meeting_participants")
+}
+
+/// Provider recording metadata; binary content lives in MediaAsset when ingested.
+model MeetingRecording {
+  id                        String                 @id @default(uuid(7)) @db.Uuid
+  organizationId            String                 @map("organization_id") @db.Uuid
+  liveSessionId             String                 @map("live_session_id") @db.Uuid
+  providerRecordingId       String                 @map("provider_recording_id")
+  mediaAssetId              String?                @map("media_asset_id") @db.Uuid
+  thumbnailMediaAssetId     String?                @map("thumbnail_media_asset_id") @db.Uuid
+  status                    MeetingRecordingStatus @default(PENDING)
+  recordingType             String?                @map("recording_type")
+  playUrl                   String?                @map("play_url")
+  downloadUrl               String?                @map("download_url")
+  startedAt                 DateTime?              @map("started_at")
+  endedAt                   DateTime?              @map("ended_at")
+  durationSeconds           Int?                   @map("duration_seconds")
+  sizeBytes                 BigInt?                @map("size_bytes")
+  mimeType                  String?                @map("mime_type")
+  checksumSha256            String?                @map("checksum_sha256")
+  providerDownloadExpiresAt DateTime?              @map("provider_download_expires_at")
+  ingestionError            String?                @map("ingestion_error")
+  availableAt               DateTime?              @map("available_at")
+  deletedAt                 DateTime?              @map("deleted_at")
+  createdAt                 DateTime               @default(now()) @map("created_at")
+  updatedAt                 DateTime               @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  liveSession  LiveSession  @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+  mediaAsset   MediaAsset?  @relation("MeetingRecordingAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  thumbnail    MediaAsset?  @relation("MeetingRecordingThumbnail", fields: [thumbnailMediaAssetId], references: [id], onDelete: SetNull)
+
+  @@unique([liveSessionId, providerRecordingId])
+  @@index([organizationId, status])
+  @@index([liveSessionId, status])
+  @@index([mediaAssetId])
+  @@index([deletedAt])
+  @@map("meeting_recordings")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 16 â€” AI Platform (provider-neutral chat, RAG, jobs, usage, feedback)
+// ---------------------------------------------------------------------------
+
+enum AIProvider {
+  OPENAI
+  AZURE_OPENAI
+  ANTHROPIC
+  GOOGLE_GEMINI
+  OLLAMA
+  OPENROUTER
+  GROQ
+  SANDBOX
+
+  @@map("ai_provider")
+}
+
+enum AIModelType {
+  CHAT
+  EMBEDDING
+  MODERATION
+
+  @@map("ai_model_type")
+}
+
+enum AIMessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+
+  @@map("ai_message_role")
+}
+
+enum AIFeature {
+  TUTOR
+  LESSON_SUMMARY
+  ASSIGNMENT_HELP
+  QUIZ_GENERATOR
+  FLASHCARDS
+  COURSE_DESCRIPTION
+  CERTIFICATE_FEEDBACK
+  ANNOUNCEMENT_WRITER
+  EMAIL_WRITER
+  PERFORMANCE_INSIGHTS
+  ADMIN_INSIGHTS
+  SEMANTIC_SEARCH
+  GENERAL
+
+  @@map("ai_feature")
+}
+
+enum AIDocumentSourceType {
+  COURSE
+  LESSON
+  ASSIGNMENT
+  MEDIA_ASSET
+  NOTE
+
+  @@map("ai_document_source_type")
+}
+
+enum AIDocumentStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+
+  @@map("ai_document_status")
+}
+
+enum AIJobType {
+  EMBED_DOCUMENT
+  REINDEX_DOCUMENT
+  GENERATE_SUMMARY
+  GENERATE_QUIZ
+  GENERATE_FLASHCARDS
+  GENERATE_INSIGHT
+  GENERATE_COURSE_COPY
+  GENERATE_ANNOUNCEMENT
+  GENERATE_EMAIL
+  GENERATE_CERTIFICATE_REMARKS
+
+  @@map("ai_job_type")
+}
+
+enum AIJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+  CANCELLED
+
+  @@map("ai_job_status")
+}
+
+enum AIUsageType {
+  CHAT_COMPLETION
+  EMBEDDING
+  MODERATION
+  STRUCTURED_GENERATION
+  RESERVATION
+
+  @@map("ai_usage_type")
+}
+
+enum AIUsageStatus {
+  RESERVED
+  COMMITTED
+  RELEASED
+  FAILED
+
+  @@map("ai_usage_status")
+}
+
+enum AIPromptTemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+
+  @@map("ai_prompt_template_status")
+}
+
+enum AIFeedbackRating {
+  UP
+  DOWN
+
+  @@map("ai_feedback_rating")
+}
+
+model AIConversation {
+  id             String     @id @default(uuid(7)) @db.Uuid
+  organizationId String     @map("organization_id") @db.Uuid
+  userId         String     @map("user_id") @db.Uuid
+  courseId       String?    @map("course_id") @db.Uuid
+  lessonId       String?    @map("lesson_id") @db.Uuid
+  assignmentId   String?    @map("assignment_id") @db.Uuid
+  feature        AIFeature  @default(GENERAL)
+  title          String?
+  provider       AIProvider
+  model          String
+  pinnedAt       DateTime?  @map("pinned_at")
+  lastMessageAt  DateTime?  @map("last_message_at")
+  metadata       Json?
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  deletedAt      DateTime?  @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation("AIConversationOwner", fields: [userId], references: [id], onDelete: Restrict)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  assignment   Assignment?  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+
+  messages AIMessage[]
+  usages   AIUsage[]
+  jobs     AIJob[]
+
+  @@index([organizationId, userId, deletedAt, updatedAt])
+  @@index([organizationId, courseId, updatedAt])
+  @@index([organizationId, feature, createdAt])
+  @@index([pinnedAt])
+  @@index([deletedAt])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id               String        @id @default(uuid(7)) @db.Uuid
+  organizationId   String        @map("organization_id") @db.Uuid
+  conversationId   String        @map("conversation_id") @db.Uuid
+  userId           String?       @map("user_id") @db.Uuid
+  parentMessageId  String?       @map("parent_message_id") @db.Uuid
+  role             AIMessageRole
+  content          String
+  provider         AIProvider?
+  model            String?
+  citations        Json?
+  safetyMetadata   Json?         @map("safety_metadata")
+  finishReason     String?       @map("finish_reason")
+  tokenPrompt      Int           @default(0) @map("token_prompt")
+  tokenCompletion  Int           @default(0) @map("token_completion")
+  latencyMs        Int?          @map("latency_ms")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  deletedAt        DateTime?     @map("deleted_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  user         User?          @relation("AIMessageAuthor", fields: [userId], references: [id], onDelete: SetNull)
+  parent       AIMessage?     @relation("AIMessageParent", fields: [parentMessageId], references: [id], onDelete: SetNull)
+  children     AIMessage[]    @relation("AIMessageParent")
+  usages       AIUsage[]
+  feedback     AIFeedback[]
+  jobs         AIJob[]        @relation("AIJobResultMessage")
+
+  @@index([conversationId, createdAt])
+  @@index([organizationId, userId, createdAt])
+  @@index([parentMessageId])
+  @@index([deletedAt])
+  @@map("ai_messages")
+}
+
+model AIUsage {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  organizationId   String         @map("organization_id") @db.Uuid
+  userId           String?        @map("user_id") @db.Uuid
+  conversationId   String?        @map("conversation_id") @db.Uuid
+  messageId        String?        @map("message_id") @db.Uuid
+  jobId            String?        @map("job_id") @db.Uuid
+  provider         AIProvider
+  model            String
+  modelType        AIModelType    @map("model_type")
+  usageType        AIUsageType    @map("usage_type")
+  feature          AIFeature      @default(GENERAL)
+  status           AIUsageStatus  @default(COMMITTED)
+  promptTokens     Int            @default(0) @map("prompt_tokens")
+  completionTokens Int            @default(0) @map("completion_tokens")
+  totalTokens      Int            @default(0) @map("total_tokens")
+  reservedTokens   Int            @default(0) @map("reserved_tokens")
+  costMicros       BigInt         @default(0) @map("cost_micros")
+  currency         String         @default("USD") @db.Char(3)
+  latencyMs        Int?           @map("latency_ms")
+  retries          Int            @default(0)
+  success          Boolean        @default(true)
+  errorCode        String?        @map("error_code")
+  requestId        String         @map("request_id")
+  correlationId    String?        @map("correlation_id")
+  metadata         Json?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?           @relation("AIUsageUser", fields: [userId], references: [id], onDelete: SetNull)
+  conversation AIConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message      AIMessage?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  job          AIJob?          @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, requestId])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, userId, createdAt])
+  @@index([organizationId, provider, model, createdAt])
+  @@index([organizationId, status, createdAt])
+  @@index([conversationId, createdAt])
+  @@index([jobId])
+  @@index([success, createdAt])
+  @@map("ai_usages")
+}
+
+model AIPromptTemplate {
+  id             String                  @id @default(uuid(7)) @db.Uuid
+  organizationId String?                 @map("organization_id") @db.Uuid
+  createdById    String?                 @map("created_by_id") @db.Uuid
+  scopeKey       String                  @default("system") @map("scope_key")
+  key            String
+  locale         String                  @default("en")
+  version        Int                     @default(1)
+  feature        AIFeature
+  title          String
+  systemPrompt   String                  @map("system_prompt")
+  userTemplate   String?                 @map("user_template")
+  variableSchema Json?                   @map("variable_schema")
+  status         AIPromptTemplateStatus  @default(DRAFT)
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    User?         @relation("AIPromptTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([scopeKey, key, locale, version])
+  @@index([organizationId, key, locale, status])
+  @@index([feature, status])
+  @@map("ai_prompt_templates")
+}
+
+model AIDocument {
+  id               String               @id @default(uuid(7)) @db.Uuid
+  organizationId   String               @map("organization_id") @db.Uuid
+  createdById      String?              @map("created_by_id") @db.Uuid
+  courseId         String?              @map("course_id") @db.Uuid
+  lessonId         String?              @map("lesson_id") @db.Uuid
+  assignmentId     String?              @map("assignment_id") @db.Uuid
+  mediaAssetId     String?              @map("media_asset_id") @db.Uuid
+  sourceType       AIDocumentSourceType @map("source_type")
+  sourceKey        String               @map("source_key")
+  title            String
+  extractedText    String?              @map("extracted_text")
+  checksumSha256   String?              @map("checksum_sha256")
+  version          Int                  @default(1)
+  status           AIDocumentStatus     @default(PENDING)
+  language         String               @default("en")
+  chunkCount       Int                  @default(0) @map("chunk_count")
+  tokenCount       Int                  @default(0) @map("token_count")
+  errorCode        String?              @map("error_code")
+  errorMessage     String?              @map("error_message")
+  metadata         Json?
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  deletedAt        DateTime?            @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("AIDocumentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  lesson       Lesson?      @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  assignment   Assignment?  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  mediaAsset   MediaAsset?  @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  embeddings AIEmbedding[]
+  jobs       AIJob[]
+
+  @@unique([organizationId, sourceType, sourceKey, version])
+  @@index([organizationId, status, updatedAt])
+  @@index([organizationId, courseId, status])
+  @@index([organizationId, lessonId])
+  @@index([organizationId, assignmentId])
+  @@index([organizationId, mediaAssetId])
+  @@index([organizationId, checksumSha256])
+  @@index([deletedAt])
+  @@map("ai_documents")
+}
+
+/// One chunk + embedding vector. Vector column is Unsupported; insert/search via raw SQL.
+model AIEmbedding {
+  id             String     @id @default(uuid(7)) @db.Uuid
+  organizationId String     @map("organization_id") @db.Uuid
+  documentId     String     @map("document_id") @db.Uuid
+  chunkIndex     Int        @map("chunk_index")
+  content        String
+  tokenCount     Int        @default(0) @map("token_count")
+  startOffset    Int?       @map("start_offset")
+  endOffset      Int?       @map("end_offset")
+  pageNumber     Int?       @map("page_number")
+  provider       AIProvider
+  model          String
+  /// Fixed 1536-dim cosine vectors (OpenAI text-embedding-3-small / compatible).
+  embedding      Unsupported("vector(1536)")
+  metadata       Json?
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  document     AIDocument   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([organizationId, documentId])
+  @@index([organizationId, model])
+  @@map("ai_embeddings")
+}
+
+model AIJob {
+  id               String      @id @default(uuid(7)) @db.Uuid
+  organizationId   String      @map("organization_id") @db.Uuid
+  requestedById    String?     @map("requested_by_id") @db.Uuid
+  documentId       String?     @map("document_id") @db.Uuid
+  courseId         String?     @map("course_id") @db.Uuid
+  lessonId         String?     @map("lesson_id") @db.Uuid
+  assignmentId     String?     @map("assignment_id") @db.Uuid
+  conversationId   String?     @map("conversation_id") @db.Uuid
+  resultMessageId  String?     @map("result_message_id") @db.Uuid
+  type             AIJobType
+  status           AIJobStatus @default(QUEUED)
+  priority         Int         @default(0)
+  payload          Json?
+  result           Json?
+  availableAt      DateTime    @default(now()) @map("available_at")
+  lockedAt         DateTime?   @map("locked_at")
+  lockedBy         String?     @map("locked_by")
+  processedAt      DateTime?   @map("processed_at")
+  attempts         Int         @default(0)
+  maxAttempts      Int         @default(5) @map("max_attempts")
+  backoffSeconds   Int         @default(60) @map("backoff_seconds")
+  lastErrorCode    String?     @map("last_error_code")
+  lastErrorMessage String?     @map("last_error_message")
+  deadLetteredAt   DateTime?   @map("dead_lettered_at")
+  cancelledAt      DateTime?   @map("cancelled_at")
+  idempotencyKey   String      @map("idempotency_key")
+  correlationId    String?     @map("correlation_id")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  requestedBy   User?           @relation("AIJobRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+  document      AIDocument?     @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  course        Course?         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  lesson        Lesson?         @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  assignment    Assignment?     @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  conversation  AIConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  resultMessage AIMessage?      @relation("AIJobResultMessage", fields: [resultMessageId], references: [id], onDelete: SetNull)
+  usages        AIUsage[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([status, availableAt, priority])
+  @@index([organizationId, status, availableAt])
+  @@index([documentId, status])
+  @@index([requestedById, createdAt])
+  @@index([lockedAt])
+  @@index([correlationId])
+  @@map("ai_jobs")
+}
+
+model AIFeedback {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  messageId      String           @map("message_id") @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  rating         AIFeedbackRating
+  reason         String?
+  comment        String?
+  metadata       Json?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  message      AIMessage    @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  user         User         @relation("AIFeedbackUser", fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([messageId, userId])
+  @@index([organizationId, rating, createdAt])
+  @@index([userId, createdAt])
+  @@map("ai_feedback")
 }

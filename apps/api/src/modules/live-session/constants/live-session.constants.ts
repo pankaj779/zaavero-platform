@@ -1,6 +1,6 @@
 export const LIVE_SESSION_STATUSES = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'] as const;
 export type LiveSessionStatusValue = (typeof LIVE_SESSION_STATUSES)[number];
-export const MEETING_PROVIDERS = ['NONE', 'ZOOM', 'GOOGLE_MEET', 'CUSTOM'] as const;
+export const MEETING_PROVIDERS = ['NONE', 'ZOOM', 'GOOGLE_MEET', 'CUSTOM', 'SANDBOX'] as const;
 export type MeetingProviderValue = (typeof MEETING_PROVIDERS)[number];
 export const LIVE_SESSION_SORT_FIELDS = [
   'createdAt',

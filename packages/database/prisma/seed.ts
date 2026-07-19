@@ -24,6 +24,8 @@ const {
   BillingInterval,
   EmailCategory,
   EmailTemplateStatus,
+  AIPromptTemplateStatus,
+  AIFeature,
 } = await import('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -46,6 +48,10 @@ const PERMISSIONS = [
   { name: 'email.retry', module: 'email', description: 'Retry failed email deliveries' },
   { name: 'storage.upload', module: 'storage', description: 'Upload and attach media assets' },
   { name: 'storage.manage', module: 'storage', description: 'Manage organization media assets' },
+  { name: 'ai.use', module: 'ai', description: 'Use AI chat and tutor features' },
+  { name: 'ai.generate', module: 'ai', description: 'Generate AI content (quiz, summaries, copy)' },
+  { name: 'ai.manage', module: 'ai', description: 'Manage AI documents and indexing jobs' },
+  { name: 'ai.admin', module: 'ai', description: 'View AI usage, quotas, and admin insights' },
 ] as const;
 
 const SYSTEM_SETTINGS = [
@@ -315,6 +321,43 @@ const SYSTEM_EMAIL_TEMPLATES = EMAIL_TEMPLATE_SPECS.map(([key, title, message, c
   status: EmailTemplateStatus.ACTIVE as const,
 }));
 
+const SYSTEM_AI_PROMPT_FEATURES = [
+  ['tutor', AIFeature.TUTOR, 'AI Tutor', 'You are a helpful course tutor. Use only provided context and never invent facts.'],
+  ['lesson_summary', AIFeature.LESSON_SUMMARY, 'Lesson Summary', 'Generate accurate lesson summaries without adding unsupported claims.'],
+  ['assignment_help', AIFeature.ASSIGNMENT_HELP, 'Assignment Help', 'Guide the learner with hints and steps. Never reveal final answers or graded solutions.'],
+  ['quiz_generator', AIFeature.QUIZ_GENERATOR, 'Quiz Generator', 'Generate assessment items aligned to lesson objectives in valid JSON when requested.'],
+  ['flashcards', AIFeature.FLASHCARDS, 'Flashcards', 'Generate concise flashcards suitable for export.'],
+  ['course_description', AIFeature.COURSE_DESCRIPTION, 'Course Description', 'Write compelling course copy grounded in supplied course details.'],
+  ['certificate_feedback', AIFeature.CERTIFICATE_FEEDBACK, 'Certificate Feedback', 'Write personalized certificate remarks based on supplied achievement data.'],
+  ['announcement_writer', AIFeature.ANNOUNCEMENT_WRITER, 'Announcement Writer', 'Draft polished teacher announcements from short prompts.'],
+  ['email_writer', AIFeature.EMAIL_WRITER, 'Email Writer', 'Draft professional email copy without sending messages.'],
+  ['performance_insights', AIFeature.PERFORMANCE_INSIGHTS, 'Performance Insights', 'Summarize supplied LMS metrics only. Never fabricate analytics.'],
+  ['admin_insights', AIFeature.ADMIN_INSIGHTS, 'Admin Insights', 'Summarize supplied organization metrics only. Never fabricate analytics.'],
+  ['semantic_search', AIFeature.SEMANTIC_SEARCH, 'Semantic Search', 'Use retrieved document excerpts to answer search-oriented questions.'],
+  ['general', AIFeature.GENERAL, 'General Assistant', 'Provide helpful, safe responses within the learning platform context.'],
+] as const;
+
+const SYSTEM_AI_PROMPT_TEMPLATES = SYSTEM_AI_PROMPT_FEATURES.map(
+  ([key, feature, title, systemPrompt]) => ({
+    scopeKey: 'system' as const,
+    key,
+    locale: 'en',
+    version: 1,
+    feature,
+    title,
+    systemPrompt,
+    userTemplate: '{{prompt}}',
+    variableSchema: {
+      type: 'object' as const,
+      properties: {
+        prompt: { type: 'string' as const },
+      },
+      additionalProperties: true as const,
+    },
+    status: AIPromptTemplateStatus.ACTIVE as const,
+  }),
+);
+
 const SAMPLE_COURSE_SLUG = 'sample-course';
 
 async function seedRoles(): Promise<Map<string, string>> {
@@ -386,7 +429,14 @@ async function seedRolePermissions(
     });
   }
 
-  const teacherPermissionNames = ['course.create', 'course.update', 'storage.upload'] as const;
+  const teacherPermissionNames = [
+    'course.create',
+    'course.update',
+    'storage.upload',
+    'ai.use',
+    'ai.generate',
+    'ai.manage',
+  ] as const;
 
   for (const permissionName of teacherPermissionNames) {
     const permissionId = permissionIds.get(permissionName);
@@ -404,6 +454,33 @@ async function seedRolePermissions(
       update: {},
       create: {
         roleId: teacherRoleId,
+        permissionId,
+      },
+    });
+  }
+
+  const studentRoleId = roleIds.get('Student');
+  if (!studentRoleId) {
+    throw new Error('Student role was not seeded.');
+  }
+
+  const studentPermissionNames = ['ai.use'] as const;
+  for (const permissionName of studentPermissionNames) {
+    const permissionId = permissionIds.get(permissionName);
+    if (!permissionId) {
+      throw new Error(`Permission ${permissionName} was not seeded.`);
+    }
+
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: studentRoleId,
+          permissionId,
+        },
+      },
+      update: {},
+      create: {
+        roleId: studentRoleId,
         permissionId,
       },
     });
@@ -487,6 +564,30 @@ async function seedEmailTemplates(): Promise<void> {
       },
       update: {},
       create: validated,
+    });
+  }
+}
+
+async function seedAIPromptTemplates(): Promise<void> {
+  for (const template of SYSTEM_AI_PROMPT_TEMPLATES) {
+    await prisma.aIPromptTemplate.upsert({
+      where: {
+        scopeKey_key_locale_version: {
+          scopeKey: template.scopeKey,
+          key: template.key,
+          locale: template.locale,
+          version: template.version,
+        },
+      },
+      update: {
+        feature: template.feature,
+        title: template.title,
+        systemPrompt: template.systemPrompt,
+        userTemplate: template.userTemplate,
+        variableSchema: template.variableSchema,
+        status: template.status,
+      },
+      create: template,
     });
   }
 }
@@ -817,6 +918,7 @@ async function main(): Promise<void> {
   await seedRolePermissions(roleIds, permissionIds);
   await seedSystemSettings();
   await seedEmailTemplates();
+  await seedAIPromptTemplates();
 
   const organizationId = await seedDefaultOrganization();
   await seedPlans(organizationId);

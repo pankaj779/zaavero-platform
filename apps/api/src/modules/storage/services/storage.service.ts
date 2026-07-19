@@ -64,6 +64,14 @@ export interface ResolveMediaAssetOptions {
   ownerUserId?: string;
 }
 
+export interface DownloadAuthorizedAssetInput {
+  organizationId: string;
+  assetId: string;
+  allowedEntityTypes: readonly MediaEntityTypeValue[];
+  allowedMimePrefixes?: readonly string[];
+  maxBytes?: number;
+}
+
 export interface GeneratedAssetInput {
   organizationId: string;
   ownerUserId: string;
@@ -339,6 +347,48 @@ export class StorageService {
   ): Promise<string[] | undefined> {
     if (references === undefined) return undefined;
     return Promise.all(references.map((reference) => this.resolveAssetUrl(reference, options)));
+  }
+
+  /**
+   * Downloads an authorized media asset for server-side processing (e.g. RAG indexing).
+   * Enforces organization, entity type, MIME, and size boundaries.
+   */
+  async downloadAuthorizedAsset(input: DownloadAuthorizedAssetInput): Promise<{
+    buffer: Buffer;
+    mimeType: string;
+    bytes: number;
+    asset: MediaAssetRecord;
+  }> {
+    const record = await this.repository.findById(input.organizationId, input.assetId);
+    if (!record || record.deletedAt) {
+      throw new StorageAssetNotFoundException();
+    }
+    if (!input.allowedEntityTypes.includes(record.entityType)) {
+      throw new InvalidStorageUploadException(
+        `Asset entity type ${record.entityType} is not permitted for this operation.`,
+      );
+    }
+    const mimeType = record.mimeType.toLowerCase();
+    if (input.allowedMimePrefixes?.length) {
+      const allowed = input.allowedMimePrefixes.some((prefix) => mimeType.startsWith(prefix));
+      if (!allowed) {
+        throw new InvalidStorageFileException('Asset MIME type is not permitted for this operation.');
+      }
+    }
+    const sizeBytes = Number(record.bytes);
+    const maxBytes =
+      input.maxBytes ??
+      this.configService.get('STORAGE_MAX_FILE_SIZE_BYTES', { infer: true }) ??
+      100 * 1024 * 1024;
+    if (sizeBytes > maxBytes) {
+      throw new InvalidStorageFileException('Asset exceeds the maximum allowed download size.');
+    }
+    const downloaded = await this.provider.downloadBuffer({
+      secureUrl: record.secureUrl,
+      publicId: record.providerPublicId,
+      resourceType: providerResourceType(record.mimeType),
+    });
+    return { ...downloaded, asset: record };
   }
 
   async listAssets(

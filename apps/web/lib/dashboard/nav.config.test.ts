@@ -14,6 +14,7 @@ const EXPECTED_NAV_LABELS = [
   'Calendar',
   'Notifications',
   'Messages',
+  'AI Tutor',
   'Profile',
   'Settings',
 ] as const;

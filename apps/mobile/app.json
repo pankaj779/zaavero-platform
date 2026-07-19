@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "Graphology",
+    "slug": "graphology-platform",
+    "scheme": "graphology",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "jsEngine": "jsc",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1120"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.graphology.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Graphology uses the camera to capture avatars and upload assignment documents.",
+        "NSPhotoLibraryUsageDescription": "Graphology accesses your photos to upload avatars and assignment files.",
+        "NSFaceIDUsageDescription": "Graphology uses Face ID to unlock your account securely."
+      }
+    },
+    "android": {
+      "package": "app.graphology.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1120"
+      },
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "NOTIFICATIONS",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Graphology uses the camera to capture avatars and upload assignment documents."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Graphology accesses your photos to upload avatars and assignment files."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4F46E5"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3001/api/v1"
+    }
+  }
+}

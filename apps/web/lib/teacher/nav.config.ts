@@ -22,6 +22,7 @@ export const teacherNavItems: TeacherNavItem[] = [
   { id: 'attendance', label: 'Attendance', href: TEACHER_ROUTES.attendance, icon: 'check' },
   { id: 'certificates', label: 'Certificates', href: TEACHER_ROUTES.certificates, icon: 'award' },
   { id: 'announcements', label: 'Announcements', href: TEACHER_ROUTES.announcements, icon: 'bell' },
+  { id: 'ai', label: 'AI Studio', href: TEACHER_ROUTES.ai, icon: 'lightbulb' },
   { id: 'messages', label: 'Messages', href: TEACHER_ROUTES.messages, icon: 'message' },
   { id: 'analytics', label: 'Analytics', href: TEACHER_ROUTES.analytics, icon: 'trending' },
   { id: 'profile', label: 'Profile', href: TEACHER_ROUTES.profile, icon: 'user' },
@@ -90,6 +91,11 @@ export const teacherPageMeta: Record<string, TeacherPageMeta> = {
     title: 'Announcements',
     description: 'Broadcast updates to your courses and batches. Announcements are coming soon.',
     breadcrumb: 'Announcements',
+  },
+  [TEACHER_ROUTES.ai]: {
+    title: 'AI Studio',
+    description: 'Generate summaries, quizzes, announcements, and teaching copy with AI.',
+    breadcrumb: 'AI Studio',
   },
   [TEACHER_ROUTES.messages]: {
     title: 'Messages',

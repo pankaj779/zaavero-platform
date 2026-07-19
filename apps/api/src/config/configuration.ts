@@ -73,5 +73,72 @@ export default (): EnvConfig => {
       process.env.STORAGE_SERVER_UPLOAD_MAX_BYTES ?? 10 * 1024 * 1024,
     ),
     STORAGE_ALLOWED_MIME_TYPES: process.env.STORAGE_ALLOWED_MIME_TYPES,
+    TOKEN_ENCRYPTION_KEY:
+      process.env.TOKEN_ENCRYPTION_KEY ??
+      (resolvedNodeEnv === 'production' ? undefined : 'dev-only-meeting-token-encryption-key'),
+    ZOOM_CLIENT_ID: process.env.ZOOM_CLIENT_ID,
+    ZOOM_CLIENT_SECRET: process.env.ZOOM_CLIENT_SECRET,
+    ZOOM_WEBHOOK_SECRET: process.env.ZOOM_WEBHOOK_SECRET,
+    GOOGLE_MEET_CLIENT_ID: process.env.GOOGLE_MEET_CLIENT_ID,
+    GOOGLE_MEET_CLIENT_SECRET: process.env.GOOGLE_MEET_CLIENT_SECRET,
+    MEETING_SANDBOX_MODE:
+      booleanFromEnv(process.env.MEETING_SANDBOX_MODE) ?? resolvedNodeEnv !== 'production',
+    AI_PROVIDER:
+      process.env.AI_PROVIDER === 'AZURE_OPENAI' ||
+      process.env.AI_PROVIDER === 'ANTHROPIC' ||
+      process.env.AI_PROVIDER === 'GOOGLE_GEMINI' ||
+      process.env.AI_PROVIDER === 'OLLAMA' ||
+      process.env.AI_PROVIDER === 'OPENROUTER' ||
+      process.env.AI_PROVIDER === 'GROQ' ||
+      process.env.AI_PROVIDER === 'SANDBOX'
+        ? process.env.AI_PROVIDER
+        : 'OPENAI',
+    AI_EMBEDDING_PROVIDER:
+      process.env.AI_EMBEDDING_PROVIDER === 'AZURE_OPENAI' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'ANTHROPIC' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'GOOGLE_GEMINI' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'OLLAMA' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'OPENROUTER' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'GROQ' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'SANDBOX' ||
+      process.env.AI_EMBEDDING_PROVIDER === 'OPENAI'
+        ? process.env.AI_EMBEDDING_PROVIDER
+        : process.env.AI_PROVIDER === 'AZURE_OPENAI' ||
+            process.env.AI_PROVIDER === 'ANTHROPIC' ||
+            process.env.AI_PROVIDER === 'GOOGLE_GEMINI' ||
+            process.env.AI_PROVIDER === 'OLLAMA' ||
+            process.env.AI_PROVIDER === 'OPENROUTER' ||
+            process.env.AI_PROVIDER === 'GROQ' ||
+            process.env.AI_PROVIDER === 'SANDBOX' ||
+            process.env.AI_PROVIDER === 'OPENAI'
+          ? process.env.AI_PROVIDER
+          : 'OPENAI',
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
+    OPENAI_MODEL: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+    EMBEDDING_MODEL: process.env.EMBEDDING_MODEL ?? 'text-embedding-3-small',
+    EMBEDDING_DIMENSIONS: Number(process.env.EMBEDDING_DIMENSIONS ?? 1536),
+    AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
+    AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT,
+    AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION ?? '2024-10-21',
+    AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT,
+    AZURE_OPENAI_EMBEDDING_DEPLOYMENT: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL ?? 'claude-3-5-haiku-latest',
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434',
+    AI_TIMEOUT_MS: Number(process.env.AI_TIMEOUT_MS ?? 60_000),
+    AI_MAX_RETRIES: Number(process.env.AI_MAX_RETRIES ?? 2),
+    AI_DAILY_TOKEN_LIMIT_USER: Number(process.env.AI_DAILY_TOKEN_LIMIT_USER ?? 200_000),
+    AI_MONTHLY_TOKEN_LIMIT_USER: Number(process.env.AI_MONTHLY_TOKEN_LIMIT_USER ?? 2_000_000),
+    AI_DAILY_TOKEN_LIMIT_ORG: Number(process.env.AI_DAILY_TOKEN_LIMIT_ORG ?? 2_000_000),
+    AI_MONTHLY_TOKEN_LIMIT_ORG: Number(process.env.AI_MONTHLY_TOKEN_LIMIT_ORG ?? 20_000_000),
+    AI_CHUNK_SIZE: Number(process.env.AI_CHUNK_SIZE ?? 800),
+    AI_CHUNK_OVERLAP: Number(process.env.AI_CHUNK_OVERLAP ?? 120),
+    AI_RETRIEVAL_TOP_K: Number(process.env.AI_RETRIEVAL_TOP_K ?? 6),
+    AI_QUEUE_POLL_INTERVAL_MS: Number(process.env.AI_QUEUE_POLL_INTERVAL_MS ?? 15_000),
   };
 };

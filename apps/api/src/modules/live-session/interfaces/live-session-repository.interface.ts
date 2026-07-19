@@ -4,18 +4,30 @@ import type {
   MeetingProviderValue,
 } from '../constants/live-session.constants';
 
+export type MeetingSyncStatusValue = 'IDLE' | 'PENDING' | 'SYNCING' | 'SYNCED' | 'FAILED';
+
 export interface LiveSessionRecord {
   id: string;
   organizationId: string;
   batchId: string;
+  meetingIntegrationId: string | null;
   title: string;
   description: string | null;
   status: LiveSessionStatusValue;
   meetingProvider: MeetingProviderValue;
+  providerMeetingId: string | null;
   meetingUrl: string | null;
+  hostUrlEncrypted: string | null;
   recordingUrl: string | null;
+  timezone: string;
+  recurrenceRule: string | null;
+  syncStatus: MeetingSyncStatusValue;
+  syncError: string | null;
   startsAt: Date;
   endsAt: Date | null;
+  startedAt: Date | null;
+  endedAt: Date | null;
+  cancelledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,8 +57,11 @@ export interface CreateLiveSessionData {
   meetingProvider?: MeetingProviderValue;
   meetingUrl?: string;
   recordingUrl?: string;
+  timezone?: string;
+  recurrenceRule?: string;
   startsAt: Date;
   endsAt?: Date;
+  createdById?: string;
 }
 export interface UpdateLiveSessionData {
   title?: string;
@@ -55,8 +70,11 @@ export interface UpdateLiveSessionData {
   meetingProvider?: MeetingProviderValue;
   meetingUrl?: string | null;
   recordingUrl?: string | null;
+  timezone?: string;
+  recurrenceRule?: string | null;
   startsAt?: Date;
   endsAt?: Date | null;
+  updatedById?: string;
 }
 export interface BatchContextRecord {
   id: string;
