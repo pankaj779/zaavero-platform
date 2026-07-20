@@ -85,7 +85,9 @@ export class AIJobWorkerService implements OnModuleInit, OnModuleDestroy {
         job.payload && typeof job.payload === 'object'
           ? (job.payload as Record<string, unknown>)
           : {};
-      const feature = String(payload.feature ?? 'GENERAL') as never;
+      const feature = (
+        typeof payload.feature === 'string' ? payload.feature : 'GENERAL'
+      ) as never;
       const result = await this.features.generate(
         {
           id: job.requestedById ?? 'system',

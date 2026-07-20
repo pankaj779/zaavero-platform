@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import type { AIProviderValue } from '../constants/ai.constants';
 import { AIProviderNotConfiguredException } from '../exceptions';
 import type { AIProvider } from './ai-provider.interface';
-import { AIProviderRegistry } from './ai-provider.registry';
+import { type AIProviderRegistry } from './ai-provider.registry';
 
 const logger = new Logger('AIProviderFactory');
 

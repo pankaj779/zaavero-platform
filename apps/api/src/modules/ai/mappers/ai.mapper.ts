@@ -85,8 +85,8 @@ export interface PaginatedAIDocumentsResponseDto {
 export interface AIAdminUsageSummaryDto {
   totalTokens: number;
   totalRequests: number;
-  byFeature: Array<{ feature: string; totalTokens: number; requests: number }>;
-  byProvider: Array<{ provider: string; totalTokens: number; requests: number }>;
+  byFeature: { feature: string; totalTokens: number; requests: number }[];
+  byProvider: { provider: string; totalTokens: number; requests: number }[];
 }
 
 export interface AIProviderHealthResponseDto {

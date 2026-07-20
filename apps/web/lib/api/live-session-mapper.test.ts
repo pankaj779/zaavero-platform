@@ -33,7 +33,7 @@ describe('live-session mapper', () => {
     expect(dto.status).toBe('completed');
     expect(dto.meeting.provider).toBe('Microsoft Teams');
     expect(dto.meeting.status).toBe('ended');
-    expect(dto.meeting.meetingUrl).toBeNull();
+    expect(dto.meeting.meetingUrl).toBe('https://example.com/meet');
     expect(dto.durationMinutes).toBe(90);
     expect(dto.mentor.name).toBe('Teacher');
     expect(dto.attendance.attendancePercent).toBeNull();

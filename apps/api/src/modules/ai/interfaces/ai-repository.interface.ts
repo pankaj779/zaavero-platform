@@ -322,7 +322,7 @@ export interface AIRepository {
     documentId: string;
     provider: AIProviderValue;
     model: string;
-    chunks: Array<{
+    chunks: {
       chunkIndex: number;
       content: string;
       tokenCount: number;
@@ -331,7 +331,7 @@ export interface AIRepository {
       endOffset?: number;
       pageNumber?: number;
       metadata?: Record<string, unknown>;
-    }>;
+    }[];
   }): Promise<void>;
   searchEmbeddings(input: {
     organizationId: string;
@@ -372,7 +372,7 @@ export interface AIRepository {
   getAdminUsageSummary(organizationId: string, since: Date): Promise<{
     totalTokens: number;
     totalRequests: number;
-    byFeature: Array<{ feature: string; totalTokens: number; requests: number }>;
-    byProvider: Array<{ provider: string; totalTokens: number; requests: number }>;
+    byFeature: { feature: string; totalTokens: number; requests: number }[];
+    byProvider: { provider: string; totalTokens: number; requests: number }[];
   }>;
 }

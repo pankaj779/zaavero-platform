@@ -151,7 +151,7 @@ export class PrismaAIRepository implements AIRepository {
         metadata: data.metadata as never,
       },
       select: conversationSelect,
-    }) as Promise<AIConversationRecord>;
+    });
   }
 
   findConversation(
@@ -167,7 +167,7 @@ export class PrismaAIRepository implements AIRepository {
         ...(userId ? { userId } : {}),
       },
       select: conversationSelect,
-    }) as Promise<AIConversationRecord | null>;
+    });
   }
 
   async listConversations(input: {
@@ -197,7 +197,7 @@ export class PrismaAIRepository implements AIRepository {
       }),
       this.prisma.aIConversation.count({ where }),
     ]);
-    return { items: items as AIConversationRecord[], total };
+    return { items: items, total };
   }
 
   updateConversation(
@@ -247,7 +247,7 @@ export class PrismaAIRepository implements AIRepository {
         latencyMs: data.latencyMs,
       },
       select: messageSelect,
-    }) as Promise<AIMessageRecord>;
+    });
   }
 
   listMessages(organizationId: string, conversationId: string): Promise<AIMessageRecord[]> {
@@ -255,7 +255,7 @@ export class PrismaAIRepository implements AIRepository {
       where: { organizationId, conversationId, deletedAt: null },
       select: messageSelect,
       orderBy: { createdAt: 'asc' },
-    }) as Promise<AIMessageRecord[]>;
+    });
   }
 
   findActivePromptTemplate(
@@ -284,7 +284,7 @@ export class PrismaAIRepository implements AIRepository {
         userTemplate: true,
         variableSchema: true,
       },
-    }) as Promise<AIPromptTemplateRecord | null>;
+    });
   }
 
   async createUsage(data: CreateUsageData): Promise<{ id: string }> {
@@ -394,7 +394,7 @@ export class PrismaAIRepository implements AIRepository {
         metadata: data.metadata as never,
       },
       select: documentSelect,
-    }) as Promise<AIDocumentRecord>;
+    });
   }
 
   updateDocument(
@@ -431,7 +431,7 @@ export class PrismaAIRepository implements AIRepository {
     return this.prisma.aIDocument.findFirst({
       where: { id, organizationId, deletedAt: null },
       select: documentSelect,
-    }) as Promise<AIDocumentRecord | null>;
+    });
   }
 
   async listDocuments(input: {
@@ -457,7 +457,7 @@ export class PrismaAIRepository implements AIRepository {
       }),
       this.prisma.aIDocument.count({ where }),
     ]);
-    return { items: items as AIDocumentRecord[], total };
+    return { items: items, total };
   }
 
   deleteEmbeddingsForDocument(documentId: string) {
@@ -469,7 +469,7 @@ export class PrismaAIRepository implements AIRepository {
     documentId: string;
     provider: string;
     model: string;
-    chunks: Array<{
+    chunks: {
       chunkIndex: number;
       content: string;
       tokenCount: number;
@@ -478,7 +478,7 @@ export class PrismaAIRepository implements AIRepository {
       endOffset?: number;
       pageNumber?: number;
       metadata?: Record<string, unknown>;
-    }>;
+    }[];
   }) {
     for (const chunk of input.chunks) {
       const id = randomUUID();
@@ -515,7 +515,7 @@ export class PrismaAIRepository implements AIRepository {
     lessonId?: string;
   }): Promise<RetrievalHit[]> {
     const rows = await this.prisma.$queryRawUnsafe<
-      Array<{
+      {
         embedding_id: string;
         document_id: string;
         chunk_index: number;
@@ -525,7 +525,7 @@ export class PrismaAIRepository implements AIRepository {
         course_id: string | null;
         lesson_id: string | null;
         score: number;
-      }>
+      }[]
     >(
       `SELECT
          e.id AS embedding_id,
@@ -558,7 +558,7 @@ export class PrismaAIRepository implements AIRepository {
       chunkIndex: row.chunk_index,
       content: row.content,
       title: row.title,
-      score: Number(row.score),
+      score: row.score,
       sourceType: row.source_type,
       courseId: row.course_id,
       lessonId: row.lesson_id,
@@ -584,7 +584,7 @@ export class PrismaAIRepository implements AIRepository {
         },
         select: jobSelect,
       });
-      return { created: true, job: job as AIJobRecord };
+      return { created: true, job: job };
     } catch (error: unknown) {
       if (!isUniqueConflict(error)) throw error;
       const job = await this.prisma.aIJob.findUnique({
@@ -597,7 +597,7 @@ export class PrismaAIRepository implements AIRepository {
         select: jobSelect,
       });
       if (!job) throw error;
-      return { created: false, job: job as AIJobRecord };
+      return { created: false, job: job };
     }
   }
 
@@ -628,7 +628,7 @@ export class PrismaAIRepository implements AIRepository {
         where: { id: { in: ids }, lockedBy: workerId, status: 'PROCESSING' },
         select: jobSelect,
         orderBy: [{ priority: 'desc' }, { availableAt: 'asc' }],
-      }) as Promise<AIJobRecord[]>;
+      });
     });
   }
 
@@ -723,7 +723,7 @@ export class PrismaAIRepository implements AIRepository {
   }
 
   async tryAdvisoryLock(lockKey: string) {
-    const rows = await this.prisma.$queryRawUnsafe<Array<{ locked: boolean }>>(
+    const rows = await this.prisma.$queryRawUnsafe<{ locked: boolean }[]>(
       `SELECT pg_try_advisory_lock(hashtext($1)) AS locked`,
       lockKey,
     );
@@ -742,8 +742,8 @@ export class PrismaAIRepository implements AIRepository {
   ): Promise<{
     totalTokens: number;
     totalRequests: number;
-    byFeature: Array<{ feature: string; totalTokens: number; requests: number }>;
-    byProvider: Array<{ provider: string; totalTokens: number; requests: number }>;
+    byFeature: { feature: string; totalTokens: number; requests: number }[];
+    byProvider: { provider: string; totalTokens: number; requests: number }[];
   }> {
     const [totals, byFeature, byProvider] = await Promise.all([
       this.prisma.aIUsage.aggregate({

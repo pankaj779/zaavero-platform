@@ -122,6 +122,26 @@ const baseEnvSchema = z.object({
   AI_CHUNK_OVERLAP: z.coerce.number().int().min(0).default(120),
   AI_RETRIEVAL_TOP_K: z.coerce.number().int().positive().default(6),
   AI_QUEUE_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(15_000),
+  /** When true (or "1"), Express trusts X-Forwarded-* from Render/Vercel proxies. */
+  TRUST_PROXY: booleanFromEnv.optional(),
+  /** Max JSON / urlencoded body size in bytes (multipart uploads use STORAGE_* caps). */
+  BODY_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1 * 1024 * 1024),
+  /** Soft request timeout hint for reverse proxies (ms). */
+  REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),
+  THROTTLE_LIMIT: z.coerce.number().int().positive().default(120),
+  THROTTLE_AUTH_LIMIT: z.coerce.number().int().positive().default(20),
+  AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
+  SENTRY_DSN: z.string().trim().min(1).optional(),
+  SENTRY_ENVIRONMENT: z.string().trim().min(1).optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  OTEL_ENABLED: booleanFromEnv.optional(),
+  OTEL_SERVICE_NAME: z.string().default('graphology-api'),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
 });
 
 export const envSchema = baseEnvSchema
@@ -232,6 +252,8 @@ export const envSchema = baseEnvSchema
     STORAGE_SANDBOX_MODE: config.STORAGE_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
     MEETING_SANDBOX_MODE: config.MEETING_SANDBOX_MODE ?? config.NODE_ENV !== 'production',
     AI_EMBEDDING_PROVIDER: config.AI_EMBEDDING_PROVIDER ?? config.AI_PROVIDER,
+    TRUST_PROXY: config.TRUST_PROXY ?? true,
+    OTEL_ENABLED: config.OTEL_ENABLED ?? false,
   }));
 
 export type EnvConfig = z.infer<typeof envSchema>;

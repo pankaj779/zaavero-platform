@@ -94,7 +94,7 @@ describe('LiveSessionApi', () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.status).toBe('scheduled');
     expect(result.items[0]?.meeting.provider).toBe('Zoom');
-    expect(result.items[0]?.meeting.meetingUrl).toBeNull();
+    expect(result.items[0]?.meeting.meetingUrl).toBe('https://zoom.example/j/1');
     expect(result.items[0]?.course.title).toBe('Foundations');
     expect(result.items[0]?.batch.name).toBe('Weekend Cohort');
     expect(result.items[0]?.durationMinutes).toBe(60);

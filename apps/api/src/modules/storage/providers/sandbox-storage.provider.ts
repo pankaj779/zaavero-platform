@@ -85,18 +85,18 @@ export class SandboxStorageProvider implements StorageProvider {
     return Promise.resolve(asset);
   }
 
-  async downloadBuffer(request: DownloadBufferRequest): Promise<DownloadBufferResult> {
+  downloadBuffer(request: DownloadBufferRequest): Promise<DownloadBufferResult> {
     if (request.publicId) {
       const asset = this.assets.get(request.publicId);
       if (!asset) {
         throw new InvalidStorageUploadException('Sandbox asset was not found.');
       }
       const buffer = Buffer.from(`sandbox:${asset.publicId}`);
-      return {
+      return Promise.resolve({
         buffer,
         mimeType: 'application/octet-stream',
         bytes: buffer.length,
-      };
+      });
     }
     const secureUrl = request.secureUrl?.trim();
     if (!secureUrl?.startsWith('https://sandbox.storage.local/')) {
@@ -108,11 +108,11 @@ export class SandboxStorageProvider implements StorageProvider {
       throw new InvalidStorageUploadException('Sandbox asset was not found.');
     }
     const buffer = Buffer.from(`sandbox:${asset.publicId}`);
-    return {
+    return Promise.resolve({
       buffer,
       mimeType: 'application/octet-stream',
       bytes: buffer.length,
-    };
+    });
   }
 
   delete(publicId: string, _resourceType: StorageResourceType): Promise<void> {

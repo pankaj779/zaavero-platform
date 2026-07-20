@@ -72,7 +72,7 @@ export class AIService {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders?.();
+    res.flushHeaders();
 
     let conversationId = input.conversationId;
     try {

@@ -1,0 +1,60 @@
+name: Deploy API (Render)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'render.yaml'
+      - '.github/workflows/deploy-api.yml'
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-deploy:
+    name: Migrate + notify Render
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9.15.9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @graphology/database db:generate
+
+      - name: Deploy migrations (Neon)
+        if: ${{ secrets.DATABASE_URL != '' && secrets.DIRECT_URL != '' }}
+        run: pnpm --filter @graphology/database exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Trigger Render deploy hook
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+      - name: Upload API Dockerfile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docker-context-meta
+          path: |
+            apps/api/Dockerfile
+            apps/api/docker-entrypoint.sh
+            render.yaml

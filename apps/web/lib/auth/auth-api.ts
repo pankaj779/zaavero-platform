@@ -19,7 +19,7 @@ function getApiBaseUrl(): string {
     return configured.replace(/\/$/, '');
   }
 
-  return 'http://localhost:3001/api/v1';
+  return 'http://127.0.0.1:3001/api/v1';
 }
 
 async function parseJson(response: Response): Promise<unknown> {

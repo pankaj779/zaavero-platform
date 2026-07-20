@@ -116,10 +116,13 @@ export class OpenAICompatibleTransport {
     let usage: AIUsageMetrics | undefined;
     let finishReason: string | null = null;
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      for (;;) {
+        const readResult = (await reader.read()) as {
+          done: boolean;
+          value?: Uint8Array;
+        };
+        if (readResult.done) break;
+        buffer += decoder.decode(readResult.value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
         for (const line of lines) {
@@ -219,9 +222,9 @@ export class OpenAICompatibleTransport {
     let lastError: unknown;
     while (attempt <= maxRetries) {
       const controller = new AbortController();
-      const onAbort = () => controller.abort();
+      const onAbort = () => { controller.abort(); };
       abortSignal?.addEventListener('abort', onAbort, { once: true });
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
       try {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -242,7 +245,7 @@ export class OpenAICompatibleTransport {
         if (response.status === 429 || response.status >= 500) {
           const text = await response.text();
           lastError = new AIProviderUnavailableException(
-            this.sanitizeError(text || `HTTP ${response.status}`),
+            this.sanitizeError(text || `HTTP ${String(response.status)}`),
           );
           attempt += 1;
           if (attempt > maxRetries) throw lastError;
@@ -252,7 +255,7 @@ export class OpenAICompatibleTransport {
         if (!response.ok) {
           const text = await response.text();
           throw new AIProviderRejectedException(
-            this.sanitizeError(text || `HTTP ${response.status}`),
+            this.sanitizeError(text || `HTTP ${String(response.status)}`),
           );
         }
         return response;

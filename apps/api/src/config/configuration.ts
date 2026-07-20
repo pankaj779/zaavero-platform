@@ -140,5 +140,18 @@ export default (): EnvConfig => {
     AI_CHUNK_OVERLAP: Number(process.env.AI_CHUNK_OVERLAP ?? 120),
     AI_RETRIEVAL_TOP_K: Number(process.env.AI_RETRIEVAL_TOP_K ?? 6),
     AI_QUEUE_POLL_INTERVAL_MS: Number(process.env.AI_QUEUE_POLL_INTERVAL_MS ?? 15_000),
+    TRUST_PROXY: booleanFromEnv(process.env.TRUST_PROXY) ?? true,
+    BODY_LIMIT_BYTES: Number(process.env.BODY_LIMIT_BYTES ?? 1 * 1024 * 1024),
+    REQUEST_TIMEOUT_MS: Number(process.env.REQUEST_TIMEOUT_MS ?? 60_000),
+    THROTTLE_TTL_MS: Number(process.env.THROTTLE_TTL_MS ?? 60_000),
+    THROTTLE_LIMIT: Number(process.env.THROTTLE_LIMIT ?? 120),
+    THROTTLE_AUTH_LIMIT: Number(process.env.THROTTLE_AUTH_LIMIT ?? 20),
+    AUDIT_RETENTION_DAYS: Number(process.env.AUDIT_RETENTION_DAYS ?? 365),
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT ?? resolvedNodeEnv,
+    SENTRY_TRACES_SAMPLE_RATE: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1),
+    OTEL_ENABLED: booleanFromEnv(process.env.OTEL_ENABLED) ?? false,
+    OTEL_SERVICE_NAME: process.env.OTEL_SERVICE_NAME ?? 'graphology-api',
+    OTEL_EXPORTER_OTLP_ENDPOINT: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
   };
 };

@@ -122,7 +122,7 @@ function durationMinutes(startsAt: string, endsAt: string | null): number {
  * - course / batch titles (enriched via lookups when available)
  * - mentor name / avatar
  * - attendance rollups
- * - meetingUrl kept null in the UI contract (details panel uses pending copy)
+ * - meetingUrl / hostUrl passed through when provisioned
  * - recording URL not surfaced on the current DTO
  */
 export function mapLiveSessionApiToTeacherDto(

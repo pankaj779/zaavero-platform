@@ -25,11 +25,13 @@ import { PdfModule } from './modules/pdf/pdf.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { SubmissionModule } from './modules/submission/submission.module';
 import { AIModule } from './modules/ai/ai.module';
+import { ThrottleModule } from './common/throttle/throttle.module';
 
 @Module({
   imports: [
     AppConfigModule,
     DatabaseModule,
+    ThrottleModule,
     EmailModule,
     HealthModule,
     AuthModule,

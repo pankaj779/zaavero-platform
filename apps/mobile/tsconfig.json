@@ -8,7 +8,10 @@
       "@/*": ["./*"],
       "@graphology/types": ["../../packages/types/src/index.ts"],
       "@graphology/utils": ["../../packages/utils/src/index.ts"],
-      "@graphology/auth": ["../../packages/auth/src/index.ts"]
+      "@graphology/auth": ["../../packages/auth/src/index.ts"],
+      "react": ["./node_modules/@types/react/index.d.ts"],
+      "react/jsx-runtime": ["./node_modules/@types/react/jsx-runtime.d.ts"],
+      "react/jsx-dev-runtime": ["./node_modules/@types/react/jsx-dev-runtime.d.ts"]
     }
   },
   "include": [

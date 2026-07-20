@@ -3,11 +3,6 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { EnvConfig } from '../../../config/env.schema';
 import { StorageService } from '../../storage/services/storage.service';
-import {
-  DEFAULT_CHUNK_OVERLAP,
-  DEFAULT_CHUNK_SIZE,
-  DEFAULT_EMBEDDING_MODEL,
-} from '../constants/ai.constants';
 import { AI_EMBEDDING_PROVIDER, AI_REPOSITORY } from '../constants/injection-tokens';
 import type { AIProvider } from '../providers/ai-provider.interface';
 import type { AIRepository } from '../interfaces/ai-repository.interface';
@@ -33,11 +28,9 @@ async function extractTextFromBuffer(buffer: Buffer, mimeType: string): Promise<
     return buffer.toString('utf8');
   }
   if (normalizedMime === 'application/pdf') {
-    const pdfParse = (await import('pdf-parse')).default as (
-      data: Buffer,
-    ) => Promise<{ text: string }>;
+    const pdfParse = (await import('pdf-parse')).default;
     const parsed = await pdfParse(buffer);
-    return parsed.text ?? '';
+    return parsed.text;
   }
   throw new Error(`Unsupported MIME type for AI indexing: ${mimeType}`);
 }
@@ -144,11 +137,10 @@ export class AIDocumentService {
       });
       return;
     }
-    const chunkSize = this.config.get('AI_CHUNK_SIZE', { infer: true }) ?? DEFAULT_CHUNK_SIZE;
-    const overlap = this.config.get('AI_CHUNK_OVERLAP', { infer: true }) ?? DEFAULT_CHUNK_OVERLAP;
+    const chunkSize = this.config.get('AI_CHUNK_SIZE', { infer: true });
+    const overlap = this.config.get('AI_CHUNK_OVERLAP', { infer: true });
     const chunks = chunkText(document.extractedText, chunkSize, overlap);
-    const model =
-      this.config.get('EMBEDDING_MODEL', { infer: true }) ?? DEFAULT_EMBEDDING_MODEL;
+    const model = this.config.get('EMBEDDING_MODEL', { infer: true });
 
     await this.repository.deleteEmbeddingsForDocument(documentId);
     const batchSize = 16;

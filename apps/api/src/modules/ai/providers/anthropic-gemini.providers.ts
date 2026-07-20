@@ -21,11 +21,14 @@ import type {
 @Injectable()
 export class AnthropicProvider implements AIProvider {
   readonly name = 'ANTHROPIC' as const;
+  private readonly apiKey: string | undefined;
 
-  constructor(private readonly config: ConfigService<EnvConfig, true>) {}
+  constructor(private readonly config: ConfigService<EnvConfig, true>) {
+    this.apiKey = config.get('ANTHROPIC_API_KEY', { infer: true });
+  }
 
   isConfigured(): boolean {
-    return Boolean(this.config.get('ANTHROPIC_API_KEY', { infer: true }));
+    return Boolean(this.apiKey?.trim());
   }
 
   capabilities(): AIProviderCapabilities {
@@ -42,7 +45,7 @@ export class AnthropicProvider implements AIProvider {
     try {
       const started = Date.now();
       await this.chat({
-        model: this.config.get('ANTHROPIC_MODEL', { infer: true }) ?? 'claude-3-5-haiku-latest',
+        model: this.config.get('ANTHROPIC_MODEL', { infer: true }),
         messages: [{ role: 'user', content: 'ping' }],
         maxTokens: 1,
       });
@@ -57,8 +60,7 @@ export class AnthropicProvider implements AIProvider {
   }
 
   async chat(request: AIChatRequest): Promise<AIChatResult> {
-    const apiKey = this.config.get('ANTHROPIC_API_KEY', { infer: true });
-    if (!apiKey) throw new AIProviderNotConfiguredException('ANTHROPIC_API_KEY is required.');
+    if (!this.apiKey) throw new AIProviderNotConfiguredException('ANTHROPIC_API_KEY is required.');
     const started = Date.now();
     const system = request.messages
       .filter((m) => m.role === 'system')
@@ -71,7 +73,7 @@ export class AnthropicProvider implements AIProvider {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': this.apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -85,10 +87,12 @@ export class AnthropicProvider implements AIProvider {
     });
     const data = (await response.json()) as Record<string, unknown>;
     if (!response.ok) {
+      const errorMessage =
+        data.error && typeof data.error === 'object'
+          ? (data.error as Record<string, unknown>).message
+          : undefined;
       throw new AIProviderRejectedException(
-        typeof data.error === 'object'
-          ? String((data.error as Record<string, unknown>).message ?? 'Anthropic rejected')
-          : 'Anthropic rejected',
+        typeof errorMessage === 'string' ? errorMessage : 'Anthropic rejected',
       );
     }
     const contentBlocks = Array.isArray(data.content) ? data.content : [];
@@ -112,8 +116,7 @@ export class AnthropicProvider implements AIProvider {
 
   async *chatStream(request: AIChatRequest): AsyncIterable<AIStreamChunk> {
     // Anthropic SSE streaming
-    const apiKey = this.config.get('ANTHROPIC_API_KEY', { infer: true });
-    if (!apiKey) throw new AIProviderNotConfiguredException('ANTHROPIC_API_KEY is required.');
+    if (!this.apiKey) throw new AIProviderNotConfiguredException('ANTHROPIC_API_KEY is required.');
     const system = request.messages
       .filter((m) => m.role === 'system')
       .map((m) => m.content)
@@ -125,7 +128,7 @@ export class AnthropicProvider implements AIProvider {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': this.apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -146,10 +149,13 @@ export class AnthropicProvider implements AIProvider {
     let buffer = '';
     let usage: AIUsageMetrics | undefined;
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      for (;;) {
+        const readResult = (await reader.read()) as {
+          done: boolean;
+          value?: Uint8Array;
+        };
+        if (readResult.done) break;
+        buffer += decoder.decode(readResult.value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
         for (const line of lines) {
@@ -187,9 +193,9 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.chat({
       ...request,
       messages: [
@@ -197,7 +203,7 @@ export class AnthropicProvider implements AIProvider {
         { role: 'system', content: 'Return a single valid JSON object only.' },
       ],
     });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
   embed(): Promise<AIEmbeddingResult> {
@@ -217,11 +223,14 @@ export class AnthropicProvider implements AIProvider {
 @Injectable()
 export class GeminiProvider implements AIProvider {
   readonly name = 'GOOGLE_GEMINI' as const;
+  private readonly apiKey: string | undefined;
 
-  constructor(private readonly config: ConfigService<EnvConfig, true>) {}
+  constructor(private readonly config: ConfigService<EnvConfig, true>) {
+    this.apiKey = config.get('GEMINI_API_KEY', { infer: true });
+  }
 
   isConfigured(): boolean {
-    return Boolean(this.config.get('GEMINI_API_KEY', { infer: true }));
+    return Boolean(this.apiKey?.trim());
   }
 
   capabilities(): AIProviderCapabilities {
@@ -238,7 +247,7 @@ export class GeminiProvider implements AIProvider {
     try {
       const started = Date.now();
       await this.chat({
-        model: this.config.get('GEMINI_MODEL', { infer: true }) ?? 'gemini-2.0-flash',
+        model: this.config.get('GEMINI_MODEL', { infer: true }),
         messages: [{ role: 'user', content: 'ping' }],
         maxTokens: 1,
       });
@@ -253,8 +262,8 @@ export class GeminiProvider implements AIProvider {
   }
 
   async chat(request: AIChatRequest): Promise<AIChatResult> {
-    const apiKey = this.config.get('GEMINI_API_KEY', { infer: true });
-    if (!apiKey) throw new AIProviderNotConfiguredException('GEMINI_API_KEY is required.');
+    if (!this.apiKey) throw new AIProviderNotConfiguredException('GEMINI_API_KEY is required.');
+    const apiKey = this.apiKey;
     const started = Date.now();
     const model = request.model;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
@@ -336,23 +345,22 @@ export class GeminiProvider implements AIProvider {
     };
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.chat({ ...request, responseFormat: 'json' });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
   async embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
-    const apiKey = this.config.get('GEMINI_API_KEY', { infer: true });
-    if (!apiKey) throw new AIProviderNotConfiguredException('GEMINI_API_KEY is required.');
+    if (!this.apiKey) throw new AIProviderNotConfiguredException('GEMINI_API_KEY is required.');
     const started = Date.now();
     const model = request.model || 'text-embedding-004';
     const inputs = Array.isArray(request.input) ? request.input : [request.input];
     const embeddings: number[][] = [];
     let promptTokens = 0;
     for (const input of inputs) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:embedContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:embedContent?key=${this.apiKey}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },

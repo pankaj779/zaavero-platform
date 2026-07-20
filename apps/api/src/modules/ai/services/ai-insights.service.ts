@@ -70,7 +70,7 @@ export class AIInsightsService {
     });
     const averageScore =
       graded.length > 0
-        ? graded.reduce((sum, row) => sum + Number(row.score ?? 0), 0) / graded.length
+        ? graded.reduce((sum, row) => sum + (row.score ?? 0), 0) / graded.length
         : null;
 
     const riskIndicators: string[] = [];

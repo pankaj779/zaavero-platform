@@ -91,7 +91,7 @@ export interface AIProvider {
   health(): Promise<AIProviderHealth>;
   chat(request: AIChatRequest): Promise<AIChatResult>;
   chatStream(request: AIChatRequest): AsyncIterable<AIStreamChunk>;
-  structuredJson<T = unknown>(request: AIChatRequest): Promise<{ data: T; result: AIChatResult }>;
+  structuredJson(request: AIChatRequest): Promise<{ data: unknown; result: AIChatResult }>;
   embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResult>;
   moderate?(request: AIModerationRequest): Promise<AIModerationResult>;
 }

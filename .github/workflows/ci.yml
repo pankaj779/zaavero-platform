@@ -100,3 +100,12 @@ jobs:
         run: pnpm test
         env:
           RUN_DATABASE_TESTS: 'true'
+
+      - name: Mobile typecheck
+        run: pnpm --filter @graphology/mobile typecheck
+
+      - name: Mobile unit tests
+        run: pnpm --filter @graphology/mobile test
+
+      - name: Prisma validate
+        run: pnpm --filter @graphology/database exec prisma validate

@@ -1,0 +1,60 @@
+name: Deploy Mobile (EAS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile
+        required: true
+        default: preview
+        type: choice
+        options: [preview, production]
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/deploy-mobile.yml'
+
+concurrency:
+  group: deploy-mobile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  eas-build:
+    name: EAS ${{ github.event.inputs.profile || 'preview' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9.15.9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install workspace
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS build
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        run: eas build --profile ${{ github.event.inputs.profile || 'preview' }} --platform all --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Skip notice
+        if: ${{ secrets.EXPO_TOKEN == '' }}
+        run: echo "EXPO_TOKEN not configured — set the secret to enable EAS builds."

@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (e.g. v1.0.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '9.15.9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @graphology/database db:generate
+        env:
+          DATABASE_URL: postgresql://graphology:graphology@localhost:5432/graphology?schema=public
+          DIRECT_URL: postgresql://graphology:graphology@localhost:5432/graphology?schema=public
+
+      - name: Typecheck
+        run: pnpm typecheck
+        env:
+          DATABASE_URL: postgresql://graphology:graphology@localhost:5432/graphology?schema=public
+          DIRECT_URL: postgresql://graphology:graphology@localhost:5432/graphology?schema=public
+          JWT_SECRET: release-ci-secret
+          REFRESH_TOKEN_SECRET: release-ci-refresh
+          CI: true
+
+      - name: Build packages + apps
+        run: pnpm build
+        env:
+          DATABASE_URL: postgresql://graphology:graphology@localhost:5432/graphology?schema=public
+          DIRECT_URL: postgresql://graphology:graphology@localhost:5432/graphology?schema=public
+          JWT_SECRET: release-ci-secret
+          REFRESH_TOKEN_SECRET: release-ci-refresh
+          CI: true
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-builds
+          path: |
+            apps/api/dist
+            apps/web/.next
+            packages/*/dist
+          if-no-files-found: warn
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

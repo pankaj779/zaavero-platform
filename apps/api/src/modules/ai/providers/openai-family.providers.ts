@@ -31,7 +31,7 @@ export class OpenAIProvider implements AIProvider {
     this.transport = new OpenAICompatibleTransport({
       provider: this.name,
       apiKey: this.apiKey,
-      baseUrl: config.get('OPENAI_BASE_URL', { infer: true }) ?? 'https://api.openai.com/v1',
+      baseUrl: config.get('OPENAI_BASE_URL', { infer: true }) || 'https://api.openai.com/v1',
       timeoutMs: config.get('AI_TIMEOUT_MS', { infer: true }),
       maxRetries: config.get('AI_MAX_RETRIES', { infer: true }),
     });
@@ -77,11 +77,11 @@ export class OpenAIProvider implements AIProvider {
     return this.transport.chatStream(request);
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.transport.chat({ ...request, responseFormat: 'json' });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
   embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
@@ -91,9 +91,9 @@ export class OpenAIProvider implements AIProvider {
     });
   }
 
-  async moderate(request: AIModerationRequest): Promise<AIModerationResult> {
+  moderate(request: AIModerationRequest): Promise<AIModerationResult> {
     void request;
-    return { flagged: false, categories: {}, scores: {} };
+    return Promise.resolve({ flagged: false, categories: {}, scores: {} });
   }
 }
 
@@ -109,12 +109,11 @@ export class AzureOpenAIProvider implements AIProvider {
   constructor(config: ConfigService<EnvConfig, true>) {
     this.endpoint = config.get('AZURE_OPENAI_ENDPOINT', { infer: true }) ?? undefined;
     this.apiKey = config.get('AZURE_OPENAI_API_KEY', { infer: true }) ?? undefined;
-    const apiVersion =
-      config.get('AZURE_OPENAI_API_VERSION', { infer: true }) ?? '2024-10-21';
+    const apiVersion = config.get('AZURE_OPENAI_API_VERSION', { infer: true });
     this.deployment =
-      config.get('AZURE_OPENAI_DEPLOYMENT', { infer: true }) ?? DEFAULT_CHAT_MODEL;
+      config.get('AZURE_OPENAI_DEPLOYMENT', { infer: true }) || DEFAULT_CHAT_MODEL;
     this.embeddingDeployment =
-      config.get('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', { infer: true }) ??
+      config.get('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', { infer: true }) ||
       DEFAULT_EMBEDDING_MODEL;
     this.transport = new OpenAICompatibleTransport({
       provider: this.name,
@@ -171,15 +170,15 @@ export class AzureOpenAIProvider implements AIProvider {
     return this.transport.chatStream({ ...request, model: request.model || this.deployment });
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.transport.chat({
       ...request,
       model: request.model || this.deployment,
       responseFormat: 'json',
     });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
   embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
@@ -247,11 +246,11 @@ export class OpenRouterProvider implements AIProvider {
     return this.transport.chatStream(request);
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.transport.chat({ ...request, responseFormat: 'json' });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
   embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
@@ -316,16 +315,18 @@ export class GroqProvider implements AIProvider {
     return this.transport.chatStream(request);
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.transport.chat({ ...request, responseFormat: 'json' });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
-  async embed(_request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
-    throw new AIProviderNotConfiguredException(
-      'Groq does not provide embeddings in this integration.',
+  embed(_request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
+    return Promise.reject(
+      new AIProviderNotConfiguredException(
+        'Groq does not provide embeddings in this integration.',
+      ),
     );
   }
 }
@@ -337,9 +338,7 @@ export class OllamaProvider implements AIProvider {
   private readonly baseUrl: string;
 
   constructor(config: ConfigService<EnvConfig, true>) {
-    this.baseUrl = (
-      config.get('OLLAMA_BASE_URL', { infer: true }) ?? 'http://127.0.0.1:11434'
-    ).replace(/\/$/, '');
+    this.baseUrl = config.get('OLLAMA_BASE_URL', { infer: true }).replace(/\/$/, '');
     this.transport = new OpenAICompatibleTransport({
       provider: this.name,
       apiKey: 'ollama',
@@ -389,9 +388,9 @@ export class OllamaProvider implements AIProvider {
     return this.transport.chatStream(request);
   }
 
-  async structuredJson<T = unknown>(
+  async structuredJson(
     request: AIChatRequest,
-  ): Promise<{ data: T; result: AIChatResult }> {
+  ): Promise<{ data: unknown; result: AIChatResult }> {
     const result = await this.transport.chat({
       ...request,
       messages: [
@@ -399,7 +398,7 @@ export class OllamaProvider implements AIProvider {
         { role: 'system', content: 'Respond with valid JSON only.' },
       ],
     });
-    return { data: JSON.parse(result.content) as T, result };
+    return { data: JSON.parse(result.content) as unknown, result };
   }
 
   embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResult> {
@@ -426,8 +425,13 @@ export class SandboxAIProvider implements AIProvider {
     };
   }
 
-  async health(): Promise<AIProviderHealth> {
-    return { provider: this.name, healthy: true, latencyMs: 0, message: 'test-only' };
+  health(): Promise<AIProviderHealth> {
+    return Promise.resolve({
+      provider: this.name,
+      healthy: true,
+      latencyMs: 0,
+      message: 'test-only',
+    });
   }
 
   chat(request: AIChatRequest): Promise<AIChatResult> {
@@ -437,6 +441,7 @@ export class SandboxAIProvider implements AIProvider {
 
   async *chatStream(request: AIChatRequest): AsyncIterable<AIStreamChunk> {
     this.captured.push({ op: 'chatStream', request });
+    await Promise.resolve();
     yield { type: 'error', error: 'Sandbox cannot generate user-facing responses.' };
     throw new AISandboxForbiddenException();
   }

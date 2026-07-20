@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { EnvConfig } from '../../../config/env.schema';
-import { DEFAULT_EMBEDDING_MODEL } from '../constants/ai.constants';
 import { AI_EMBEDDING_PROVIDER } from '../constants/injection-tokens';
 import type { AIProvider } from '../providers/ai-provider.interface';
 import { AIUsageService } from './ai-usage.service';
@@ -26,8 +25,7 @@ export class AIRetrievalService {
     courseId?: string;
     lessonId?: string;
   }): Promise<RetrievalHit[]> {
-    const model =
-      this.config.get('EMBEDDING_MODEL', { infer: true }) ?? DEFAULT_EMBEDDING_MODEL;
+    const model = this.config.get('EMBEDDING_MODEL', { infer: true });
     const embedResult = await this.embeddingProvider.embed({
       model,
       input: input.query,
@@ -50,7 +48,7 @@ export class AIRetrievalService {
     });
   }
 
-  formatCitations(hits: RetrievalHit[]): Array<Record<string, unknown>> {
+  formatCitations(hits: RetrievalHit[]): Record<string, unknown>[] {
     return hits.map((hit) => ({
       documentId: hit.documentId,
       title: hit.title,
@@ -66,7 +64,7 @@ export class AIRetrievalService {
     return hits
       .map(
         (hit, index) =>
-          `[Source ${index + 1}: ${hit.title}]\n${hit.content.slice(0, 1200)}`,
+          `[Source ${String(index + 1)}: ${hit.title}]\n${hit.content.slice(0, 1200)}`,
       )
       .join('\n\n');
   }

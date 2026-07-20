@@ -1,0 +1,86 @@
+# Render Blueprint — Graphology API
+# https://render.com/docs/blueprint-spec
+#
+# Secrets must be set in the Render dashboard (never commit real values).
+
+services:
+  - type: web
+    name: graphology-api
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/ready
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: REFRESH_TOKEN_SECRET
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_WEBHOOK_SECRET
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: RESEND
+      - key: EMAIL_SANDBOX_MODE
+        value: "false"
+      - key: STORAGE_PROVIDER
+        value: CLOUDINARY
+      - key: STORAGE_SANDBOX_MODE
+        value: "false"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: AI_PROVIDER
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: MEETING_SANDBOX_MODE
+        value: "false"
+      - key: ZOOM_CLIENT_ID
+        sync: false
+      - key: ZOOM_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_MEET_CLIENT_ID
+        sync: false
+      - key: GOOGLE_MEET_CLIENT_SECRET
+        sync: false

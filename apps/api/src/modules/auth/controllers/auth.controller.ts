@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { ControllerSuccessPayload } from '../../../common/interfaces/api-response.interface';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
@@ -33,6 +34,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ auth: { limit: 10, ttl: 60_000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Register a new user account',
@@ -43,6 +45,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ auth: { limit: 20, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Authenticate with email and password',

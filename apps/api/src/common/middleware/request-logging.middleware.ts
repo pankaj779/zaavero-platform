@@ -1,6 +1,10 @@
 import { Injectable, Logger, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
+/**
+ * Structured HTTP access log (key=value JSON) so log aggregators / Sentry
+ * breadcrumbs can parse requestId, method, path, status, and duration.
+ */
 @Injectable()
 export class RequestLoggingMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP');
@@ -12,9 +16,17 @@ export class RequestLoggingMiddleware implements NestMiddleware {
 
     res.on('finish', () => {
       const durationMs = Date.now() - startedAt;
-      this.logger.log(
-        `requestId=${requestId} method=${method} path=${originalUrl} status=${String(res.statusCode)} durationMs=${String(durationMs)}`,
-      );
+      const payload = {
+        level: 'info',
+        type: 'http_access',
+        requestId,
+        method,
+        path: originalUrl,
+        status: res.statusCode,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      };
+      this.logger.log(JSON.stringify(payload));
     });
 
     next();

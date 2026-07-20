@@ -51,10 +51,7 @@ export class AIFeatureService {
 
     const template = await this.prompt.resolveTemplate({ feature: input.feature });
     const renderedUser = this.prompt.renderUserTemplate(template.userTemplate, input.variables);
-    const model =
-      this.config.get('OPENAI_MODEL', { infer: true }) ??
-      this.config.get('ANTHROPIC_MODEL', { infer: true }) ??
-      'gpt-4o-mini';
+    const model = this.config.get('OPENAI_MODEL', { infer: true });
 
     const result = await this.chatProvider.chat({
       model,
